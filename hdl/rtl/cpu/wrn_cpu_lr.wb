@@ -1,0 +1,93 @@
+-- -*- Mode: LUA; tab-width: 2 -*-
+
+peripheral {
+	 name = "WR Node CPU Local Registers";
+	 prefix = "wrn_cpu_lr";
+	 hdl_entity = "wrn_cpu_lr_wb_slave";
+
+	 reg {
+			name = "CPU Polling Register";
+			prefix = "POLL";
+
+			field {
+				 name = "HMQ Slot Status";
+				 prefix = "HMQ";
+				 size = 16;
+				 type = SLV;
+				 access_bus = READ_ONLY;
+				 access_dev = WRITE_ONLY;
+			};
+
+			field {
+				 name = "RMQ Slot Status";
+				 prefix = "RMQ";
+				 size = 16;
+				 type = SLV;
+				 access_bus = READ_ONLY;
+				 access_dev = WRITE_ONLY;
+			};
+	 };
+
+	 reg {
+			name = "CPU Status Register";
+			prefix = "STAT";
+
+			field {
+				 name = "WR Link Up";
+				 prefix = "WR_LINK";
+				 type = BIT;
+				 access_bus = READ_ONLY;
+				 access_dev = WRITE_ONLY;
+			};
+
+			field {
+				 name = "WR Time OK";
+				 prefix = "WR_TIME_OK";
+				 type = BIT;
+				 access_bus = READ_ONLY;
+				 access_dev = WRITE_ONLY;
+			};
+	 };
+
+
+	 reg {
+			name = "TAI Cycles";
+			prefix = "TAI_CYCLES";
+
+			field {
+				 name = "TAI Cycles";
+				 size = 28;
+				 type = SLV;
+				 access_bus = READ_ONLY;
+				 access_dev = WRITE_ONLY;
+				 ack_read = "tai_cycles_rd_ack_o";
+			};
+		};
+
+	 reg {
+			name = "TAI Seconds";
+			prefix = "TAI_SEC";
+
+			field {
+				 name = "TAI Seconds";
+				 size = 32;
+				 type = SLV;
+				 access_bus = READ_ONLY;
+				 access_dev = WRITE_ONLY;
+			};
+		};
+
+		reg {
+			name = "Test";
+			prefix = "TEST";
+
+			field {
+				 name = "test";
+				 size = 32;
+				 type = SLV;
+				 access_bus = READ_WRITE;
+				 access_dev = READ_ONLY;
+			};
+		};
+};
+

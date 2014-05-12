@@ -1,0 +1,1 @@
+files = ["wrn_shared_mem.vhd"]
