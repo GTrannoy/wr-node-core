@@ -4,8 +4,8 @@ files = [	"wr_node_core.vhd",
 modules = { 
 "local" : [ "cpu", "mqueue", "smem" ],
 "git" : [ 
-        "git@ohwr.org:hdl-core-lib/general-cores.git::master",
-        "git@ohwr.org:hdl-core-lib/etherbone-core.git::master",
-        "git@ohwr.org:hdl-core-lib/wr-hdl.git::master",
+        "git@ohwr.org:hdl-core-lib/general-cores.git::tom-lm32-wrnode",
+        "git@ohwr.org:hdl-core-lib/etherbone-core.git::tom-wr-node",
+        "git@ohwr.org:hdl-core-lib/wr-cores.git::tom-wr-node",
 
         ] }

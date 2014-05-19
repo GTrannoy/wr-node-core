@@ -17,8 +17,11 @@ use unisim.vcomponents.all;
 
 entity svec_list_node_template is
   generic (
-    g_fmc0_sdb       : t_sdb_device;
-    g_fmc1_sdb       : t_sdb_device;
+    g_fmc0_sdb        : t_sdb_record;
+    g_fmc0_vic_vector : t_wishbone_address;
+    g_fmc1_sdb        : t_sdb_record;
+    g_fmc1_vic_vector : t_wishbone_address;
+
     g_simulation     : integer := 0;
     g_with_wr_phy    : integer := 0;
     g_wr_node_config : t_wr_node_config
@@ -110,35 +113,39 @@ entity svec_list_node_template is
     pll25dac_sclk_o   : out std_logic;
     pll25dac_sync_n_o : out std_logic;
 
-
-
     fmc0_prsntm2c_n_i : in std_logic;
     fmc1_prsntm2c_n_i : in std_logic;
-
-    fmc0_scl_b : inout std_logic;
-    fmc0_sda_b : inout std_logic;
-
-    fmc1_scl_b : inout std_logic;
-    fmc1_sda_b : inout std_logic;
 
     tempid_dq_b : inout std_logic;
 
     uart_rxd_i : in  std_logic := '1';
     uart_txd_o : out std_logic;
 
-    fmc0_clk_aux_i         : in  std_logic;
-    fmc0_clk_aux_lock_en_i : in  std_logic;
-    fmc0_clk_aux_locked_o  : out std_logic;
-    fmc0_wb_o              : out t_wishbone_master_out;
-    fmc0_wb_i              : in  t_wishbone_master_in;
-    fmc0_irq_i             : in  std_logic;
+    fmc0_clk_aux_i  : in  std_logic;
+    fmc0_host_wb_o  : out t_wishbone_master_out;
+    fmc0_host_wb_i  : in  t_wishbone_master_in;
+    fmc0_dp_wb_o    : out t_wishbone_master_out;
+    fmc0_dp_wb_i    : in  t_wishbone_master_in;
+    fmc0_host_irq_i : in  std_logic;
 
-    fmc1_clk_aux_i         : in  std_logic;
-    fmc1_clk_aux_lock_en_i : in  std_logic;
-    fmc1_clk_aux_locked_o  : out std_logic;
-    fmc1_wb_o              : out t_wishbone_master_out;
-    fmc1_wb_i              : in  t_wishbone_master_in;
-    fmc1_irq_i             : in  std_logic
+    fmc1_clk_aux_i  : in  std_logic;
+    fmc1_host_wb_o  : out t_wishbone_master_out;
+    fmc1_host_wb_i  : in  t_wishbone_master_in;
+    fmc1_dp_wb_o    : out t_wishbone_master_out;
+    fmc1_dp_wb_i    : in  t_wishbone_master_in;
+    fmc1_host_irq_i : in  std_logic;
+
+    tm_link_up_o         : out std_logic;
+    tm_dac_value_o       : out std_logic_vector(23 downto 0);
+    tm_dac_wr_o          : out std_logic_vector(1 downto 0);
+    tm_clk_aux_lock_en_i : in  std_logic_vector(1 downto 0) := (others => '0');
+    tm_clk_aux_locked_o  : out std_logic_vector(1 downto 0);
+    tm_time_valid_o      : out std_logic;
+    tm_tai_o             : out std_logic_vector(39 downto 0);
+    tm_cycles_o          : out std_logic_vector(27 downto 0);
+
+    carrier_scl_b : inout std_logic;
+    carrier_sda_b : inout std_logic
     );
 
 end svec_list_node_template;
@@ -219,11 +226,11 @@ architecture rtl of svec_list_node_template is
 
   constant c_INTERCONNECT_LAYOUT : t_sdb_record_array(c_NUM_WB_MASTERS - 1 downto 0) :=
     (
-      c_SLAVE_FMC0    => f_sdb_embed_device(g_fmc0_sdb, x"00010000"),
-      c_SLAVE_FMC1    => f_sdb_embed_device(g_fmc1_sdb, x"00020000"),
-      c_SLAVE_VIC     => f_sdb_embed_device(c_xwb_vic_sdb, x"00030000"),
-      c_SLAVE_WR_CORE => f_sdb_embed_bridge(c_WRCORE_BRIDGE_SDB, x"00040000"),
-      c_SLAVE_WR_NODE => f_sdb_embed_bridge(c_WRNODE_BRIDGE_SDB, x"00080000")
+      c_SLAVE_FMC0    => g_fmc0_sdb,
+      c_SLAVE_FMC1    => g_fmc1_sdb,
+      c_SLAVE_VIC     => f_sdb_embed_device(c_xwb_vic_sdb, x"00070000"),
+      c_SLAVE_WR_CORE => f_sdb_embed_bridge(c_WRCORE_BRIDGE_SDB, x"00080000"),
+      c_SLAVE_WR_NODE => f_sdb_embed_bridge(c_WRNODE_BRIDGE_SDB, x"000c0000")
 --      c_DESC_SYNTHESIS => f_sdb_embed_synthesis(c_sdb_synthesis_info),
 --      c_DESC_REPO_URL  => f_sdb_embed_repo_url(c_sdb_repo_url)
       );
@@ -231,15 +238,10 @@ architecture rtl of svec_list_node_template is
   constant c_SDB_ADDRESS : t_wishbone_address := x"00000000";
 
   constant c_VIC_VECTOR_TABLE : t_wishbone_address_array(0 to 2) :=
-    (0 => x"00010000",
-     1 => x"00020000",
-     2 => x"00080000");
+    (0 => g_fmc0_vic_vector,
+     1 => g_fmc1_vic_vector,
+     2 => x"000c0000");
 
-  constant c_FMC_MUX_ADDR : t_wishbone_address_array(0 downto 0) :=
-    (0 => x"00000000");
-  constant c_FMC_MUX_MASK : t_wishbone_address_array(0 downto 0) :=
-    (0 => x"00000000");
-  
   signal cnx_master_out : t_wishbone_master_out_array(c_NUM_WB_MASTERS-1 downto 0);
   signal cnx_master_in  : t_wishbone_master_in_array(c_NUM_WB_MASTERS-1 downto 0);
 
@@ -461,7 +463,7 @@ begin
 
   U_VME_Core : xvme64x_core
     generic map (
-      g_adem_a24 => x"fff00000" )
+      g_adem_a24 => x"fff00000")
     port map (
       clk_i           => clk_sys,
       rst_n_i         => powerup_rst_n,
@@ -657,8 +659,8 @@ begin
       rst_n_i      => local_reset_n,
       slave_i      => cnx_master_out(c_SLAVE_VIC),
       slave_o      => cnx_master_in(c_SLAVE_VIC),
-      irqs_i(0)    => fmc0_irq_i,
-      irqs_i(1)    => fmc1_irq_i,
+      irqs_i(0)    => fmc0_host_irq_i,
+      irqs_i(1)    => fmc1_host_irq_i,
       irqs_i(2)    => wrn_irq,
       irq_master_o => vic_master_irq);
 
@@ -668,10 +670,10 @@ begin
     port map (
       clk_i          => clk_sys,
       rst_n_i        => local_reset_n,
-      dp_master_o(0) => wrn_fmc0_wb_out,
-      dp_master_o(1) => wrn_fmc1_wb_out,
-      dp_master_i(0) => wrn_fmc0_wb_in,
-      dp_master_i(1) => wrn_fmc1_wb_in,
+      dp_master_o(0) => fmc0_dp_wb_o,
+      dp_master_o(1) => fmc1_dp_wb_o,
+      dp_master_i(0) => fmc0_dp_wb_i,
+      dp_master_i(1) => fmc1_dp_wb_i,
       wr_src_o       => ebm_src_out,
       wr_src_i       => ebm_src_in,
       wr_snk_o       => ebs_snk_out,
@@ -682,41 +684,6 @@ begin
       host_slave_o   => cnx_master_in(c_SLAVE_WR_NODE),
       host_irq_o     => wrn_irq,
       tm_i           => tm);
-
-  
-  U_FMC0_WB_Mux : xwb_crossbar
-    generic map (
-      g_num_masters => 2,
-      g_num_slaves  => 1,
-      g_registered  => false,
-      g_address     => c_FMC_MUX_ADDR,
-      g_mask        => c_FMC_MUX_MASK)
-    port map (
-      clk_sys_i   => clk_sys,
-      rst_n_i     => local_reset_n,
-      slave_i(0)  => wrn_fmc0_wb_out,
-      slave_i(1)  => cnx_master_out(c_SLAVE_FMC0),
-      slave_o(0)  => wrn_fmc0_wb_in,
-      slave_o(1)  => cnx_master_in(c_SLAVE_FMC0),
-      master_i(0) => fmc0_wb_i,
-      master_o(0) => fmc0_wb_o);
-
-  U_FMC1_WB_Mux : xwb_crossbar
-    generic map (
-      g_num_masters => 2,
-      g_num_slaves  => 1,
-      g_registered  => false,
-      g_address     => c_FMC_MUX_ADDR,
-      g_mask        => c_FMC_MUX_MASK)
-    port map (
-      clk_sys_i   => clk_sys,
-      rst_n_i     => local_reset_n,
-      slave_i(0)  => wrn_fmc1_wb_out,
-      slave_i(1)  => cnx_master_out(c_SLAVE_FMC1),
-      slave_o(0)  => wrn_fmc1_wb_in,
-      slave_o(1)  => cnx_master_in(c_SLAVE_FMC1),
-      master_i(0) => fmc1_wb_i,
-      master_o(0) => fmc1_wb_o);
 
   gen_with_phy : if(g_with_wr_phy /= 0) generate
 
@@ -779,7 +746,7 @@ begin
       led_state_i => led_state,
 
       column_o   => fp_led_column_o,
-      line_o     => fp_led_line_o,        
+      line_o     => fp_led_line_o,
       line_oen_o => fp_led_line_oen_o
       );
 
@@ -850,6 +817,20 @@ begin
 
   rst_n_sys_o <= local_reset_n;
   clk_sys_o   <= clk_sys;
+
+-- forward timing to the FMC cores in the top level.
+  tm_link_up_o       <= tm_link_up;
+  tm_dac_value_o     <= tm_dac_value;
+  tm_dac_wr_o        <= tm_dac_wr;
+  tm_clk_aux_lock_en <= tm_clk_aux_lock_en_i;
+  tm_time_valid_o    <= tm_time_valid;
+  tm_tai_o           <= tm_tai;
+  tm_cycles_o        <= tm_cycles;
+
+  fmc0_host_wb_o <= cnx_master_out(c_SLAVE_FMC0);
+  fmc1_host_wb_o <= cnx_master_out(c_SLAVE_FMC1);
+  cnx_master_in(c_SLAVE_FMC0) <= fmc0_host_wb_i;
+  cnx_master_in(c_SLAVE_FMC1) <= fmc1_host_wb_i;
   
 end rtl;
 

@@ -40,8 +40,15 @@ module main;
 		     .clk_125m_pllref_n_i(~clk_125m),
 		     .clk_125m_gtp_p_i(clk_125m),
 		     .clk_125m_gtp_n_i(~clk_125m),
+
+		     .fmc1_fd_clk_ref_p_i(clk_125m),
+		     .fmc1_fd_clk_ref_n_i(~clk_125m),
+
+		     .fmc0_tdc_125m_clk_p_i(clk_125m),
+		     .fmc0_tdc_125m_clk_n_i(~clk_125m),
+
 		     .clk_20m_vcxo_i(clk_20m),
-                     
+                     .fmc0_tdc_pll_status_i(1'b1),
 		     .rst_n_a_i(rst_n),
                      
 		     `WIRE_VME_PINS(8)
@@ -54,7 +61,9 @@ module main;
       uint64_t val = (base) | (am << 2);
 
       $display("Func%d ADER=0x%x", func, val);
-      
+
+     if(am == 0)
+       val = 1;
       
       acc.write(addr + 0, (val >> 24) & 'hff, CR_CSR|A32|D08Byte3);
       acc.write(addr + 4, (val >> 16) & 'hff, CR_CSR|A32|D08Byte3);
@@ -73,7 +82,8 @@ module main;
 //      config_vme_function(acc, 0, 'h80000000, 'h09);
       /* map func1 to 0xc00000, A24 */
       config_vme_function(acc, 1, 'hc00000, 'h39);
-      
+      config_vme_function(acc, 0, 0, 0);
+
       acc.write('h7ff33, 1, CR_CSR|A32|D08Byte3);
       acc.write('h7fffb, 'h10, CR_CSR|A32|D08Byte3); /* enable module (BIT_SET = 0x10) */
 
@@ -93,7 +103,21 @@ module main;
 
       init_vme64x_core(acc);
       acc_casted.set_default_xfer_size(A24|SINGLE|D32);
+ 
 
+      acc.read('hc00000, d); $display("%x", d);
+      acc.read('hc40000, d); $display("%x", d);
+      acc.read('hc40004, d); $display("%x", d);
+      acc.read('hc40008, d); $display("%x", d);
+
+      #10us;
+
+      #400us;
+
+      acc.read('hc20000, d); $display("TDC SDB ID : %x", d);
+
+      
+      $stop;
       
       
       #10us;
@@ -101,8 +125,8 @@ module main;
       
 
       
-      cpu_csr = new ( acc, 'h0xc90000 );
-      hmq = new ( acc, 'h0xc80000);
+      cpu_csr = new ( acc, 'h0xcd0000 );
+      hmq = new ( acc, 'h0xcc0000);
 
       cpu_csr.init();
 

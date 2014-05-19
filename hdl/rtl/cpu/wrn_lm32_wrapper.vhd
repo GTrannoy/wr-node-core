@@ -167,18 +167,18 @@ begin
 
   gen_cc : if g_cpu_id = 0 generate
 
-    chipscope_icon_1 : chipscope_icon
-      port map (
-        CONTROL0 => CONTROL);
+    --chipscope_icon_1 : chipscope_icon
+    --  port map (
+    --    CONTROL0 => CONTROL);
 
-    chipscope_ila_1 : chipscope_ila
-      port map (
-        CONTROL => CONTROL,
-        CLK     => clk_sys_i,
-        TRIG0   => TRIG0,
-        TRIG1   => TRIG1,
-        TRIG2   => TRIG2,
-        TRIG3   => TRIG3);
+    --chipscope_ila_1 : chipscope_ila
+    --  port map (
+    --    CONTROL => CONTROL,
+    --    CLK     => clk_sys_i,
+    --    TRIG0   => TRIG0,
+    --    TRIG1   => TRIG1,
+    --    TRIG2   => TRIG2,
+    --    TRIG3   => TRIG3);
 
     trig0(0) <= rst;
     trig0(1) <= cpu_reset;

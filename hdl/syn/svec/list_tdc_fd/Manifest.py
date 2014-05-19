@@ -1,7 +1,7 @@
 target = "xilinx"
 action = "synthesis"
 
-fetchto = "../../ip_cores"
+fetchto = "../../../ip_cores"
 
 syn_device = "xc6slx150t"
 syn_grade = "-3"
