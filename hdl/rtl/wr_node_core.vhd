@@ -167,6 +167,11 @@ architecture rtl of wr_node_core is
   signal timing : t_wrn_timing_if;
 
   signal cpu_index : integer := 0;
+
+  type t_wrn_cpu_csr_in_registers_array is array(integer range <>) of t_wrn_cpu_csr_in_registers;
+
+  signal cpu_csr_towb_cb: t_wrn_cpu_csr_in_registers_array (g_config.cpu_count-1 downto 0);
+
   
 begin  -- rtl
 
@@ -254,11 +259,13 @@ begin  -- rtl
         dp_master_i => dp_master_i(i),
         dp_master_o => dp_master_o(i),
         cpu_csr_i   => cpu_csr_fromwb,
-        --    cpu_csr_o   => cpu_csr_towb,
+        cpu_csr_o   => cpu_csr_towb_cb(i),
         rmq_ready_i => rmq_status,
         hmq_ready_i => hmq_status);
 
   end generate gen_cpus;
+
+  cpu_csr_towb.udata_i <= cpu_csr_towb_cb(cpu_index).udata_i;
 
   U_Host_MQ : wrn_mqueue_host
     generic map (

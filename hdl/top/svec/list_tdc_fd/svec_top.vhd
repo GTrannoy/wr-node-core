@@ -232,9 +232,9 @@ architecture rtl of svec_top is
       out_slot_count  => 4,
       out_slot_config => (
         0             => (16, 128),
-        1             => (16, 128),
+        1             => (128, 16),
         2             => (16, 128),
-        3             => (16, 128),
+        3             => (128, 16),
         others        => (0, 0)),
 
       in_slot_count  => 2,
@@ -311,54 +311,16 @@ architecture rtl of svec_top is
   signal fmc1_wb_out : t_wishbone_master_out;
   signal fmc1_wb_in  : t_wishbone_master_in;
 
-    component chipscope_ila
+  component dummy_chipscope is
     port (
-      CONTROL : inout std_logic_vector(35 downto 0);
-      CLK     : in    std_logic;
-      TRIG0   : in    std_logic_vector(31 downto 0);
-      TRIG1   : in    std_logic_vector(31 downto 0);
-      TRIG2   : in    std_logic_vector(31 downto 0);
-      TRIG3   : in    std_logic_vector(31 downto 0));
-  end component;
-
-  component chipscope_icon
-    port (
-      CONTROL0 : inout std_logic_vector (35 downto 0));
-  end component;
-  
-  signal CONTROL : std_logic_vector(35 downto 0);
-  signal CLK     : std_logic;
-  signal TRIG0   : std_logic_vector(31 downto 0);
-  signal TRIG1   : std_logic_vector(31 downto 0);
-  signal TRIG2   : std_logic_vector(31 downto 0);
-  signal TRIG3   : std_logic_vector(31 downto 0);
-
-  attribute keep : string;
-  attribute keep of trig0: signal is "true";
-  attribute keep of trig1: signal is "true";
-  attribute keep of trig2: signal is "true";
-  attribute keep of trig3: signal is "true";
+      clk_i : in std_logic);
+  end component dummy_chipscope;
   
 begin
 
-  chipscope_ila_1 : chipscope_ila
+  dummy_chipscope_1: dummy_chipscope
     port map (
-      CONTROL => CONTROL,
-      CLK     => clk_sys  ,
-      TRIG0   => TRIG0,
-      TRIG1   => TRIG1,
-      TRIG2   => TRIG2,
-      TRIG3   => TRIG3);
-
-  TRIG0 <= (others  => '0');
-  TRIG1 <= (others  => '0');
-  TRIG2 <= (others  => '0');
-  TRIG3 <= (others  => '0');
-            
-
-  chipscope_icon_1 : chipscope_icon
-    port map (
-      CONTROL0 => CONTROL);
+      clk_i => clk_sys);
 
   U_Node_Template : svec_list_node_template
     generic map (

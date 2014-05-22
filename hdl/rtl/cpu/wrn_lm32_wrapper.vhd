@@ -85,8 +85,6 @@ architecture wrapper of wrn_lm32_wrapper is
       qb_o    : out std_logic_vector(31 downto 0);
       ena_i   : in  std_logic;
       enb_i   : in  std_logic;
-      bwea_i  : in  std_logic_vector(3 downto 0);
-      bweb_i  : in  std_logic_vector(3 downto 0);
       wea_i   : in  std_logic;
       web_i   : in  std_logic);
   end component;
@@ -162,9 +160,12 @@ architecture wrapper of wrn_lm32_wrapper is
   signal TRIG2   : std_logic_vector(31 downto 0);
   signal TRIG3   : std_logic_vector(31 downto 0);
   
-  
+
+  signal core_sel_match: std_logic;
 begin
 
+  core_sel_match <= '1' when unsigned(cpu_csr_i.core_sel_o) = g_cpu_id else '0';
+  
   gen_cc : if g_cpu_id = 0 generate
 
     --chipscope_icon_1 : chipscope_icon
@@ -248,23 +249,26 @@ begin
       qb_o    => iram_d_dat_in,
       ena_i   => iram_ena,
       enb_i   => iram_d_en,
-      bwea_i  => "1111",
-      bweb_i  => iram_d_sel,
       wea_i   => host_write,
       web_i   => iram_d_we);
 
-  host_write <= not cpu_enable and cpu_csr_i.udata_load_o;
+
+
+  host_write <= not cpu_enable and cpu_csr_i.udata_load_o and core_sel_match;
 
   iram_i_dat <= host_rdata;
 
   cm_out.stb <= (cm_out.cyc and not data_was_busy) or data_remaining;
 
+  cpu_csr_o.udata_i <= host_rdata ;
+                                                                  
+  
   process(clk_sys_i)
     variable data_addr : t_wishbone_address;
     
   begin
     if rising_edge(clk_sys_i) then
-      if rst_n_i = '0' then
+      if rst_n_i = '0' or cpu_enable = '0' then
         data_was_busy  <= '0';
         data_addr_reg  <= (others => '0');
         data_remaining <= '0';
@@ -292,7 +296,7 @@ begin
   p_jtag_regs : process(clk_sys_i)
   begin
     if rising_edge(clk_sys_i) then
-      if rst_n_i = '0' then
+      if rst_n_i = '0' or cpu_enable = '0' then
         jtag_clk        <= '0';
         jtag_update     <= '0';
         jtag_reg_addr_d <= (others => '0');

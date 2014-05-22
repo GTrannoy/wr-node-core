@@ -60,7 +60,7 @@ architecture rtl of wrn_mqueue_slot is
   signal out_cmd_wr, out_stat_rd : std_logic;
   signal status                  : std_logic_vector(31 downto 0);
 
-  signal out_discard : std_logic;
+  signal out_discard, out_purge : std_logic;
 
   signal q_read, q_write : std_logic;
 
@@ -98,7 +98,7 @@ begin  -- rtl
   out_cmd_wr <= '1' when outb_i.sel = '1' and outb_i.we = '1' and (unsigned(outb_i.adr(9 downto 2)) = c_addr_command) else '0';
 
   out_discard <= out_discard_i or (out_cmd_wr and outb_i.dat(27));
-
+  out_purge <= out_cmd_wr and outb_i.dat(25);
 
   p_read_status : process(clk_i)
   begin
@@ -222,7 +222,7 @@ begin  -- rtl
   p_counters : process(clk_i)
   begin
     if rising_edge(clk_i) then
-      if rst_n_i = '0' or in_purge = '1' then
+      if rst_n_i = '0' or in_purge = '1' or out_purge = '1' then
         rd_ptr   <= (others => '0');
         wr_ptr   <= (others => '0');
         occupied <= (others => '0');

@@ -40,7 +40,39 @@ module main;
                      .host_slave_i (Host.master.out),
                      .host_slave_o (Host.master.in)
     );
+   
+   wire load_x = DUT.gen_cpus[0].U_CPU_Block.U_TheCoreCPU.U_Wrapped_CPU.load_store_unit.load_x;
+   wire kill_x = DUT.gen_cpus[0].U_CPU_Block.U_TheCoreCPU.U_Wrapped_CPU.load_store_unit.kill_x;
+   wire irom_select_x = DUT.gen_cpus[0].U_CPU_Block.U_TheCoreCPU.U_Wrapped_CPU.load_store_unit.irom_select_x;
+   wire[31:0] load_a_x = DUT.gen_cpus[0].U_CPU_Block.U_TheCoreCPU.U_Wrapped_CPU.load_store_unit.load_store_address_x;
+   wire [31:0] irom_data_m = DUT.gen_cpus[0].U_CPU_Block.U_TheCoreCPU.U_Wrapped_CPU.load_store_unit.irom_data_m;
+   
+   reg 	      load_xd = 0, kill_xd, irom_select_xd;
+;
+   reg [31:0] load_ad;
+   
+   always@(posedge clk_sys)
+     begin
+	load_xd <= load_x;
+	load_ad <= load_a_x;
+	kill_xd <= kill_x;
+	irom_select_xd <= irom_select_x;
+	
 
+	
+	if(load_xd && !kill_xd && irom_select_xd)
+	  begin
+	     $display("-> Load: addr %x data %x", load_ad, irom_data_m);
+	     
+	  end
+     end
+   
+	  
+	  
+   
+   
+
+  
    initial begin
       NodeCPUControl cpu_csr;
       MQueueHost hmq;
@@ -53,10 +85,10 @@ module main;
 
       cpu_csr.init();
 
-      cpu_csr.load_firmware (0, "../../sw/hmq_test/hmq-test.ram");
+      cpu_csr.load_firmware (0, "../../sw/fmc-test/tdc/rt-tdc.ram");
       cpu_csr.reset_core(0, 0);
 
-      hmq.send(0, '{1,2,3} );
+//      hmq.send(0, '{1,2,3} );
       
       forever begin
          hmq.update();

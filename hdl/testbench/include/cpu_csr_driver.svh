@@ -60,11 +60,14 @@ class NodeCPUControl;
 
    task load_firmware(int core, string filename);
       integer f = $fopen(filename,"r");
-
+      uint32_t q[$];
+      int     n, i;
+      
       reset_core(core, 1);
 
       writel(`ADDR_WRN_CPU_CSR_CORE_SEL, core);
 
+      
       
       while(!$feof(f))
         begin
@@ -76,8 +79,23 @@ class NodeCPUControl;
              begin
                 writel(`ADDR_WRN_CPU_CSR_UADDR, addr);
                 writel(`ADDR_WRN_CPU_CSR_UDATA, data);
+		q.push_back(data);
+		n++;
+		
              end
         end
+
+      for(i=0;i<n;i++)
+	begin
+	   uint32_t rv;
+           writel(`ADDR_WRN_CPU_CSR_UADDR, i);
+           readl(`ADDR_WRN_CPU_CSR_UDATA, rv);
+	   $display("readback: addr %x d %x", i, rv);
+	   if(rv != q[i])
+	     $display("verification error\n");
+	   
+	end
+      
       
    endtask
         

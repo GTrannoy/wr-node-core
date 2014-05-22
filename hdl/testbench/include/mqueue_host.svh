@@ -195,7 +195,7 @@ class MQueueHost;
          uint32_t d;
          
          outgoing_read ( slot, 8 + i * 4, d );
-         $display("data: %x", d);
+         $display("data: %x '%c'", d, d);
       end
 
       outgoing_write( slot, `MQUEUE_SLOT_COMMAND, `MQUEUE_CMD_DISCARD );
