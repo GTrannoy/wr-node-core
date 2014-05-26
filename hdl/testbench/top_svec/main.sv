@@ -105,15 +105,18 @@ module main;
       acc_casted.set_default_xfer_size(A24|SINGLE|D32);
  
 
+/* -----\/----- EXCLUDED -----\/-----
       acc.read('hc00000, d); $display("%x", d);
       acc.read('hc40000, d); $display("%x", d);
       acc.read('hc40004, d); $display("%x", d);
       acc.read('hc40008, d); $display("%x", d);
+ -----/\----- EXCLUDED -----/\----- */
 
       #10us;
 
       #400us;
 
+/* -----\/----- EXCLUDED -----\/-----
       acc.read('hc20000, d); $display("TDC SDB ID : %x", d);
 
       
@@ -121,6 +124,7 @@ module main;
       
       
       #10us;
+ -----/\----- EXCLUDED -----/\----- */
 
       
 

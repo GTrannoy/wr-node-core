@@ -41,6 +41,7 @@ module main;
                      .host_slave_o (Host.master.in)
     );
    
+/* -----\/----- EXCLUDED -----\/-----
    wire load_x = DUT.gen_cpus[0].U_CPU_Block.U_TheCoreCPU.U_Wrapped_CPU.load_store_unit.load_x;
    wire kill_x = DUT.gen_cpus[0].U_CPU_Block.U_TheCoreCPU.U_Wrapped_CPU.load_store_unit.kill_x;
    wire irom_select_x = DUT.gen_cpus[0].U_CPU_Block.U_TheCoreCPU.U_Wrapped_CPU.load_store_unit.irom_select_x;
@@ -50,7 +51,7 @@ module main;
    reg 	      load_xd = 0, kill_xd, irom_select_xd;
 ;
    reg [31:0] load_ad;
-   
+
    always@(posedge clk_sys)
      begin
 	load_xd <= load_x;
@@ -68,7 +69,8 @@ module main;
      end
    
 	  
-	  
+ -----/\----- EXCLUDED -----/\----- */
+   	  
    
    
 
