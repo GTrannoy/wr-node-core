@@ -325,8 +325,7 @@ begin  -- rtl
       when EB_SET_TARGET_BASE =>
         f_wishbone_op(ebm_out, NO_XFER);
       when EB_SET_MAX_OPS =>
-        f_wishbone_op(ebm_out, WRITE, c_OPS_MAX, x"0000000a");
-        
+        f_wishbone_op(ebm_out, WRITE, c_OPS_MAX, std_logic_vector (resize(msg_size + 2, 32)));
       when EB_SET_XFER_SIZE =>
         f_wishbone_op(ebm_out, WRITE, c_PAC_LEN, x"00000100" ); --std_logic_vector (resize(msg_size, 32)));
       when EB_SEND_CLAIM =>
