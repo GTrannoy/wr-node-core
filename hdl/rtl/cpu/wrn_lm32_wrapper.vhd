@@ -110,33 +110,20 @@ architecture wrapper of wrn_lm32_wrapper is
   signal jtag_reg_d      : std_logic_vector(7 downto 0);
   signal jtag_reg_addr_d : std_logic_vector (2 downto 0);
 
-
-  signal iram_i_adr     : std_logic_vector(31 downto 0);
-  signal iram_i_dat     : std_logic_vector(31 downto 0);
-  signal iram_i_en      : std_logic;
-  signal iram_d_adr     : std_logic_vector(31 downto 0);
-  signal iram_d_dat_out : std_logic_vector(31 downto 0);
-  signal iram_d_dat_in  : std_logic_vector(31 downto 0);
-  signal iram_d_sel     : std_logic_vector(3 downto 0);
-  signal iram_d_we      : std_logic;
-  signal iram_d_en      : std_logic;
-
   signal cm_out : t_wishbone_master_out;
   signal cm_in  : t_wishbone_master_in;
 
   signal data_addr_reg : t_wishbone_address;
 
-  signal cpu_reset, cpu_enable         : std_logic;
-  signal host_rdata                    : std_logic_vector(31 downto 0);
-  signal host_write                    : std_logic;
-  signal data_was_busy, data_remaining : std_logic;
+  signal cpu_reset, cpu_enable, cpu_reset_n : std_logic;
+  signal host_rdata                         : std_logic_vector(31 downto 0);
+  signal host_write                         : std_logic;
+  signal data_was_busy, data_remaining      : std_logic;
 
   signal rst : std_logic;
 
   signal d_adr : std_logic_vector(31 downto 0);
 
-  signal iram_ena : std_logic;
-  signal iram_aa  : std_logic_vector(c_iram_addr_width-1 downto 0);
 
   component chipscope_ila
     port (
@@ -159,139 +146,101 @@ architecture wrapper of wrn_lm32_wrapper is
   signal TRIG1   : std_logic_vector(31 downto 0);
   signal TRIG2   : std_logic_vector(31 downto 0);
   signal TRIG3   : std_logic_vector(31 downto 0);
-  
 
-  signal core_sel_match: std_logic;
+  signal core_sel_match : std_logic;
+
+  signal cpu_dwb_out, cpu_iwb_out : t_wishbone_master_out;
+  signal cpu_dwb_in, cpu_iwb_in   : t_wishbone_master_in;
+
+  signal iram_access          : std_logic;
+  signal iram_access_d0       : std_logic;
+  signal iram_i_wr, iram_d_wr : std_logic;
+  signal iram_i_adr           : std_logic_vector(f_log2_size(g_iram_size)-3 downto 0);
+  signal iram_i_d, iram_d_q   : std_logic_vector(31 downto 0);
+
 begin
 
-  core_sel_match <= '1' when unsigned(cpu_csr_i.core_sel_o) = g_cpu_id else '0';
-  
-  gen_cc : if g_cpu_id = 0 generate
-
-    --chipscope_icon_1 : chipscope_icon
-    --  port map (
-    --    CONTROL0 => CONTROL);
-
-    --chipscope_ila_1 : chipscope_ila
-    --  port map (
-    --    CONTROL => CONTROL,
-    --    CLK     => clk_sys_i,
-    --    TRIG0   => TRIG0,
-    --    TRIG1   => TRIG1,
-    --    TRIG2   => TRIG2,
-    --    TRIG3   => TRIG3);
-
-    trig0(0) <= rst;
-    trig0(1) <= cpu_reset;
-    trig0(2) <= iram_i_en;
-
-    trig1 <= iram_i_adr;
-    trig2 <= iram_i_dat;
-
-    
-  end generate gen_cc;
-
-  rst <= not rst_n_i or cpu_csr_i.reset_o(g_cpu_id);
-
-  cpu_reset  <= cpu_csr_i.reset_o(g_cpu_id);
-  cpu_enable <= not cpu_reset;
-
-  U_Wrapped_CPU : lm32_cpu_wr_node
+  xwb_lm32_1 : xwb_lm32
     generic map (
-      eba_reset => x"00000000")
+      g_profile => "medium_icache")
     port map (
-      clk_i     => clk_sys_i,
-      rst_i     => rst,
-      interrupt => irq_i,
+      clk_sys_i => clk_sys_i,
+      rst_n_i   => cpu_reset_n,
+      irq_i     => x"00000000",
+      dwb_o     => cpu_dwb_out,
+      dwb_i     => cpu_dwb_in,
+      iwb_o     => cpu_iwb_out,
+      iwb_i     => cpu_iwb_in);
 
-      --jtag_clk        => jtag_clk,
-      --jtag_update     => jtag_update,
-      --jtag_reg_q      => jtag_reg_d,
-      --jtag_reg_addr_q => jtag_reg_addr_d,
-      --jtag_reg_d      => jtag_reg_q,
-      --jtag_reg_addr_d => jtag_reg_addr_q,
-
-      iram_i_adr_o => iram_i_adr,
-      iram_i_dat_i => iram_i_dat,
-      iram_i_en_o  => iram_i_en,
-      iram_d_adr_o => iram_d_adr,
-      iram_d_dat_o => iram_d_dat_out,
-      iram_d_dat_i => iram_d_dat_in,
-      iram_d_sel_o => iram_d_sel,
-      iram_d_we_o  => iram_d_we,
-      iram_d_en_o  => iram_d_en,
-
-      D_DAT_O => cm_out.dat,
-      D_ADR_O => d_adr,
-      D_CYC_O => cm_out.cyc,
-      D_SEL_O => cm_out.sel,
-      D_STB_O => open,
-      D_WE_O  => cm_out.we,
-      D_DAT_I => f_x_to_zero (cm_in.dat),
-      D_ACK_I => cm_in.ack,
-      D_ERR_I => '0',
-      D_RTY_I => '0');
-
-  iram_aa  <= f_pick(cpu_enable, iram_i_adr(c_iram_addr_width-1 downto 0), cpu_csr_i.uaddr_addr_o(c_iram_addr_width-1 downto 0));
-  iram_ena <= f_pick(cpu_enable, iram_i_en, '1');
-
-  U_IRAM : wrn_cpu_iram
+  iram : generic_dpram
     generic map (
-      g_size => g_iram_size / 4)
+      g_data_width       => 32,
+      g_size             => g_iram_size / 4,
+      g_with_byte_enable => true,
+      g_dual_clock       => false)
     port map (
-      clk_i   => clk_sys_i,
       rst_n_i => rst_n_i,
-      aa_i    => iram_aa,
-      ab_i    => iram_d_adr(c_iram_addr_width-1 downto 0),
-      da_i    => cpu_csr_i.udata_o,
-      db_i    => iram_d_dat_out,
-      qa_o    => host_rdata,
-      qb_o    => iram_d_dat_in,
-      ena_i   => iram_ena,
-      enb_i   => iram_d_en,
-      wea_i   => host_write,
-      web_i   => iram_d_we);
+      clka_i  => clk_sys_i,
 
+      wea_i => iram_i_wr,
+      aa_i  => iram_i_adr,
+      da_i  => iram_i_d,
+      qa_o  => cpu_iwb_in.dat,
 
+      clkb_i => clk_sys_i,
+      bweb_i => cpu_dwb_out.sel,
+      web_i  => iram_d_wr,
+      ab_i   => cpu_dwb_out.adr(f_log2_size(g_iram_size)-1 downto 2),
+      db_i   => cpu_dwb_out.dat,
+      qb_o   => iram_d_q
+      );
 
-  host_write <= not cpu_enable and cpu_csr_i.udata_load_o and core_sel_match;
+  iram_access <= '1' when cpu_dwb_out.adr (31 downto 20) = x"000" and cpu_dwb_out.cyc = '1' and cpu_dwb_out.stb = '1' else '0';
 
-  iram_i_dat <= host_rdata;
+  cpu_dwb_in.ack   <= iram_access_d0 or dwb_i.ack;
+  cpu_dwb_in.dat   <= iram_d_q when iram_access_d0 = '1' else dwb_i.dat;
+  cpu_dwb_in.stall <= '0'      when iram_access = '1'    else dwb_i.stall;
+  cpu_dwb_in.err   <= '0';
+  cpu_dwb_in.rty   <= '0';
+  iram_d_wr        <= iram_access and cpu_dwb_out.we;
 
-  cm_out.stb <= (cm_out.cyc and not data_was_busy) or data_remaining;
+  dwb_o.cyc <= cpu_dwb_out.cyc;
+  dwb_o.stb <= cpu_dwb_out.stb and not iram_access;
+  dwb_o.sel <= cpu_dwb_out.sel;
+  dwb_o.we  <= cpu_dwb_out.we;
+  dwb_o.adr <= cpu_dwb_out.adr;
+  dwb_o.dat <= cpu_dwb_out.dat;
 
-  cpu_csr_o.udata_i <= host_rdata ;
-                                                                  
-  
-  process(clk_sys_i)
-    variable data_addr : t_wishbone_address;
-    
+  p_decode : process(clk_sys_i)
   begin
     if rising_edge(clk_sys_i) then
-      if rst_n_i = '0' or cpu_enable = '0' then
-        data_was_busy  <= '0';
-        data_addr_reg  <= (others => '0');
-        data_remaining <= '0';
+      if cpu_reset_n = '0' then
+        iram_access_d0 <= '0';
       else
-        data_was_busy <= cm_out.cyc;
-
-        -- Is this the start of a new WB cycle?
-        if cm_out.cyc = '1' and data_was_busy = '0' then
-          data_remaining <= '1';
-          data_addr      := D_ADR;
-        else
-          data_addr := data_addr_reg;
-        end if;
-
-        if cm_in.stall = '0' and cm_out.stb = '1' then
-          data_remaining <= '0';
-        end if;
-
-
-        data_addr_reg <= data_addr;
+        iram_access_d0 <= iram_access;
+        cpu_iwb_in.ack <= cpu_iwb_out.cyc and cpu_iwb_out.stb;
       end if;
     end if;
   end process;
+
+  cpu_iwb_in.stall <= '0';
+  cpu_iwb_in.err   <= '0';
+  cpu_iwb_in.rty   <= '0';
+
+
+  core_sel_match <= '1' when unsigned(cpu_csr_i.core_sel_o) = g_cpu_id else '0';
+  cpu_reset      <= not rst_n_i or cpu_csr_i.reset_o(g_cpu_id);
+  cpu_enable     <= not cpu_reset;
+  cpu_reset_n <= not cpu_reset;
+
+  iram_i_d   <= cpu_csr_i.udata_o;
+  iram_i_wr  <= cpu_csr_i.udata_load_o and core_sel_match;
+  iram_i_adr <= cpu_csr_i.uaddr_addr_o(f_log2_size(g_iram_size)-3 downto 0) when cpu_enable = '0' else
+                cpu_iwb_out.adr(f_log2_size(g_iram_size)-1 downto 2);
+  
+  cpu_csr_o.udata_i <= cpu_iwb_in.dat;
+
+
 
   p_jtag_regs : process(clk_sys_i)
   begin
@@ -308,10 +257,5 @@ begin
     end if;
   end process;
 
-
-  cm_out.ADR <= d_adr when data_was_busy = '0' else data_addr_reg;
-
-  dwb_o <= cm_out;
-  cm_in <= dwb_i;
 
 end wrapper;
