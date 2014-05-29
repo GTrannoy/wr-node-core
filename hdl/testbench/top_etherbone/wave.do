@@ -1,493 +1,149 @@
 onerror {resume}
 quietly WaveActivateNextPane {} 0
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/clk_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/rst_n_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/slave_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/slave_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/src_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/src_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/s_adr_hi
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/s_cfg_rec_hdr
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/r_drain
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/s_dat
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/s_ack
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/s_err
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/s_stall
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/s_rst_n
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/wb_rst_n
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/s_tx_send_now
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/s_his_mac
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/s_my_mac
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/s_his_ip
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/s_my_ip
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/s_his_port
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/s_my_port
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/s_tx_stb
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/s_clear
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/s_tx_flush
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/s_skip_stb
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/s_length
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/s_max_ops
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/s_slave_framer_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/s_slave_ctrl_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/s_master_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/s_master_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/s_framer2narrow
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/s_narrow2framer
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/s_narrow2tx
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/s_tx2narrow
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/wbif/clk_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/wbif/rst_n_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/wbif/clear_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/wbif/flush_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/wbif/slave_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/wbif/slave_dat_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/wbif/slave_ack_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/wbif/slave_err_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/wbif/my_mac_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/wbif/my_ip_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/wbif/my_port_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/wbif/his_mac_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/wbif/his_ip_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/wbif/his_port_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/wbif/length_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/wbif/max_ops_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/wbif/adr_hi_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/wbif/eb_opt_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/wbif/r_slave_out_ack
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/wbif/r_slave_out_err
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/wbif/r_slave_out_dat
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/wbif/r_stat
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/wbif/r_clr
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/wbif/r_flush
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/wbif/r_his_mac
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/wbif/r_my_mac
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/wbif/r_his_ip
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/wbif/r_my_ip
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/wbif/r_his_port
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/wbif/r_my_port
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/wbif/r_ops_max
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/wbif/r_length
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/wbif/r_adr_hi
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/wbif/r_eb_opt
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/wbif/a_my_mac_lo
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/wbif/a_my_mac_hi
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/wbif/a_his_mac_lo
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/wbif/a_his_mac_hi
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/clk_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rst_n_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/slave_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/slave_stall_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/tx_send_now_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/master_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/master_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/tx_flush_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/max_ops_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/length_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/cfg_rec_hdr_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo_q
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo_d
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo_empty
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/send_now
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/tx_stb
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/pop_state
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo_q
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo_d
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo_push
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo_pop
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo_full
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo_empty
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/dat
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/adr
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/we
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/stb
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/cyc
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/tx_cyc
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/r_rec_ack
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/r_stall
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/adr_wr
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/adr_rd
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rec_hdr
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rec_valid
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_aux1
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_aux2
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_pop
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/r_first_rec
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/r_eb_hdr
-add wave -noupdate -height 16 /main/DUT/U_WRNode_Etherbone_Master/framer/r_mux_state
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/r_cnt_ops
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/r_cnt_pad
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/r_max_ops_left
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/r_byte_cnt
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/r_length
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/s_recgen_slave_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/clk_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/rst_n_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/slave_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/slave_stall_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/rec_valid_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/rec_hdr_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/rec_adr_rd_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/rec_adr_wr_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/rec_ack_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/max_ops_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/cfg_rec_hdr_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo_q
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo_d
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo_push
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo_pop
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo_full
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo_empty
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/dat
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/adr
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/we
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/stb
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/cyc
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/sel
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/s_drop
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/s_cmd
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/s_push
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/r_drain
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/r_stall
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/r_stall_out
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/r_wb_pop
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/r_cyc
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/r_cyc_in
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/r_stb
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/r_stb_in
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/r_we_in
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/r_adr
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/r_adr_in
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/r_dat
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/r_dat_in
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/r_sel_in
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/r_adr_wr
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/r_adr_rd
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/r_rec_hdr
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/r_push_hdr
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/r_rec_valid
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/r_hdr_state
-add wave -noupdate -height 16 /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/r_mode
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/r_wait_return
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/r_cnt_wait
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/a_cmd
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/a_drop
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/a_sel
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/a_we
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/a_adr
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/a_dat
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/rst_n_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/clk_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/d_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/we_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/q_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/rd_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/empty_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/full_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/almost_empty_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/almost_full_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/count_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/rst_n_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/clk_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/d_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/we_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/q_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/rd_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/empty_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/full_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/almost_empty_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/almost_full_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/count_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/rd_ptr
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/wr_ptr
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/wr_ptr_d0
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/rd_ptr_muxed
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/usedw
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/full
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/empty
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/q_int
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/we_int
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/rd_int
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/guard_bit
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/q_reg
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/q_comb
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/U_FIFO_Ram/rst_n_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/U_FIFO_Ram/clka_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/U_FIFO_Ram/bwea_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/U_FIFO_Ram/wea_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/U_FIFO_Ram/aa_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/U_FIFO_Ram/da_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/U_FIFO_Ram/qa_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/U_FIFO_Ram/clkb_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/U_FIFO_Ram/bweb_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/U_FIFO_Ram/web_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/U_FIFO_Ram/ab_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/U_FIFO_Ram/db_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/U_FIFO_Ram/qb_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/U_FIFO_Ram/gen_single_clk/U_RAM_SC/rst_n_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/U_FIFO_Ram/gen_single_clk/U_RAM_SC/clk_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/U_FIFO_Ram/gen_single_clk/U_RAM_SC/bwea_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/U_FIFO_Ram/gen_single_clk/U_RAM_SC/wea_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/U_FIFO_Ram/gen_single_clk/U_RAM_SC/aa_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/U_FIFO_Ram/gen_single_clk/U_RAM_SC/da_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/U_FIFO_Ram/gen_single_clk/U_RAM_SC/qa_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/U_FIFO_Ram/gen_single_clk/U_RAM_SC/bweb_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/U_FIFO_Ram/gen_single_clk/U_RAM_SC/web_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/U_FIFO_Ram/gen_single_clk/U_RAM_SC/ab_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/U_FIFO_Ram/gen_single_clk/U_RAM_SC/db_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/U_FIFO_Ram/gen_single_clk/U_RAM_SC/qb_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/U_FIFO_Ram/gen_single_clk/U_RAM_SC/s_we_a
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/U_FIFO_Ram/gen_single_clk/U_RAM_SC/s_ram_in_a
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/U_FIFO_Ram/gen_single_clk/U_RAM_SC/s_we_b
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/U_FIFO_Ram/gen_single_clk/U_RAM_SC/s_ram_in_b
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/U_FIFO_Ram/gen_single_clk/U_RAM_SC/wea_rep
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/rgen/wb_fifo/U_Inferred_FIFO/U_FIFO_Ram/gen_single_clk/U_RAM_SC/web_rep
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/clk_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/rstn_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/w_full_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/w_push_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/w_dat_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/r_empty_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/r_pop_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/r_dat_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/r_idx
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/w_idx
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/r_idx1
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/w_idx1
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/ram/rst_n_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/ram/clka_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/ram/bwea_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/ram/wea_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/ram/aa_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/ram/da_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/ram/clkb_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/ram/ab_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/ram/qb_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/ram/true_dp/rst_n_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/ram/true_dp/clka_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/ram/true_dp/bwea_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/ram/true_dp/wea_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/ram/true_dp/aa_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/ram/true_dp/da_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/ram/true_dp/qa_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/ram/true_dp/clkb_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/ram/true_dp/bweb_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/ram/true_dp/web_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/ram/true_dp/ab_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/ram/true_dp/db_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/ram/true_dp/qb_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/ram/true_dp/gen_single_clk/U_RAM_SC/rst_n_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/ram/true_dp/gen_single_clk/U_RAM_SC/clk_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/ram/true_dp/gen_single_clk/U_RAM_SC/bwea_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/ram/true_dp/gen_single_clk/U_RAM_SC/wea_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/ram/true_dp/gen_single_clk/U_RAM_SC/aa_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/ram/true_dp/gen_single_clk/U_RAM_SC/da_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/ram/true_dp/gen_single_clk/U_RAM_SC/qa_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/ram/true_dp/gen_single_clk/U_RAM_SC/bweb_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/ram/true_dp/gen_single_clk/U_RAM_SC/web_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/ram/true_dp/gen_single_clk/U_RAM_SC/ab_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/ram/true_dp/gen_single_clk/U_RAM_SC/db_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/ram/true_dp/gen_single_clk/U_RAM_SC/qb_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/ram/true_dp/gen_single_clk/U_RAM_SC/s_we_a
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/ram/true_dp/gen_single_clk/U_RAM_SC/s_ram_in_a
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/ram/true_dp/gen_single_clk/U_RAM_SC/s_we_b
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/ram/true_dp/gen_single_clk/U_RAM_SC/s_ram_in_b
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/ram/true_dp/gen_single_clk/U_RAM_SC/wea_rep
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo/ram/true_dp/gen_single_clk/U_RAM_SC/web_rep
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/clk_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/rstn_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/w_full_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/w_push_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/w_dat_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/r_empty_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/r_pop_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/r_dat_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/r_idx
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/w_idx
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/r_idx1
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/w_idx1
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/ram/rst_n_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/ram/clka_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/ram/bwea_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/ram/wea_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/ram/aa_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/ram/da_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/ram/clkb_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/ram/ab_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/ram/qb_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/ram/true_dp/rst_n_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/ram/true_dp/clka_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/ram/true_dp/bwea_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/ram/true_dp/wea_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/ram/true_dp/aa_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/ram/true_dp/da_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/ram/true_dp/qa_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/ram/true_dp/clkb_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/ram/true_dp/bweb_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/ram/true_dp/web_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/ram/true_dp/ab_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/ram/true_dp/db_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/ram/true_dp/qb_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/ram/true_dp/gen_single_clk/U_RAM_SC/rst_n_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/ram/true_dp/gen_single_clk/U_RAM_SC/clk_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/ram/true_dp/gen_single_clk/U_RAM_SC/bwea_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/ram/true_dp/gen_single_clk/U_RAM_SC/wea_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/ram/true_dp/gen_single_clk/U_RAM_SC/aa_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/ram/true_dp/gen_single_clk/U_RAM_SC/da_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/ram/true_dp/gen_single_clk/U_RAM_SC/qa_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/ram/true_dp/gen_single_clk/U_RAM_SC/bweb_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/ram/true_dp/gen_single_clk/U_RAM_SC/web_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/ram/true_dp/gen_single_clk/U_RAM_SC/ab_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/ram/true_dp/gen_single_clk/U_RAM_SC/db_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/ram/true_dp/gen_single_clk/U_RAM_SC/qb_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/ram/true_dp/gen_single_clk/U_RAM_SC/s_we_a
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/ram/true_dp/gen_single_clk/U_RAM_SC/s_ram_in_a
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/ram/true_dp/gen_single_clk/U_RAM_SC/s_we_b
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/ram/true_dp/gen_single_clk/U_RAM_SC/s_ram_in_b
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/ram/true_dp/gen_single_clk/U_RAM_SC/wea_rep
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo/ram/true_dp/gen_single_clk/U_RAM_SC/web_rep
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/narrow/clk_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/narrow/rst_n_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/narrow/slave_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/narrow/slave_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/narrow/master_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/narrow/master_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/narrow/r_ack
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/narrow/r_cyc
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/narrow/r_drop
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/narrow/r_stb
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/narrow/r_last
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/narrow/r_idx
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/narrow/r_dat
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/narrow/s_stall
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/narrow/s_cyc_cases
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/clk_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/rst_n_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/src_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/src_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/slave_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/slave_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/stb_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/stall_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/mac_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/ip_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/port_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/skip_stb_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/skip_stall_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/my_mac_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/my_ip_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/my_port_i
-add wave -noupdate -height 16 /main/DUT/U_WRNode_Etherbone_Master/tx/r_state
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/r_staten
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/r_count
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/r_ready
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/r_mac
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/r_ip
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/r_port
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/r_length
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/r_hdr_stb
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/r_shift
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/r_ack
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/s_stall
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/s_buf_stb
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/s_buf_full
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/s_buf_push
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/s_buf_commit
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/s_buf_abort
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/s_buf_cyc
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/s_buf_data
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/r_tx_cyc
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/s_tx_empty
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/s_tx_pop
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/s_tx_cyc
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/s_tx_dat
-add wave -noupdate -height 16 /main/DUT/U_WRNode_Etherbone_Master/tx/r_sum_state
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/r_sum_en
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/r_sum_data
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/s_sum_done
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/s_tx_out_cnt
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/s_tx_in_cnt
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/s_tx_payload
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/s_ip_tol_ins
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/s_ip_chk_ins
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/s_udp_len_ins
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/s_otf_mux
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/s_ip_chk
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/r_ip_tol
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/r_udp_len
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/clk_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/rstn_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/r_cnt_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/w_cnt_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/w_full_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/w_push_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/w_dat_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/w_commit_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/w_abort_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/r_empty_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/r_pop_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/r_dat_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/r_idx
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/w_idx
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/e_idx
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/r_idx1
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/w_idx1
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/s_w_push
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/s_w_adr
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/s_w_dat
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/r_len
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/r_cnt
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/ram/rst_n_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/ram/clka_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/ram/bwea_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/ram/wea_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/ram/aa_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/ram/da_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/ram/clkb_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/ram/ab_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/ram/qb_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/ram/true_dp/rst_n_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/ram/true_dp/clka_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/ram/true_dp/bwea_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/ram/true_dp/wea_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/ram/true_dp/aa_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/ram/true_dp/da_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/ram/true_dp/qa_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/ram/true_dp/clkb_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/ram/true_dp/bweb_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/ram/true_dp/web_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/ram/true_dp/ab_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/ram/true_dp/db_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/ram/true_dp/qb_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/ram/true_dp/gen_single_clk/U_RAM_SC/rst_n_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/ram/true_dp/gen_single_clk/U_RAM_SC/clk_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/ram/true_dp/gen_single_clk/U_RAM_SC/bwea_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/ram/true_dp/gen_single_clk/U_RAM_SC/wea_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/ram/true_dp/gen_single_clk/U_RAM_SC/aa_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/ram/true_dp/gen_single_clk/U_RAM_SC/da_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/ram/true_dp/gen_single_clk/U_RAM_SC/qa_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/ram/true_dp/gen_single_clk/U_RAM_SC/bweb_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/ram/true_dp/gen_single_clk/U_RAM_SC/web_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/ram/true_dp/gen_single_clk/U_RAM_SC/ab_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/ram/true_dp/gen_single_clk/U_RAM_SC/db_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/ram/true_dp/gen_single_clk/U_RAM_SC/qb_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/ram/true_dp/gen_single_clk/U_RAM_SC/s_we_a
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/ram/true_dp/gen_single_clk/U_RAM_SC/s_ram_in_a
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/ram/true_dp/gen_single_clk/U_RAM_SC/s_we_b
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/ram/true_dp/gen_single_clk/U_RAM_SC/s_ram_in_b
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/ram/true_dp/gen_single_clk/U_RAM_SC/wea_rep
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/tx/ram/true_dp/gen_single_clk/U_RAM_SC/web_rep
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/sum/clk_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/sum/nRst_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/sum/en_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/sum/data_i
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/sum/done_o
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/sum/sum_o
-add wave -noupdate -height 16 /main/DUT/U_WRNode_Etherbone_Master/tx/sum/state
-add wave -noupdate /main/DUT/U_WRNode_Etherbone_Master/tx/sum/sum
+add wave -noupdate -group RMQ_ebout /main/DUT/U_WRNode_Core/U_Remote_MQ/U_EB_Output/clk_i
+add wave -noupdate -group RMQ_ebout /main/DUT/U_WRNode_Core/U_Remote_MQ/U_EB_Output/rst_n_i
+add wave -noupdate -group RMQ_ebout /main/DUT/U_WRNode_Core/U_Remote_MQ/U_EB_Output/slots_i
+add wave -noupdate -group RMQ_ebout /main/DUT/U_WRNode_Core/U_Remote_MQ/U_EB_Output/slots_o
+add wave -noupdate -group RMQ_ebout /main/DUT/U_WRNode_Core/U_Remote_MQ/U_EB_Output/stat_i
+add wave -noupdate -group RMQ_ebout /main/DUT/U_WRNode_Core/U_Remote_MQ/U_EB_Output/discard_o
+add wave -noupdate -group RMQ_ebout -expand /main/DUT/U_WRNode_Core/U_Remote_MQ/U_EB_Output/ebm_o
+add wave -noupdate -group RMQ_ebout /main/DUT/U_WRNode_Core/U_Remote_MQ/U_EB_Output/ebm_i
+add wave -noupdate -group RMQ_ebout /main/DUT/U_WRNode_Core/U_Remote_MQ/U_EB_Output/host_slave_i
+add wave -noupdate -group RMQ_ebout /main/DUT/U_WRNode_Core/U_Remote_MQ/U_EB_Output/host_slave_o
+add wave -noupdate -group RMQ_ebout -height 16 /main/DUT/U_WRNode_Core/U_Remote_MQ/U_EB_Output/arb_state
+add wave -noupdate -group RMQ_ebout /main/DUT/U_WRNode_Core/U_Remote_MQ/U_EB_Output/slot_ready
+add wave -noupdate -group RMQ_ebout /main/DUT/U_WRNode_Core/U_Remote_MQ/U_EB_Output/slot_sel
+add wave -noupdate -group RMQ_ebout /main/DUT/U_WRNode_Core/U_Remote_MQ/U_EB_Output/slot_done
+add wave -noupdate -group RMQ_ebout /main/DUT/U_WRNode_Core/U_Remote_MQ/U_EB_Output/slot_req
+add wave -noupdate -group RMQ_ebout /main/DUT/U_WRNode_Core/U_Remote_MQ/U_EB_Output/slot_in
+add wave -noupdate -group RMQ_ebout /main/DUT/U_WRNode_Core/U_Remote_MQ/U_EB_Output/slot_stat
+add wave -noupdate -group RMQ_ebout /main/DUT/U_WRNode_Core/U_Remote_MQ/U_EB_Output/slot_out
+add wave -noupdate -group RMQ_ebout /main/DUT/U_WRNode_Core/U_Remote_MQ/U_EB_Output/slot_discard
+add wave -noupdate -group RMQ_ebout -height 16 /main/DUT/U_WRNode_Core/U_Remote_MQ/U_EB_Output/eb_state
+add wave -noupdate -group RMQ_ebout /main/DUT/U_WRNode_Core/U_Remote_MQ/U_EB_Output/eb_write_addr
+add wave -noupdate -group RMQ_ebout /main/DUT/U_WRNode_Core/U_Remote_MQ/U_EB_Output/eb_write_start
+add wave -noupdate -group RMQ_ebout /main/DUT/U_WRNode_Core/U_Remote_MQ/U_EB_Output/msg_size
+add wave -noupdate -group RMQ_ebout /main/DUT/U_WRNode_Core/U_Remote_MQ/U_EB_Output/msg_remaining
+add wave -noupdate -group RMQ_ebout /main/DUT/U_WRNode_Core/U_Remote_MQ/U_EB_Output/ack_count
+add wave -noupdate -group RMQ_ebout /main/DUT/U_WRNode_Core/U_Remote_MQ/U_EB_Output/ebm_out
+add wave -noupdate -group RMQ_ebout /main/DUT/U_WRNode_Core/U_Remote_MQ/U_EB_Output/slot_addr
+add wave -noupdate -group Framer /main/DUT/U_WRNode_Etherbone_Master/framer/clk_i
+add wave -noupdate -group Framer /main/DUT/U_WRNode_Etherbone_Master/framer/rst_n_i
+add wave -noupdate -group Framer /main/DUT/U_WRNode_Etherbone_Master/framer/slave_i
+add wave -noupdate -group Framer /main/DUT/U_WRNode_Etherbone_Master/framer/slave_stall_o
+add wave -noupdate -group Framer /main/DUT/U_WRNode_Etherbone_Master/framer/tx_send_now_i
+add wave -noupdate -group Framer /main/DUT/U_WRNode_Etherbone_Master/framer/master_o
+add wave -noupdate -group Framer /main/DUT/U_WRNode_Etherbone_Master/framer/master_i
+add wave -noupdate -group Framer /main/DUT/U_WRNode_Etherbone_Master/framer/tx_flush_o
+add wave -noupdate -group Framer /main/DUT/U_WRNode_Etherbone_Master/framer/max_ops_i
+add wave -noupdate -group Framer /main/DUT/U_WRNode_Etherbone_Master/framer/length_i
+add wave -noupdate -group Framer /main/DUT/U_WRNode_Etherbone_Master/framer/cfg_rec_hdr_i
+add wave -noupdate -group Framer /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo_q
+add wave -noupdate -group Framer /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo_d
+add wave -noupdate -group Framer /main/DUT/U_WRNode_Etherbone_Master/framer/ctrl_fifo_empty
+add wave -noupdate -group Framer /main/DUT/U_WRNode_Etherbone_Master/framer/send_now
+add wave -noupdate -group Framer /main/DUT/U_WRNode_Etherbone_Master/framer/tx_stb
+add wave -noupdate -group Framer /main/DUT/U_WRNode_Etherbone_Master/framer/pop_state
+add wave -noupdate -group Framer /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo_q
+add wave -noupdate -group Framer /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo_d
+add wave -noupdate -group Framer /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo_push
+add wave -noupdate -group Framer /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo_pop
+add wave -noupdate -group Framer /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo_full
+add wave -noupdate -group Framer /main/DUT/U_WRNode_Etherbone_Master/framer/op_fifo_empty
+add wave -noupdate -group Framer /main/DUT/U_WRNode_Etherbone_Master/framer/dat
+add wave -noupdate -group Framer /main/DUT/U_WRNode_Etherbone_Master/framer/adr
+add wave -noupdate -group Framer /main/DUT/U_WRNode_Etherbone_Master/framer/we
+add wave -noupdate -group Framer /main/DUT/U_WRNode_Etherbone_Master/framer/stb
+add wave -noupdate -group Framer /main/DUT/U_WRNode_Etherbone_Master/framer/cyc
+add wave -noupdate -group Framer /main/DUT/U_WRNode_Etherbone_Master/framer/tx_cyc
+add wave -noupdate -group Framer /main/DUT/U_WRNode_Etherbone_Master/framer/r_rec_ack
+add wave -noupdate -group Framer /main/DUT/U_WRNode_Etherbone_Master/framer/r_stall
+add wave -noupdate -group Framer /main/DUT/U_WRNode_Etherbone_Master/framer/adr_wr
+add wave -noupdate -group Framer /main/DUT/U_WRNode_Etherbone_Master/framer/adr_rd
+add wave -noupdate -group Framer /main/DUT/U_WRNode_Etherbone_Master/framer/rec_hdr
+add wave -noupdate -group Framer /main/DUT/U_WRNode_Etherbone_Master/framer/rec_valid
+add wave -noupdate -group Framer /main/DUT/U_WRNode_Etherbone_Master/framer/op_aux1
+add wave -noupdate -group Framer /main/DUT/U_WRNode_Etherbone_Master/framer/op_aux2
+add wave -noupdate -group Framer /main/DUT/U_WRNode_Etherbone_Master/framer/op_pop
+add wave -noupdate -group Framer /main/DUT/U_WRNode_Etherbone_Master/framer/r_first_rec
+add wave -noupdate -group Framer /main/DUT/U_WRNode_Etherbone_Master/framer/r_eb_hdr
+add wave -noupdate -group Framer -height 16 /main/DUT/U_WRNode_Etherbone_Master/framer/r_mux_state
+add wave -noupdate -group Framer /main/DUT/U_WRNode_Etherbone_Master/framer/r_cnt_ops
+add wave -noupdate -group Framer /main/DUT/U_WRNode_Etherbone_Master/framer/r_cnt_pad
+add wave -noupdate -group Framer /main/DUT/U_WRNode_Etherbone_Master/framer/r_max_ops_left
+add wave -noupdate -group Framer /main/DUT/U_WRNode_Etherbone_Master/framer/r_byte_cnt
+add wave -noupdate -group Framer /main/DUT/U_WRNode_Etherbone_Master/framer/r_length
+add wave -noupdate -group Framer /main/DUT/U_WRNode_Etherbone_Master/framer/s_recgen_slave_i
+add wave -noupdate -group EBM_top /main/DUT/U_WRNode_Etherbone_Master/clk_i
+add wave -noupdate -group EBM_top /main/DUT/U_WRNode_Etherbone_Master/rst_n_i
+add wave -noupdate -group EBM_top /main/DUT/U_WRNode_Etherbone_Master/slave_i
+add wave -noupdate -group EBM_top /main/DUT/U_WRNode_Etherbone_Master/slave_o
+add wave -noupdate -group EBM_top /main/DUT/U_WRNode_Etherbone_Master/src_i
+add wave -noupdate -group EBM_top /main/DUT/U_WRNode_Etherbone_Master/src_o
+add wave -noupdate -group EBM_top /main/DUT/U_WRNode_Etherbone_Master/s_adr_hi
+add wave -noupdate -group EBM_top /main/DUT/U_WRNode_Etherbone_Master/s_cfg_rec_hdr
+add wave -noupdate -group EBM_top /main/DUT/U_WRNode_Etherbone_Master/r_drain
+add wave -noupdate -group EBM_top /main/DUT/U_WRNode_Etherbone_Master/s_dat
+add wave -noupdate -group EBM_top /main/DUT/U_WRNode_Etherbone_Master/s_ack
+add wave -noupdate -group EBM_top /main/DUT/U_WRNode_Etherbone_Master/s_err
+add wave -noupdate -group EBM_top /main/DUT/U_WRNode_Etherbone_Master/s_stall
+add wave -noupdate -group EBM_top /main/DUT/U_WRNode_Etherbone_Master/s_rst_n
+add wave -noupdate -group EBM_top /main/DUT/U_WRNode_Etherbone_Master/wb_rst_n
+add wave -noupdate -group EBM_top /main/DUT/U_WRNode_Etherbone_Master/s_tx_send_now
+add wave -noupdate -group EBM_top /main/DUT/U_WRNode_Etherbone_Master/s_his_mac
+add wave -noupdate -group EBM_top /main/DUT/U_WRNode_Etherbone_Master/s_my_mac
+add wave -noupdate -group EBM_top /main/DUT/U_WRNode_Etherbone_Master/s_his_ip
+add wave -noupdate -group EBM_top /main/DUT/U_WRNode_Etherbone_Master/s_my_ip
+add wave -noupdate -group EBM_top /main/DUT/U_WRNode_Etherbone_Master/s_his_port
+add wave -noupdate -group EBM_top /main/DUT/U_WRNode_Etherbone_Master/s_my_port
+add wave -noupdate -group EBM_top /main/DUT/U_WRNode_Etherbone_Master/s_tx_stb
+add wave -noupdate -group EBM_top /main/DUT/U_WRNode_Etherbone_Master/s_clear
+add wave -noupdate -group EBM_top /main/DUT/U_WRNode_Etherbone_Master/s_tx_flush
+add wave -noupdate -group EBM_top /main/DUT/U_WRNode_Etherbone_Master/s_skip_stb
+add wave -noupdate -group EBM_top /main/DUT/U_WRNode_Etherbone_Master/s_length
+add wave -noupdate -group EBM_top /main/DUT/U_WRNode_Etherbone_Master/s_max_ops
+add wave -noupdate -group EBM_top /main/DUT/U_WRNode_Etherbone_Master/s_slave_framer_i
+add wave -noupdate -group EBM_top /main/DUT/U_WRNode_Etherbone_Master/s_slave_ctrl_i
+add wave -noupdate -group EBM_top /main/DUT/U_WRNode_Etherbone_Master/s_master_o
+add wave -noupdate -group EBM_top /main/DUT/U_WRNode_Etherbone_Master/s_master_i
+add wave -noupdate -group EBM_top /main/DUT/U_WRNode_Etherbone_Master/s_framer2narrow
+add wave -noupdate -group EBM_top /main/DUT/U_WRNode_Etherbone_Master/s_narrow2framer
+add wave -noupdate -group EBM_top /main/DUT/U_WRNode_Etherbone_Master/s_narrow2tx
+add wave -noupdate -group EBM_top /main/DUT/U_WRNode_Etherbone_Master/s_tx2narrow
+add wave -noupdate -expand -group CB0 /main/DUT/U_WRNode_Core/gen_cpus(0)/U_CPU_Block/clk_sys_i
+add wave -noupdate -expand -group CB0 /main/DUT/U_WRNode_Core/gen_cpus(0)/U_CPU_Block/rst_n_i
+add wave -noupdate -expand -group CB0 /main/DUT/U_WRNode_Core/gen_cpus(0)/U_CPU_Block/clk_ref_i
+add wave -noupdate -expand -group CB0 /main/DUT/U_WRNode_Core/gen_cpus(0)/U_CPU_Block/rst_n_ref_i
+add wave -noupdate -expand -group CB0 -expand /main/DUT/U_WRNode_Core/gen_cpus(0)/U_CPU_Block/tm_i
+add wave -noupdate -expand -group CB0 /main/DUT/U_WRNode_Core/gen_cpus(0)/U_CPU_Block/sh_master_i
+add wave -noupdate -expand -group CB0 /main/DUT/U_WRNode_Core/gen_cpus(0)/U_CPU_Block/sh_master_o
+add wave -noupdate -expand -group CB0 /main/DUT/U_WRNode_Core/gen_cpus(0)/U_CPU_Block/dp_master_i
+add wave -noupdate -expand -group CB0 /main/DUT/U_WRNode_Core/gen_cpus(0)/U_CPU_Block/dp_master_o
+add wave -noupdate -expand -group CB0 /main/DUT/U_WRNode_Core/gen_cpus(0)/U_CPU_Block/cpu_csr_i
+add wave -noupdate -expand -group CB0 /main/DUT/U_WRNode_Core/gen_cpus(0)/U_CPU_Block/cpu_csr_o
+add wave -noupdate -expand -group CB0 /main/DUT/U_WRNode_Core/gen_cpus(0)/U_CPU_Block/rmq_ready_i
+add wave -noupdate -expand -group CB0 /main/DUT/U_WRNode_Core/gen_cpus(0)/U_CPU_Block/hmq_ready_i
+add wave -noupdate -expand -group CB0 /main/DUT/U_WRNode_Core/gen_cpus(0)/U_CPU_Block/cnx_master_in
+add wave -noupdate -expand -group CB0 /main/DUT/U_WRNode_Core/gen_cpus(0)/U_CPU_Block/cnx_master_out
+add wave -noupdate -expand -group CB0 /main/DUT/U_WRNode_Core/gen_cpus(0)/U_CPU_Block/tai_cycles_rd_ack
+add wave -noupdate -expand -group CB0 /main/DUT/U_WRNode_Core/gen_cpus(0)/U_CPU_Block/local_regs_in
+add wave -noupdate -expand -group CB0 /main/DUT/U_WRNode_Core/gen_cpus(0)/U_CPU_Block/local_regs_out
+add wave -noupdate -expand -group CB0 /main/DUT/U_WRNode_Core/gen_cpus(0)/U_CPU_Block/cpu_dwb_out
+add wave -noupdate -expand -group CB0 /main/DUT/U_WRNode_Core/gen_cpus(0)/U_CPU_Block/cpu_dwb_in
+add wave -noupdate -expand -group CB0 /main/DUT/U_WRNode_Core/gen_cpus(0)/U_CPU_Block/tai_sys
+add wave -noupdate -expand -group CB0 /main/DUT/U_WRNode_Core/gen_cpus(0)/U_CPU_Block/cycles_sys
+add wave -noupdate -expand -group CB0 /main/DUT/U_WRNode_Core/gen_cpus(0)/U_CPU_Block/cycles_sys_latched
+add wave -noupdate -expand -group CB0 /main/DUT/U_WRNode_Core/gen_cpus(0)/U_CPU_Block/tai_ref
+add wave -noupdate -expand -group CB0 /main/DUT/U_WRNode_Core/gen_cpus(0)/U_CPU_Block/cycles_ref
+add wave -noupdate -expand -group CB0 /main/DUT/U_WRNode_Core/gen_cpus(0)/U_CPU_Block/tm_p_ref
+add wave -noupdate -expand -group CB0 /main/DUT/U_WRNode_Core/gen_cpus(0)/U_CPU_Block/tm_ready_ref
+add wave -noupdate -expand -group CB0 /main/DUT/U_WRNode_Core/gen_cpus(0)/U_CPU_Block/tm_p_sys
+add wave -noupdate -expand -group CB0 /main/DUT/U_WRNode_Core/gen_cpus(0)/U_CPU_Block/tm_p_ref_d0
+add wave -noupdate /main/tai
+add wave -noupdate /main/cycles
 TreeUpdate [SetDefaultTree]
-WaveRestoreCursors {{Cursor 1} {178478 ns} 0}
-configure wave -namecolwidth 150
+WaveRestoreCursors {{Cursor 1} {65444 ns} 0}
+configure wave -namecolwidth 485
 configure wave -valuecolwidth 100
 configure wave -justifyvalue left
 configure wave -signalnamewidth 1
@@ -501,4 +157,4 @@ configure wave -griddelta 40
 configure wave -timeline 0
 configure wave -timelineunits ns
 update
-WaveRestoreZoom {0 ns} {344064 ns}
+WaveRestoreZoom {40892 ns} {124860 ns}

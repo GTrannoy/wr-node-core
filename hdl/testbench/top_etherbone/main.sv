@@ -16,13 +16,74 @@ class CWRNode;
       
 endclass // CWRNode
 
+module
+ VHDWBMonitor
+   #(
+     parameter string g_name = "" 
+     )
+   (
+ input clk_i,
+ input t_wishbone_master_out in,
+ input t_wishbone_master_in out);
+
+   reg cyc_d0 = 0;
+   int xfer_count = 0;
+   
+   
+   
+   
+   always@(posedge clk_i)
+     cyc_d0 <= in.cyc;
+
+   always@(posedge clk_i)
+     begin
+	if(!cyc_d0 && in.cyc)
+	  begin
+	     $display("%s: start-of-cycle", g_name);
+	     xfer_count = 0;
+	  end
+	
+	
+	if(in.cyc && in.stb && !out.stall && in.we)
+	  begin
+	     $display("%s: write[%d]: addr %x data %x", g_name, xfer_count, in.adr, in.dat);
+	     xfer_count++;
+	     
+	     end
+	
+	if(cyc_d0 && !in.cyc)
+	  $display("%s: end-of-cycle", g_name);
+     end
+   
+   
+
+endmodule // VHDWBMonitor
+
+
 
 module main;
 
    reg rst_n = 0;
    reg clk_sys = 0;
 
-   always #4ns clk_sys <= ~clk_sys;
+   reg clk_ref = 0;
+
+   reg [31:0] tai = 0;
+   reg [27:0] cycles = 0;
+   
+   
+   
+   always #4.1ns clk_ref <= ~clk_ref;
+   
+   always #8ns clk_sys <= ~clk_sys;
+
+
+   always@(posedge clk_ref)
+     if(cycles == 100) begin
+	cycles <= 0;
+	tai <= tai + 1;
+     end else
+       cycles <= cycles + 1;
    
    initial begin
       repeat(20) @(posedge clk_sys);
@@ -45,11 +106,18 @@ module main;
    always@(posedge clk_sys)
      wr_src_in.ack <= wr_src_out.cyc & wr_src_out.stb;
    
+
+   wire t_wrn_timing_if timing;
+
+   assign timing.tai = tai;
+   assign timing.cycles = cycles;
    
    wr_node_core_with_etherbone DUT (
 				    .clk_i   (clk_sys),
 				    .rst_n_i (rst_n),
 
+				    .clk_ref_i(clk_ref),
+				
 				    .host_slave_i (Host.master.out),
 				    .host_slave_o (Host.master.in),
 
@@ -57,9 +125,36 @@ module main;
 				    .eb_config_o (EBConfig.master.in),
 
 				    .wr_src_i(wr_src_in),
-				    .wr_src_o(wr_src_out)
+				    .wr_src_o(wr_src_out),
+				    .tm_i(timing)
 				    );
 
+   wire t_wishbone_master_in m_in;
+   wire t_wishbone_master_out m_out;
+
+   assign m_out.cyc = DUT.ebm_mux_out.cyc;
+   assign m_out.stb = DUT.ebm_mux_out.stb;
+   assign m_out.we = DUT.ebm_mux_out.we;
+   assign m_out.sel = DUT.ebm_mux_out.sel;
+   assign m_out.adr = DUT.ebm_mux_out.adr;
+   assign m_out.dat = DUT.ebm_mux_out.dat;
+
+   assign m_in.ack = DUT.ebm_mux_in.ack;
+   assign m_in.stall = DUT.ebm_mux_in.stall;
+   
+   
+
+
+   
+   VHDWBMonitor #("ebm") Mon_EB (
+			.clk_i(clk_sys),
+			.in(m_out),
+			.out(m_in));
+
+  
+  
+ 
+   
    initial begin
       NodeCPUControl cpu_csr;
       MQueueHost hmq;
