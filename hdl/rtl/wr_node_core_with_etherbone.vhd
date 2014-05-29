@@ -36,7 +36,9 @@ entity wr_node_core_with_etherbone is
     host_slave_i : in  t_wishbone_slave_in;
     host_slave_o : out t_wishbone_slave_out;
     host_irq_o   : out std_logic;
-    tm_i         : in  t_wrn_timing_if
+
+    clk_ref_i : in std_logic;
+    tm_i      : in t_wrn_timing_if
     );
 
 end wr_node_core_with_etherbone;
@@ -146,7 +148,9 @@ begin
       host_slave_i => host_slave_i,
       host_slave_o => host_slave_o,
       host_irq_o   => host_irq_o,
+      clk_ref_i    => clk_ref_i,
       tm_i         => tm_i);
+
 
 
 end rtl;

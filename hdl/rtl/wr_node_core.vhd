@@ -6,9 +6,7 @@ use work.wr_node_pkg.all;
 use work.wishbone_pkg.all;
 use work.wrn_cpu_csr_wbgen2_pkg.all;
 use work.wrn_mqueue_pkg.all;
-
-
-
+use work.gencores_pkg.all;
 
 entity wr_node_core is
   
@@ -35,7 +33,8 @@ entity wr_node_core is
     host_slave_o : out t_wishbone_slave_out;
     host_irq_o   : out std_logic;
 
-    tm_i : in t_wrn_timing_if
+    clk_ref_i : in std_logic;
+    tm_i      : in t_wrn_timing_if
     );
 
 end wr_node_core;
@@ -49,6 +48,8 @@ architecture rtl of wr_node_core is
     port (
       clk_sys_i   : in  std_logic;
       rst_n_i     : in  std_logic;
+      clk_ref_i   : in  std_logic;
+      rst_n_ref_i : in  std_logic;
       tm_i        : in  t_wrn_timing_if;
       sh_master_i : in  t_wishbone_master_in;
       sh_master_o : out t_wishbone_master_out;
@@ -164,18 +165,25 @@ architecture rtl of wr_node_core is
 
   signal hmq_status, rmq_status : std_logic_vector(15 downto 0);
 
-  signal timing : t_wrn_timing_if;
 
   signal cpu_index : integer := 0;
 
   type t_wrn_cpu_csr_in_registers_array is array(integer range <>) of t_wrn_cpu_csr_in_registers;
 
-  signal cpu_csr_towb_cb: t_wrn_cpu_csr_in_registers_array (g_config.cpu_count-1 downto 0);
+  signal cpu_csr_towb_cb : t_wrn_cpu_csr_in_registers_array (g_config.cpu_count-1 downto 0);
 
+  signal rst_n_ref : std_logic;
   
 begin  -- rtl
 
+  U_Sync_Refclk : gc_sync_ffs
+    port map (
+      clk_i    => clk_ref_i,
+      rst_n_i  => '1',
+      data_i   => rst_n_i,
+      synced_o => rst_n_ref);
 
+  
   U_Host_Access_CB : xwb_crossbar
     generic map (
       g_num_masters => 1,
@@ -253,7 +261,9 @@ begin  -- rtl
       port map (
         clk_sys_i   => clk_i,
         rst_n_i     => rst_n_i,
-        tm_i        => timing,
+        clk_ref_i   => clk_ref_i,
+        rst_n_ref_i => rst_n_ref,
+        tm_i        => tm_i,
         sh_master_i => si_slave_out(c_si_slave_cpu0 + i),
         sh_master_o => si_slave_in(c_si_slave_cpu0 + i),
         dp_master_i => dp_master_i(i),

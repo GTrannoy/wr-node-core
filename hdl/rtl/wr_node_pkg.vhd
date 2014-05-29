@@ -64,6 +64,7 @@ package wr_node_pkg is
       host_slave_i : in  t_wishbone_slave_in;
       host_slave_o : out t_wishbone_slave_out;
       host_irq_o   : out std_logic;
+      clk_ref_i : in std_logic;
       tm_i         : in  t_wrn_timing_if);
   end component wr_node_core;
 
@@ -86,6 +87,7 @@ package wr_node_pkg is
       host_slave_i : in  t_wishbone_slave_in;
       host_slave_o : out t_wishbone_slave_out;
       host_irq_o   : out std_logic;
+      clk_ref_i : in std_logic;
       tm_i         : in  t_wrn_timing_if);
   end component wr_node_core_with_etherbone;
 

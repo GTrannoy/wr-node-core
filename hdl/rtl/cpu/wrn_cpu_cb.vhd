@@ -2,6 +2,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 
 use work.wishbone_pkg.all;
+use work.gencores_pkg.all;
 --use work.wrcore_pkg.all;
 
 use work.wrn_cpu_csr_wbgen2_pkg.all;
@@ -19,6 +20,9 @@ entity wrn_cpu_cb is
   port (
     clk_sys_i : in std_logic;
     rst_n_i   : in std_logic;
+
+    clk_ref_i   : in std_logic;
+    rst_n_ref_i : in std_logic;
 
     tm_i : in t_wrn_timing_if;
 
@@ -82,9 +86,9 @@ architecture rtl of wrn_cpu_cb is
   constant c_slave_si : integer := 2;
   
   constant c_cnx_address : t_wishbone_address_array(2 downto 0) := (
-    c_slave_lr => x"00100000",                        -- local regs
-    c_slave_dp => x"00200000",                        -- dedicated peripheral port
-    c_slave_si => x"40000000"                         -- shared interconnect
+    c_slave_lr => x"00100000",          -- local regs
+    c_slave_dp => x"00200000",          -- dedicated peripheral port
+    c_slave_si => x"40000000"           -- shared interconnect
     );
 
   constant c_cnx_mask : t_wishbone_address_array(2 downto 0) := (
@@ -99,9 +103,67 @@ architecture rtl of wrn_cpu_cb is
 
   signal cpu_dwb_out : t_wishbone_master_out;
   signal cpu_dwb_in  : t_wishbone_master_in;
-  
+
+  signal tai_sys                        : std_logic_vector(31 downto 0);
+  signal cycles_sys, cycles_sys_latched : std_logic_vector(27 downto 0);
+
+  signal tai_ref    : std_logic_vector(31 downto 0);
+  signal cycles_ref : std_logic_vector(27 downto 0);
+
+  signal tm_p_ref, tm_ready_ref, tm_p_sys, tm_p_ref_d0 : std_logic;
   
 begin  -- rtl
+
+
+  U_Sync1 : gc_pulse_synchronizer
+    port map (
+      clk_in_i  => clk_ref_i,
+      clk_out_i => clk_sys_i,
+      rst_n_i   => rst_n_i,
+      d_ready_o => tm_ready_ref,
+      d_p_i     => tm_p_ref,
+      q_p_o     => tm_p_sys);
+
+  process(clk_ref_i)
+  begin
+    if rising_edge(clk_ref_i) then
+      if rst_n_ref_i = '0' then
+        tm_p_ref    <= '0';
+        tm_p_ref_d0 <= '0';
+      else
+        tm_p_ref    <= not tm_p_ref_d0 and tm_ready_ref;
+        tm_p_ref_d0 <= tm_p_ref;
+
+        if(tm_p_ref = '1') then
+          tai_ref    <= tm_i.tai  (31 downto 0);
+          cycles_ref <= tm_i.cycles;
+        end if;
+      end if;
+    end if;
+  end process;
+
+  process(clk_sys_i)
+  begin
+    if rising_edge(clk_sys_i) then
+      if(tm_p_sys = '1') then
+        tai_sys    <= tai_ref;
+        cycles_sys <= cycles_ref;
+      end if;
+    end if;
+  end process;
+
+  -- ugly hack!
+  process(clk_sys_i)
+  begin
+    if rising_edge(clk_sys_i) then
+      if(cnx_master_out(c_slave_lr).cyc = '1' and cnx_master_out(c_slave_lr).stb = '1' and cnx_master_in(c_slave_lr).stall = '0') then
+        cycles_sys_latched <= cycles_sys;
+      end if;
+    end if;
+  end process;
+
+  local_regs_in.tai_cycles_i <= cycles_sys_latched;
+  local_regs_in.tai_sec_i    <= tai_sys;
 
   U_TheCoreCPU : wrn_lm32_wrapper
     generic map (
@@ -139,7 +201,7 @@ begin  -- rtl
 
   local_regs_in.poll_hmq_i <= hmq_ready_i;
   local_regs_in.poll_rmq_i <= rmq_ready_i;
-  
+
 
   U_Local_Interconnect : xwb_crossbar
     generic map (
@@ -156,10 +218,10 @@ begin  -- rtl
       master_i   => cnx_master_in,
       master_o   => cnx_master_out);
 
-  dp_master_o <= cnx_master_out(c_slave_dp);
+  dp_master_o               <= cnx_master_out(c_slave_dp);
   cnx_master_in(c_slave_dp) <= dp_master_i;
 
-  sh_master_o <= cnx_master_out(c_slave_si);
+  sh_master_o               <= cnx_master_out(c_slave_si);
   cnx_master_in(c_slave_si) <= sh_master_i;
 
   
