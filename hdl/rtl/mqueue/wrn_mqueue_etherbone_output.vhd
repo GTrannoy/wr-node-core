@@ -137,7 +137,8 @@ architecture rtl of wrn_mqueue_etherbone_output is
                       EB_SEND_CLAIM,
                       EB_SEND_READY,
                       EB_WAIT_XFER_DONE,
-                      EB_SET_MAX_OPS);
+                      EB_SET_MAX_OPS,
+                      EB_DUMMY_WAIT);
 
   signal eb_state : t_eb_state;
 
@@ -226,7 +227,7 @@ begin  -- rtl
 
             if(slot_ready = '1') then
               eb_state      <= EB_SET_TARGET_IP;
-              msg_size      <= unsigned(slot_stat.current_size) - 1;  -- fixme
+              msg_size      <= unsigned(slot_stat.current_size) - 2;  -- fixme
               msg_remaining <= unsigned(slot_stat.current_size) - 3;
             end if;
             
@@ -273,10 +274,16 @@ begin  -- rtl
               else
                 msg_remaining <= msg_remaining - 1;
                 eb_write_addr <= eb_write_addr + 4;
-                slot_addr     <= slot_addr + 4;
+                eb_state <= EB_DUMMY_WAIT;
+
               end if;
             end if;
 
+          when EB_DUMMY_WAIT =>
+            eb_state <= EB_WRITE_DATA;
+            slot_addr     <= slot_addr + 4;
+            
+            
           when EB_SEND_READY =>
             if(ebm_i.stall = '0') then
               eb_state <= EB_FLUSH_XFER;
@@ -327,18 +334,20 @@ begin  -- rtl
       when EB_SET_MAX_OPS =>
         f_wishbone_op(ebm_out, WRITE, c_OPS_MAX, std_logic_vector (resize(msg_size + 2, 32)));
       when EB_SET_XFER_SIZE =>
-        f_wishbone_op(ebm_out, WRITE, c_PAC_LEN, x"00000100" ); --std_logic_vector (resize(msg_size, 32)));
+        f_wishbone_op(ebm_out, WRITE, c_PAC_LEN, x"00000080" ); --std_logic_vector (resize(msg_size, 32)));
       when EB_SEND_CLAIM =>
         f_wishbone_op(ebm_out, WRITE, resize(eb_write_start, 32) or x"03000000", x"01000000");
       when EB_WRITE_DATA =>
         f_wishbone_op(ebm_out, WRITE, resize(eb_write_addr, 32) or x"03000000", std_logic_vector (slot_in.dat));
       when EB_SEND_READY =>
-        f_wishbone_op(ebm_out, WRITE, resize(eb_write_start, 32) or x"03000000", x"04000000");
+        f_wishbone_op(ebm_out, WRITE, resize(eb_write_start, 32) or x"03000000", x"04000000" or std_logic_vector(resize(msg_size,32)));
       when EB_FLUSH_XFER =>
         f_wishbone_op(ebm_out, WRITE, c_FLUSH, x"00000001");
       when EB_READ_STATUS =>
         f_wishbone_op(ebm_out, READ, c_STATUS);
       when EB_WAIT_XFER_DONE =>
+        f_wishbone_op(ebm_out, NO_XFER);
+      when EB_DUMMY_WAIT =>
         f_wishbone_op(ebm_out, NO_XFER);
       when others =>
         f_wishbone_op(ebm_out, INACTIVE);
@@ -397,6 +406,14 @@ begin  -- rtl
 
         
       when EB_SEND_CLAIM =>
+        if(ebm_i.stall = '0') then
+          slot_out.adr <= std_logic_vector(slot_addr + 4);
+        else
+          slot_out.adr <= std_logic_vector(slot_addr);
+        end if;
+
+
+      when EB_DUMMY_WAIT =>
         if(ebm_i.stall = '0') then
           slot_out.adr <= std_logic_vector(slot_addr + 4);
         else
