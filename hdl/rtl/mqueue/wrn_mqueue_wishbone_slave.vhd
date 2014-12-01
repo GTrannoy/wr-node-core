@@ -111,11 +111,11 @@ begin  -- rtl
         else
           gcr_rd_data <= (others => '0');
 
-          if(wb_write = '1') then
+          if(wb_write = '1' and gcr_sel = '1') then
             case slave_i.adr(5 downto 2) is
               when c_gcr_slot_irq_mask =>
-                irq_config.mask_in  <= slave_i.dat(15 downto 0);
-                irq_config.mask_out <= slave_i.dat(31 downto 16);
+                irq_config.mask_in  <= slave_i.dat(31 downto 16);
+                irq_config.mask_out <= slave_i.dat(15 downto 0);
               when c_gcr_slot_irq_coalesce =>
                 irq_config.threshold <= slave_i.dat(7 downto 0);
                 irq_config.timeout   <= slave_i.dat(23 downto 16);
@@ -124,8 +124,8 @@ begin  -- rtl
           else
             case slave_i.adr(5 downto 2) is
               when c_gcr_slot_irq_mask =>
-                gcr_rd_data(31 downto 16) <= irq_config.mask_out;
-                gcr_rd_data(15 downto 0)  <= irq_config.mask_in;
+                gcr_rd_data(31 downto 16) <= irq_config.mask_in;
+                gcr_rd_data(15 downto 0)  <= irq_config.mask_out;
 
               when c_gcr_slot_irq_coalesce =>
                 gcr_rd_data(7 downto 0)   <= irq_config.threshold;
@@ -133,7 +133,7 @@ begin  -- rtl
 
               when c_gcr_slot_status =>
                 for i in 0 to g_config.in_slot_count-1 loop
-                  gcr_rd_data(i+16) <= not incoming_status_i(i).empty;
+                  gcr_rd_data(i+16) <= incoming_status_i(i).empty;
                 end loop;  -- i
 
                 for i in 0 to g_config.out_slot_count-1 loop
@@ -153,7 +153,7 @@ begin  -- rtl
 
   end generate gen_with_gcr;
 
-  slave_o.stall<= '0';
+  slave_o.stall <= '0';
   slave_o.err   <= '0';
   slave_o.rty   <= '0';
   slave_o.int   <= '0';
