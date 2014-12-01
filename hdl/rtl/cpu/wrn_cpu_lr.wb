@@ -1,3 +1,38 @@
+-------------------------------------------------------------------------------
+-- Title      : White Rabbit Node Core
+-- Project    : White Rabbit
+-------------------------------------------------------------------------------
+-- File       : wrn_cpu_lr.wb
+-- Author     : Tomasz Włostowski
+-- Company    : CERN BE-CO-HT
+-- Created    : 2014-04-01
+-- Last update: 2014-11-26
+-------------------------------------------------------------------------------
+-- Description: 
+--
+-- CPU Local Registers block layout (wbgen2)
+-------------------------------------------------------------------------------
+--
+-- Copyright (c) 2014 CERN
+--
+-- This source file is free software; you can redistribute it   
+-- and/or modify it under the terms of the GNU Lesser General   
+-- Public License as published by the Free Software Foundation; 
+-- either version 2.1 of the License, or (at your option) any   
+-- later version.                                               
+--
+-- This source is distributed in the hope that it will be       
+-- useful, but WITHOUT ANY WARRANTY; without even the implied   
+-- warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR      
+-- PURPOSE.  See the GNU Lesser General Public License for more 
+-- details.                                                     
+--
+-- You should have received a copy of the GNU Lesser General    
+-- Public License along with this source; if not, download it   
+-- from http://www.gnu.org/licenses/lgpl-2.1.html
+--
+-------------------------------------------------------------------------------
+
 -- -*- Mode: LUA; tab-width: 2 -*-
 
 peripheral {
@@ -47,6 +82,16 @@ peripheral {
 				 access_bus = READ_ONLY;
 				 access_dev = WRITE_ONLY;
 			};
+
+			field {
+				 name = "WR Aux Clock OK";
+				 prefix = "WR_AUX_CLOCK_OK";
+				 type = SLV;
+				 size = 8;
+				 access_bus = READ_ONLY;
+				 access_dev = WRITE_ONLY;
+			};
+
 	 };
 
 
@@ -60,7 +105,6 @@ peripheral {
 				 type = SLV;
 				 access_bus = READ_ONLY;
 				 access_dev = WRITE_ONLY;
-				 ack_read = "tai_cycles_rd_ack_o";
 			};
 		};
 
@@ -74,20 +118,42 @@ peripheral {
 				 type = SLV;
 				 access_bus = READ_ONLY;
 				 access_dev = WRITE_ONLY;
+				 ack_read = "tai_sec_rd_ack_o";
 			};
 		};
 
-		reg {
-			name = "Test";
-			prefix = "TEST";
-
-			field {
-				 name = "test";
+	
+	reg {
+	    name = "GPIO Input";
+	    prefix = "GPIO_IN";
+	    field {
+				 name = "GPIO In";
 				 size = 32;
 				 type = SLV;
-				 access_bus = READ_WRITE;
-				 access_dev = READ_ONLY;
-			};
-		};
+				 access_bus = READ_ONLY;
+				 access_dev = WRITE_ONLY;
+	    };
+	};
+
+	reg {
+	    name = "GPIO Set";
+	    prefix = "GPIO_SET";
+	    field {
+				 name = "GPIO Set";
+				 size = 32;
+				 type = PASS_THROUGH;
+	    };
+	};
+
+	reg {
+	    name = "GPIO Clear";
+	    prefix = "GPIO_CLEAR";
+	    field {
+				 name = "GPIO Clear";
+				 size = 32;
+				 type = PASS_THROUGH;
+	    };
+	};
+
 };
 

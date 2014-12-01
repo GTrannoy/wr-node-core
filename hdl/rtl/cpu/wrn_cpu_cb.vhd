@@ -1,9 +1,46 @@
+-------------------------------------------------------------------------------
+-- Title      : White Rabbit Node Core
+-- Project    : White Rabbit
+-------------------------------------------------------------------------------
+-- File       : wrn_cpu_cb.vhd
+-- Author     : Tomasz Włostowski
+-- Company    : CERN BE-CO-HT
+-- Created    : 2014-04-01
+-- Last update: 2014-11-26
+-- Platform   : FPGA-generic
+-- Standard   : VHDL'93
+-------------------------------------------------------------------------------
+-- Description: 
+--
+-- WR Node CPU Core block top level. Connects an LM32, dedicated peripheral,
+-- program/data memory and control registers.
+-------------------------------------------------------------------------------
+--
+-- Copyright (c) 2014 CERN
+--
+-- This source file is free software; you can redistribute it   
+-- and/or modify it under the terms of the GNU Lesser General   
+-- Public License as published by the Free Software Foundation; 
+-- either version 2.1 of the License, or (at your option) any   
+-- later version.                                               
+--
+-- This source is distributed in the hope that it will be       
+-- useful, but WITHOUT ANY WARRANTY; without even the implied   
+-- warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR      
+-- PURPOSE.  See the GNU Lesser General Public License for more 
+-- details.                                                     
+--
+-- You should have received a copy of the GNU Lesser General    
+-- Public License along with this source; if not, download it   
+-- from http://www.gnu.org/licenses/lgpl-2.1.html
+--
+-------------------------------------------------------------------------------
+
 library ieee;
 use ieee.std_logic_1164.all;
 
 use work.wishbone_pkg.all;
 use work.gencores_pkg.all;
---use work.wrcore_pkg.all;
 
 use work.wrn_cpu_csr_wbgen2_pkg.all;
 use work.wrn_cpu_lr_wbgen2_pkg.all;
@@ -26,17 +63,20 @@ entity wrn_cpu_cb is
 
     tm_i : in t_wrn_timing_if;
 
-    sh_master_i : in  t_wishbone_master_in;
+    sh_master_i : in  t_wishbone_master_in := cc_dummy_master_in;
     sh_master_o : out t_wishbone_master_out;
 
-    dp_master_i : in  t_wishbone_master_in;
+    dp_master_i : in  t_wishbone_master_in := cc_dummy_master_in;
     dp_master_o : out t_wishbone_master_out;
 
     cpu_csr_i : in  t_wrn_cpu_csr_out_registers;
     cpu_csr_o : out t_wrn_cpu_csr_in_registers := c_wrn_cpu_csr_in_registers_init_value;
 
     rmq_ready_i : in std_logic_vector(15 downto 0);
-    hmq_ready_i : in std_logic_vector(15 downto 0)
+    hmq_ready_i : in std_logic_vector(15 downto 0);
+
+    gpio_i : in  std_logic_vector(31 downto 0);
+    gpio_o : out std_logic_vector(31 downto 0)
     );
 
 
@@ -57,7 +97,7 @@ architecture rtl of wrn_cpu_cb is
       wb_we_i             : in  std_logic;
       wb_ack_o            : out std_logic;
       wb_stall_o          : out std_logic;
-      tai_cycles_rd_ack_o : out std_logic;
+      tai_sec_rd_ack_o : out std_logic;
       regs_i              : in  t_wrn_cpu_lr_in_registers;
       regs_o              : out t_wrn_cpu_lr_out_registers);
   end component;
@@ -97,7 +137,7 @@ architecture rtl of wrn_cpu_cb is
     c_slave_si => x"c0000000"
     );
 
-  signal tai_cycles_rd_ack : std_logic;
+  signal tai_sec_rd_ack : std_logic;
   signal local_regs_in     : t_wrn_cpu_lr_in_registers;
   signal local_regs_out    : t_wrn_cpu_lr_out_registers;
 
@@ -105,7 +145,7 @@ architecture rtl of wrn_cpu_cb is
   signal cpu_dwb_in  : t_wishbone_master_in;
 
   signal tai_sys                        : std_logic_vector(31 downto 0);
-  signal cycles_sys, cycles_sys_latched : std_logic_vector(27 downto 0);
+  signal cycles_sys, cycles_sys_d0, cycles_sys_d1 : std_logic_vector(27 downto 0);
 
   signal tai_ref    : std_logic_vector(31 downto 0);
   signal cycles_ref : std_logic_vector(27 downto 0);
@@ -124,18 +164,39 @@ begin  -- rtl
       d_p_i     => tm_p_ref,
       q_p_o     => tm_p_sys);
 
+  U_Sync2 : gc_sync_ffs
+    port map (
+      clk_i  => clk_sys_i,
+      rst_n_i   => rst_n_i,
+      data_i => tm_i.link_up,
+      synced_o => local_regs_in.stat_wr_link_i);
+
+  U_Sync3 : gc_sync_ffs
+    port map (
+      clk_i  => clk_sys_i,
+      rst_n_i   => rst_n_i,
+      data_i => tm_i.time_valid,
+      synced_o => local_regs_in.stat_wr_time_ok_i);
+
+  U_Sync4 : gc_sync_register
+    generic map (
+      g_width => 8)
+    port map (
+      clk_i  => clk_sys_i,
+      rst_n_a_i   => rst_n_i,
+      d_i => tm_i.aux_locked,
+      q_o => local_regs_in.stat_wr_aux_clock_ok_i);
+
   process(clk_ref_i)
   begin
     if rising_edge(clk_ref_i) then
       if rst_n_ref_i = '0' then
         tm_p_ref    <= '0';
-        tm_p_ref_d0 <= '0';
       else
-        tm_p_ref    <= not tm_p_ref_d0 and tm_ready_ref;
-        tm_p_ref_d0 <= tm_p_ref;
+        tm_p_ref    <= not tm_p_ref and tm_ready_ref;
 
         if(tm_p_ref = '1') then
-          tai_ref    <= tm_i.tai  (31 downto 0);
+          tai_ref    <= tm_i.tai (31 downto 0);
           cycles_ref <= tm_i.cycles;
         end if;
       end if;
@@ -146,9 +207,10 @@ begin  -- rtl
   begin
     if rising_edge(clk_sys_i) then
       if(tm_p_sys = '1') then
-        tai_sys    <= tai_ref;
         cycles_sys <= cycles_ref;
+        tai_sys <= tai_ref;
       end if;
+      cycles_sys_d0 <= cycles_sys;
     end if;
   end process;
 
@@ -156,14 +218,34 @@ begin  -- rtl
   process(clk_sys_i)
   begin
     if rising_edge(clk_sys_i) then
-      if(cnx_master_out(c_slave_lr).cyc = '1' and cnx_master_out(c_slave_lr).stb = '1' and cnx_master_in(c_slave_lr).stall = '0') then
-        cycles_sys_latched <= cycles_sys;
+      if(tai_sec_rd_ack = '1') then
+        local_regs_in.tai_cycles_i <= cycles_sys_d0;
       end if;
     end if;
   end process;
 
-  local_regs_in.tai_cycles_i <= cycles_sys_latched;
   local_regs_in.tai_sec_i    <= tai_sys;
+
+  p_gpio : process(clk_sys_i)
+  begin
+    if rising_edge(clk_sys_i) then
+      if rst_n_i = '0' then
+        gpio_o <= (others => '0');
+      else
+        for i in 0 to 31 loop
+        local_regs_in.gpio_in_i(i) <= gpio_i(i);
+
+          if local_regs_out.gpio_set_wr_o = '1' and local_regs_out.gpio_set_o(i) = '1' then
+            gpio_o(i) <= '1';
+          end if;
+
+          if local_regs_out.gpio_clear_wr_o = '1' and local_regs_out.gpio_clear_o(i) = '1' then
+            gpio_o(i) <= '0';
+          end if;
+        end loop;
+      end if;
+    end if;
+  end process;
 
   U_TheCoreCPU : wrn_lm32_wrapper
     generic map (
@@ -192,7 +274,7 @@ begin  -- rtl
       wb_we_i             => cnx_master_out(c_slave_lr).we,
       wb_ack_o            => cnx_master_in(c_slave_lr).ack,
       wb_stall_o          => cnx_master_in(c_slave_lr).stall,
-      tai_cycles_rd_ack_o => tai_cycles_rd_ack,
+      tai_sec_rd_ack_o => tai_sec_rd_ack,
       regs_i              => local_regs_in,
       regs_o              => local_regs_out);
 
@@ -224,5 +306,5 @@ begin  -- rtl
   sh_master_o               <= cnx_master_out(c_slave_si);
   cnx_master_in(c_slave_si) <= sh_master_i;
 
-  
+
 end rtl;
