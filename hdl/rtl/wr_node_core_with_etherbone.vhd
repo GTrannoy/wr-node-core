@@ -1,3 +1,41 @@
+-------------------------------------------------------------------------------
+-- Title      : White Rabbit Node Core
+-- Project    : White Rabbit
+-------------------------------------------------------------------------------
+-- File       : wr_node_core_with_etherbone.vhd
+-- Author     : Tomasz Włostowski
+-- Company    : CERN BE-CO-HT
+-- Created    : 2014-04-01
+-- Last update: 2014-12-01
+-- Platform   : FPGA-generic
+-- Standard   : VHDL'93
+-------------------------------------------------------------------------------
+-- Description: 
+--
+-- White Rabbit Node Core wrapped together with Etherbone. Provided for your
+-- convenience.
+-------------------------------------------------------------------------------
+--
+-- Copyright (c) 2014 CERN
+--
+-- This source file is free software; you can redistribute it   
+-- and/or modify it under the terms of the GNU Lesser General   
+-- Public License as published by the Free Software Foundation; 
+-- either version 2.1 of the License, or (at your option) any   
+-- later version.                                               
+--
+-- This source is distributed in the hope that it will be       
+-- useful, but WITHOUT ANY WARRANTY; without even the implied   
+-- warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR      
+-- PURPOSE.  See the GNU Lesser General Public License for more 
+-- details.                                                     
+--
+-- You should have received a copy of the GNU Lesser General    
+-- Public License along with this source; if not, download it   
+-- from http://www.gnu.org/licenses/lgpl-2.1.html
+--
+-------------------------------------------------------------------------------
+
 library ieee;
 
 use ieee.STD_LOGIC_1164.all;
@@ -15,8 +53,9 @@ entity wr_node_core_with_etherbone is
     g_config : t_wr_node_config := c_default_node_config);
 
   port (
-    clk_i   : in std_logic;
-    rst_n_i : in std_logic;
+    clk_i       : in std_logic;
+    rst_n_i     : in std_logic;
+    rst_net_n_i : in std_logic;
 
     sp_master_o : out t_wishbone_master_out;
     sp_master_i : in  t_wishbone_master_in := cc_dummy_master_in;
@@ -25,10 +64,10 @@ entity wr_node_core_with_etherbone is
     dp_master_i : in  t_wishbone_master_in_array(0 to g_config.cpu_count-1) := f_dummy_master_in_array(g_config.cpu_count);
 
     wr_src_o : out t_wrf_source_out;
-    wr_src_i : in  t_wrf_source_in;
+    wr_src_i : in     t_wrf_source_in;
 
     wr_snk_o : out t_wrf_sink_out;
-    wr_snk_i : in  t_wrf_sink_in;
+    wr_snk_i : in     t_wrf_sink_in;
 
     eb_config_i : in  t_wishbone_slave_in;
     eb_config_o : out t_wishbone_slave_out;
@@ -38,7 +77,10 @@ entity wr_node_core_with_etherbone is
     host_irq_o   : out std_logic;
 
     clk_ref_i : in std_logic;
-    tm_i      : in t_wrn_timing_if
+    tm_i      : in t_wrn_timing_if;
+
+    gpio_o : out std_logic_vector(31 downto 0);
+    gpio_i : in  std_logic_vector(31 downto 0)
     );
 
 end wr_node_core_with_etherbone;
@@ -67,7 +109,14 @@ architecture rtl of wr_node_core_with_etherbone is
 
   signal wrn_ebs_out, ebm_mux_out, wrn_ebm_out : t_wishbone_master_out;
   signal wrn_ebs_in, ebm_mux_in, wrn_ebm_in    : t_wishbone_master_in;
+  signal wr_ebs_src_out : t_wrf_source_out;
+  signal wr_ebs_src_in  : t_wrf_source_in;
+
+  signal rst_net_n : std_logic;
 begin
+
+
+  rst_net_n <= rst_n_i and rst_net_n_i;
 
   U_Config_XBar : xwb_crossbar
     generic map (
@@ -106,12 +155,12 @@ begin
 
   U_WRNode_Etherbone_Slave : eb_slave_core
     generic map (
-      g_sdb_address => x"ffffffffffffffff")
+      g_sdb_address => x"00000000c0000000")
     port map (
       clk_i       => clk_i,
-      nRst_i      => rst_n_i,
-      src_o       => open,
-      src_i       => c_dummy_src_in,
+      nRst_i      => rst_net_n,
+      src_o       => wr_ebs_src_out,
+      src_i       => wr_ebs_src_in,
       snk_o       => wr_snk_o,
       snk_i       => wr_snk_i,
       cfg_slave_o => eb_config_in(c_SLAVE_EBS_CONFIG),
@@ -119,13 +168,26 @@ begin
       master_o    => wrn_ebs_out,
       master_i    => wrn_ebs_in);
 
+  wr_ebs_src_in.stall <= '0';
+  wr_ebs_src_in.err   <= '0';
+  wr_ebs_src_in.rty   <= '0';
+
+  process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      wr_ebs_src_in.ack <= wr_ebs_src_out.stb and wr_ebs_src_out.cyc;
+    end if;
+  end process;
+
+
+
   U_WRNode_Etherbone_Master : eb_master_top
     generic map (
       g_adr_bits_hi => 8,
       g_mtu         => 1024)
     port map (
       clk_i   => clk_i,
-      rst_n_i => rst_n_i,
+      rst_n_i => rst_net_n,
       slave_i => ebm_mux_out,
       slave_o => ebm_mux_in,
       src_i   => wr_src_i,
@@ -149,8 +211,8 @@ begin
       host_slave_o => host_slave_o,
       host_irq_o   => host_irq_o,
       clk_ref_i    => clk_ref_i,
-      tm_i         => tm_i);
-
-
+      tm_i         => tm_i,
+      gpio_i       => gpio_i,
+      gpio_o       => gpio_o);
 
 end rtl;

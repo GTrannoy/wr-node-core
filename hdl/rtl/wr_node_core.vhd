@@ -1,3 +1,41 @@
+-------------------------------------------------------------------------------
+-- Title      : White Rabbit Node Core
+-- Project    : White Rabbit
+-------------------------------------------------------------------------------
+-- File       : wr_node_core.vhd
+-- Author     : Tomasz Włostowski
+-- Company    : CERN BE-CO-HT
+-- Created    : 2014-04-01
+-- Last update: 2014-12-01
+-- Platform   : FPGA-generic
+-- Standard   : VHDL'93
+-------------------------------------------------------------------------------
+-- Description: 
+--
+-- White Rabbit Node Core - top level, interconnecting the CPU cores,
+-- Message Queues, Host interface and the Shared Memory.
+-------------------------------------------------------------------------------
+--
+-- Copyright (c) 2014 CERN
+--
+-- This source file is free software; you can redistribute it   
+-- and/or modify it under the terms of the GNU Lesser General   
+-- Public License as published by the Free Software Foundation; 
+-- either version 2.1 of the License, or (at your option) any   
+-- later version.                                               
+--
+-- This source is distributed in the hope that it will be       
+-- useful, but WITHOUT ANY WARRANTY; without even the implied   
+-- warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR      
+-- PURPOSE.  See the GNU Lesser General Public License for more 
+-- details.                                                     
+--
+-- You should have received a copy of the GNU Lesser General    
+-- Public License along with this source; if not, download it   
+-- from http://www.gnu.org/licenses/lgpl-2.1.html
+--
+-------------------------------------------------------------------------------
+
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
@@ -34,7 +72,10 @@ entity wr_node_core is
     host_irq_o   : out std_logic;
 
     clk_ref_i : in std_logic;
-    tm_i      : in t_wrn_timing_if
+    tm_i      : in t_wrn_timing_if;
+
+    gpio_o : out std_logic_vector(31 downto 0);
+    gpio_i : in  std_logic_vector(31 downto 0)
     );
 
 end wr_node_core;
@@ -58,7 +99,10 @@ architecture rtl of wr_node_core is
       cpu_csr_i   : in  t_wrn_cpu_csr_out_registers;
       cpu_csr_o   : out t_wrn_cpu_csr_in_registers;
       rmq_ready_i : in  std_logic_vector(15 downto 0);
-      hmq_ready_i : in  std_logic_vector(15 downto 0));
+      hmq_ready_i : in  std_logic_vector(15 downto 0);
+      gpio_o      : out std_logic_vector(31 downto 0);
+      gpio_i      : in  std_logic_vector(31 downto 0)
+      );
   end component;
 
   component wrn_cpu_csr_wb_slave
@@ -106,6 +150,37 @@ architecture rtl of wr_node_core is
       ebs_slave_i  : in  t_wishbone_slave_in  := cc_dummy_slave_in;
       rmq_status_o : out std_logic_vector(15 downto 0));
   end component;
+
+  component wrn_shared_mem is
+    generic (
+      g_size : integer);
+    port (
+      clk_i   : in  std_logic;
+      rst_n_i : in  std_logic;
+      slave_i : in  t_wishbone_slave_in;
+      slave_o : out t_wishbone_slave_out);
+  end component wrn_shared_mem;
+
+  component wb_remapper is
+    generic (
+      g_num_ranges : integer;
+      g_base_in    : t_wishbone_address_array;
+      g_base_out   : t_wishbone_address_array;
+      g_mask_in    : t_wishbone_address_array;
+      g_mask_out   : t_wishbone_address_array);
+    port (
+      slave_i  : in  t_wishbone_slave_in;
+      slave_o  : out t_wishbone_slave_out;
+      master_i : in  t_wishbone_master_in;
+      master_o : out t_wishbone_master_out);
+  end component wb_remapper;
+
+  constant c_smem_remap_mask_in  : t_wishbone_address_array(0 downto 0) := (0 => x"00030000");
+  constant c_smem_remap_mask_out : t_wishbone_address_array(0 downto 0) := (0 => x"0000ffff");
+
+  constant c_smem_remap_base_in  : t_wishbone_address_array(0 downto 0) := (0 => x"00020000");
+  constant c_smem_remap_base_out : t_wishbone_address_array(0 downto 0) := (0 => x"00200000");
+
 
   constant c_hac_wishbone_masters : integer := 3;
   constant c_hac_master_hmq       : integer := 0;
@@ -170,9 +245,29 @@ architecture rtl of wr_node_core is
 
   type t_wrn_cpu_csr_in_registers_array is array(integer range <>) of t_wrn_cpu_csr_in_registers;
 
+  type t_gpio_out_array is array(integer range <>) of std_logic_vector(31 downto 0);
+
   signal cpu_csr_towb_cb : t_wrn_cpu_csr_in_registers_array (g_config.cpu_count-1 downto 0);
+  signal cpu_gpio_out    : t_gpio_out_array (g_config.cpu_count-1 downto 0);
 
   signal rst_n_ref : std_logic;
+
+  signal host_remapped_in  : t_wishbone_slave_in;
+  signal host_remapped_out : t_wishbone_slave_out;
+
+  function f_reduce_or (x : t_gpio_out_array) return std_logic_vector is
+    variable rv : std_logic_vector(31 downto 0);
+  begin
+    rv := (others => '0');
+    for n in 0 to x'length-1 loop
+      for i in 0 to 31 loop
+        if(x(n)(i) = '1') then
+          rv(i) := '1';
+        end if;
+      end loop;
+    end loop;
+    return rv;
+  end f_reduce_or;
   
 begin  -- rtl
 
@@ -183,7 +278,20 @@ begin  -- rtl
       data_i   => rst_n_i,
       synced_o => rst_n_ref);
 
-  
+
+  U_Remap_SMEM : wb_remapper
+    generic map (
+      g_num_ranges => 1,
+      g_base_in    => c_smem_remap_base_in,
+      g_base_out   => c_smem_remap_base_out,
+      g_mask_in    => c_smem_remap_mask_in,
+      g_mask_out   => c_smem_remap_mask_out)
+    port map (
+      slave_i  => host_slave_i,
+      slave_o  => host_slave_o,
+      master_i => host_remapped_out,
+      master_o => host_remapped_in);
+
   U_Host_Access_CB : xwb_crossbar
     generic map (
       g_num_masters => 1,
@@ -194,8 +302,8 @@ begin  -- rtl
     port map (
       clk_sys_i  => clk_i,
       rst_n_i    => rst_n_i,
-      slave_i(0) => host_slave_i,
-      slave_o(0) => host_slave_o,
+      slave_i(0) => host_remapped_in,
+      slave_o(0) => host_remapped_out,
       master_i   => hac_master_in,
       master_o   => hac_master_out);
 
@@ -218,7 +326,6 @@ begin  -- rtl
   sp_master_o                   <= si_master_out(c_si_master_sp);
   si_master_in (c_si_master_sp) <= sp_master_i;
 
-  si_master_in(c_si_master_smem) <= cc_dummy_master_in;
 
   si_slave_in(c_si_slave_hac)    <= hac_master_out(c_hac_master_si);
   hac_master_in(c_hac_master_si) <= si_slave_out(c_si_slave_hac);
@@ -245,6 +352,8 @@ begin  -- rtl
       regs_i     => cpu_csr_towb,
       regs_o     => cpu_csr_fromwb);
 
+  hac_master_in(c_hac_master_cpu_csr).err <= '0';
+  hac_master_in(c_hac_master_cpu_csr).rty <= '0';
 
   cpu_index <= to_integer(unsigned(cpu_csr_fromwb.core_sel_o));
 
@@ -271,7 +380,9 @@ begin  -- rtl
         cpu_csr_i   => cpu_csr_fromwb,
         cpu_csr_o   => cpu_csr_towb_cb(i),
         rmq_ready_i => rmq_status,
-        hmq_ready_i => hmq_status);
+        hmq_ready_i => hmq_status,
+        gpio_o      => cpu_gpio_out(i),
+        gpio_i      => gpio_i);
 
   end generate gen_cpus;
 
@@ -304,6 +415,17 @@ begin  -- rtl
       ebs_slave_i  => ebs_slave_i,
       rmq_status_o => rmq_status);
 
+  
+  U_Shared_Mem : wrn_shared_mem
+    generic map (
+      g_size => 8192)
+    port map (
+      clk_i   => clk_i,
+      rst_n_i => rst_n_i,
+      slave_i => si_master_out(c_si_master_smem),
+      slave_o => si_master_in(c_si_master_smem));
+
+  gpio_o <= f_reduce_or(cpu_gpio_out);
 end rtl;
 
 

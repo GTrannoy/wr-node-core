@@ -1,3 +1,41 @@
+-------------------------------------------------------------------------------
+-- Title      : White Rabbit Node Core
+-- Project    : White Rabbit
+-------------------------------------------------------------------------------
+-- File       : wr_node_pkg.vhd
+-- Author     : Tomasz Włostowski
+-- Company    : CERN BE-CO-HT
+-- Created    : 2014-04-01
+-- Last update: 2014-12-01
+-- Platform   : FPGA-generic
+-- Standard   : VHDL'93
+-------------------------------------------------------------------------------
+-- Description: 
+--
+-- White Rabbit Node Core - top level package, with public types, definitions
+-- and components.
+-------------------------------------------------------------------------------
+--
+-- Copyright (c) 2014 CERN
+--
+-- This source file is free software; you can redistribute it   
+-- and/or modify it under the terms of the GNU Lesser General   
+-- Public License as published by the Free Software Foundation; 
+-- either version 2.1 of the License, or (at your option) any   
+-- later version.                                               
+--
+-- This source is distributed in the hope that it will be       
+-- useful, but WITHOUT ANY WARRANTY; without even the implied   
+-- warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR      
+-- PURPOSE.  See the GNU Lesser General Public License for more 
+-- details.                                                     
+--
+-- You should have received a copy of the GNU Lesser General    
+-- Public License along with this source; if not, download it   
+-- from http://www.gnu.org/licenses/lgpl-2.1.html
+--
+-------------------------------------------------------------------------------
+
 library ieee;
 
 use ieee.std_logic_1164.all;
@@ -14,10 +52,10 @@ package wr_node_pkg is
     link_up        : std_logic;
     dac_value      : std_logic_vector(23 downto 0);
     dac_wr         : std_logic;
-    clk_aux_locked : std_logic;
     time_valid     : std_logic;
     tai            : std_logic_vector(39 downto 0);
     cycles         : std_logic_vector(27 downto 0);
+    aux_locked : std_logic_vector(7 downto 0);
   end record;
 
   type t_int_array is array(integer range<>) of integer;
@@ -65,7 +103,9 @@ package wr_node_pkg is
       host_slave_o : out t_wishbone_slave_out;
       host_irq_o   : out std_logic;
       clk_ref_i : in std_logic;
-      tm_i         : in  t_wrn_timing_if);
+      tm_i         : in  t_wrn_timing_if;
+      gpio_o : out std_logic_vector(31 downto 0);
+      gpio_i : in  std_logic_vector(31 downto 0));
   end component wr_node_core;
 
   component wr_node_core_with_etherbone is
@@ -74,6 +114,7 @@ package wr_node_pkg is
     port (
       clk_i        : in  std_logic;
       rst_n_i      : in  std_logic;
+      rst_net_n_i : in std_logic;
       sp_master_o  : out t_wishbone_master_out;
       sp_master_i  : in  t_wishbone_master_in                                  := cc_dummy_master_in;
       dp_master_o  : out t_wishbone_master_out_array(0 to g_config.cpu_count-1);
@@ -88,10 +129,27 @@ package wr_node_pkg is
       host_slave_o : out t_wishbone_slave_out;
       host_irq_o   : out std_logic;
       clk_ref_i : in std_logic;
-      tm_i         : in  t_wrn_timing_if);
+      tm_i         : in  t_wrn_timing_if;
+      gpio_o : out std_logic_vector(31 downto 0);
+      gpio_i : in  std_logic_vector(31 downto 0));
   end component wr_node_core_with_etherbone;
 
-
+  constant c_wr_node_sdb : t_sdb_device := (
+    abi_class     => x"0000",              -- undocumented device
+    abi_ver_major => x"01",
+    abi_ver_minor => x"00",
+    wbd_endian    => c_sdb_endian_big,
+    wbd_width     => x"7",                 -- 8/16/32-bit port granularity
+    sdb_component => (
+      addr_first  => x"0000000000000000",
+      addr_last   => x"000000000003ffff",
+      product     => (
+        vendor_id => x"000000000000CE42",  -- CERN
+        device_id => x"000090de",
+        version   => x"00000001",
+        date      => x"20141201",
+        name      => "WR-Node-Core       ")));
+    
 end wr_node_pkg;
 
 package body wr_node_pkg is
