@@ -1,5 +1,6 @@
 library ieee;
 use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
 
 use work.wishbone_pkg.all;
 use work.wrn_mqueue_pkg.all;
@@ -35,6 +36,16 @@ architecture rtl of wrn_mqueue_host is
   signal incoming_stat : t_slot_status_out_array(0 to g_config.in_slot_count-1);
   signal outgoing_stat : t_slot_status_out_array(0 to g_config.out_slot_count-1);
 
+
+  signal hmq_status : std_logic_vector(g_config.in_slot_count-1 downto 0);
+  signal irq_config : t_wrn_irq_config;
+
+  signal tmr_div     : unsigned(23 downto 0);
+  signal tmr_tick    : std_logic;
+  signal tmr_timeout : unsigned(9 downto 0);
+
+  signal irq_vec_in, irq_vec_out : std_logic_vector(15 downto 0);
+  
 begin  -- rtl
 
   U_SI_Wishbone_Slave : wrn_mqueue_wishbone_slave
@@ -89,10 +100,10 @@ begin  -- rtl
         outb_i  => si_incoming_in(i),
         outb_o  => si_incoming_out(i));
 
-    hmq_status_o (i) <= not incoming_stat(i).empty;
+    hmq_status (i) <= not incoming_stat(i).empty;
 
   end generate gen_incoming_slots;
-  
+
   U_Host_Wishbone_Slave : wrn_mqueue_wishbone_slave
     generic map (
       g_with_gcr => true,
@@ -108,8 +119,61 @@ begin  -- rtl
       outgoing_o => host_outgoing_in,
       outgoing_i => host_outgoing_out,
 
-      slave_i => host_slave_i,
-      slave_o => host_slave_o);
+      slave_i      => host_slave_i,
+      slave_o      => host_slave_o,
+      irq_config_o => irq_config);
 
+  process(hmq_status)
+  begin
+    hmq_status_o                                    <= (others => '0');
+    hmq_status_o(g_config.in_slot_count-1 downto 0) <= hmq_status;
+  end process;
+
+
+  p_coalesce_tick : process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      if rst_n_i = '0' then
+        tmr_div  <= (others => '0');
+        tmr_tick <= '0';
+      else
+        if(tmr_div /= 6250) then        -- 100us coelesce tick
+          tmr_div  <= tmr_div + 1;
+          tmr_tick <= '1';
+        else
+          tmr_div  <= (others => '0');
+          tmr_tick <= '0';
+        end if;
+      end if;
+    end if;
+  end process;
+
+
+  process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      if rst_n_i = '0' then
+        host_irq_o <= '0';
+      else
+        irq_vec_in  <= (others => '0');
+        irq_vec_out <= (others => '0');
+
+        for i in 0 to g_config.in_slot_count-1 loop
+          irq_vec_in(i) <= incoming_stat(i).empty;
+        end loop;
+
+        for i in 0 to g_config.out_slot_count-1 loop
+          irq_vec_out(i) <= not outgoing_stat(i).empty;
+        end loop;
+
+        if((irq_vec_out and irq_config.mask_out) /= x"0000")
+          or((irq_vec_in and irq_config.mask_in) /= x"0000") then
+          host_irq_o <= '1';
+        else
+          host_irq_o <= '0';
+        end if;
+      end if;
+    end if;
+  end process;
   
 end rtl;
