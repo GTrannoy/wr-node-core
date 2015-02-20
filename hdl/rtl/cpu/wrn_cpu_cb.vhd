@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2014-12-01
+-- Last update: 2014-12-11
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -38,9 +38,11 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
 
 use work.wishbone_pkg.all;
 use work.gencores_pkg.all;
+use work.genram_pkg.all;
 
 use work.wrn_cpu_csr_wbgen2_pkg.all;
 use work.wrn_cpu_lr_wbgen2_pkg.all;
@@ -76,7 +78,12 @@ entity wrn_cpu_cb is
     hmq_ready_i : in std_logic_vector(15 downto 0);
 
     gpio_i : in  std_logic_vector(31 downto 0);
-    gpio_o : out std_logic_vector(31 downto 0)
+    gpio_o : out std_logic_vector(31 downto 0);
+
+    dbg_drdy_o: out std_logic;
+    dbg_dack_i: in std_logic;
+    dbg_data_o: out std_logic_vector(7 downto 0)
+    
     );
 
 
@@ -151,7 +158,9 @@ architecture rtl of wrn_cpu_cb is
   signal cycles_ref : std_logic_vector(27 downto 0);
 
   signal tm_p_ref, tm_ready_ref, tm_p_sys, tm_p_ref_d0 : std_logic;
-  
+
+  signal dbg_fifo_empty, dbg_fifo_full, dbg_fifo_wr : std_logic;
+
 begin  -- rtl
 
 
@@ -306,5 +315,25 @@ begin  -- rtl
   sh_master_o               <= cnx_master_out(c_slave_si);
   cnx_master_in(c_slave_si) <= sh_master_i;
 
+  dbg_fifo_wr <= not dbg_fifo_full and local_regs_out.dbg_chr_wr_o;
+  
+  U_Debug_Message_FIFO : generic_sync_fifo
+    generic map (
+      g_data_width             => 8,
+      g_size                   => c_wrn_debug_message_fifo_size,
+      g_show_ahead             => true)
+    port map (
+      rst_n_i        => rst_n_i,
+      clk_i          => clk_sys_i,
+      d_i            => local_regs_out.dbg_chr_o,
+      we_i           => dbg_fifo_wr,
+      q_o            => dbg_data_o,
+      rd_i           => dbg_dack_i,
+      empty_o        => dbg_fifo_empty,
+      full_o         => dbg_fifo_full);
+  
+  dbg_drdy_o <= not dbg_fifo_empty;
+  local_regs_in.stat_core_id_i <= std_logic_vector(to_unsigned(g_cpu_id, 4)); 
 
+  
 end rtl;

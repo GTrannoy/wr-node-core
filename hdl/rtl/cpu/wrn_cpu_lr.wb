@@ -92,6 +92,17 @@ peripheral {
 				 access_dev = WRITE_ONLY;
 			};
 
+			field {
+			      name = "Core ID";
+			      prefix = "CORE_ID";
+			      description = "ID (number) of the CPU core owning this register.";
+			      type = SLV;
+			      align = 28;
+			      size = 4;
+			      access_bus = READ_ONLY;
+			      access_dev = WRITE_ONLY;
+		     };
+			
 	 };
 
 
@@ -151,6 +162,16 @@ peripheral {
 	    field {
 				 name = "GPIO Clear";
 				 size = 32;
+				 type = PASS_THROUGH;
+	    };
+	};
+
+	reg {
+	    name = "Debug Message Output";
+	    prefix = "DBG_CHR";
+	    field {
+				 name = "Debug Message Character";
+				 size = 8;
 				 type = PASS_THROUGH;
 	    };
 	};

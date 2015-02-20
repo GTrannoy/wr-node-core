@@ -1,3 +1,5 @@
+-- -*- Mode: LUA; tab-width: 2 -*-
+
 -------------------------------------------------------------------------------
 -- Title      : White Rabbit Node Core
 -- Project    : White Rabbit
@@ -32,8 +34,6 @@
 -- from http://www.gnu.org/licenses/lgpl-2.1.html
 --
 -------------------------------------------------------------------------------
-
--- -*- Mode: LUA; tab-width: 2 -*-
 
 peripheral {
 	 name = "WR Node CPU Control/Status registers block";
@@ -144,9 +144,10 @@ peripheral {
 			};
 	 };
 
+
    reg {
       name = "CPU Debug Register";
-      prefix = "DEBUG";
+      prefix = "DBG_JTAG";
       
       field {
          name = "JTAG data";
@@ -201,5 +202,50 @@ peripheral {
          load = LOAD_EXT;
       };
    };
+
+	 reg {
+			name = "CPU Debug Message Register";
+			prefix = "DBG_MSG";
+
+			field {
+				 prefix = "DATA";
+				 name = "Debug message byte for the selected core";
+				 type = SLV;
+				 size = 8;
+				 ack_read = "dbg_msg_data_rd_ack_o";
+				 access_bus = READ_ONLY;
+				 access_dev = WRITE_ONLY;
+			};
+	 };
+
+   reg {
+			name = "CPU Debug Messge Poll Register";
+			prefix = "DBG_POLL";
+
+			field {
+				 prefix = "READY";
+				 name = "Debug Message data available";
+				 type = SLV;
+				 size = 8;
+				 access_bus = READ_ONLY;
+				 access_dev = WRITE_ONLY;
+			};
+   };
+
+  reg {
+			name = "CPU Debug Messge Interrupt Mask Register";
+			prefix = "DBG_IMSK";
+
+			field {
+				 prefix = "ENABLE";
+				 name = "Per-CPU Debug Message Interrupt Enable";
+				 description = "1: IRQ enabled";
+				 type = SLV;
+				 size = 8;
+				 access_bus = READ_WRITE;
+				 access_dev = READ_ONLY;
+			};
+   };
+
 };
 
