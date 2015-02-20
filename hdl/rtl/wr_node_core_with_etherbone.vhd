@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2014-12-01
+-- Last update: 2014-12-08
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -80,7 +80,10 @@ entity wr_node_core_with_etherbone is
     tm_i      : in t_wrn_timing_if;
 
     gpio_o : out std_logic_vector(31 downto 0);
-    gpio_i : in  std_logic_vector(31 downto 0)
+    gpio_i : in  std_logic_vector(31 downto 0);
+
+    debug_msg_irq_o : out std_logic
+
     );
 
 end wr_node_core_with_etherbone;
@@ -213,6 +216,7 @@ begin
       clk_ref_i    => clk_ref_i,
       tm_i         => tm_i,
       gpio_i       => gpio_i,
-      gpio_o       => gpio_o);
+      gpio_o       => gpio_o,
+      debug_msg_irq_o => debug_msg_irq_o);
 
 end rtl;

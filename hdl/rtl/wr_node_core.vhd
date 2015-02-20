@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2014-12-01
+-- Last update: 2014-12-08
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -69,13 +69,15 @@ entity wr_node_core is
 
     host_slave_i : in  t_wishbone_slave_in;
     host_slave_o : out t_wishbone_slave_out;
-    host_irq_o   : out std_logic;
 
     clk_ref_i : in std_logic;
     tm_i      : in t_wrn_timing_if;
 
     gpio_o : out std_logic_vector(31 downto 0);
-    gpio_i : in  std_logic_vector(31 downto 0)
+    gpio_i : in  std_logic_vector(31 downto 0);
+
+    host_irq_o      : out std_logic;
+    debug_msg_irq_o : out std_logic
     );
 
 end wr_node_core;
@@ -101,26 +103,30 @@ architecture rtl of wr_node_core is
       rmq_ready_i : in  std_logic_vector(15 downto 0);
       hmq_ready_i : in  std_logic_vector(15 downto 0);
       gpio_o      : out std_logic_vector(31 downto 0);
-      gpio_i      : in  std_logic_vector(31 downto 0)
+      gpio_i      : in  std_logic_vector(31 downto 0);
+      dbg_drdy_o  : out std_logic;
+      dbg_dack_i  : in  std_logic;
+      dbg_data_o  : out std_logic_vector(7 downto 0)
       );
   end component;
 
-  component wrn_cpu_csr_wb_slave
+  component wrn_cpu_csr_wb_slave is
     port (
-      rst_n_i    : in  std_logic;
-      clk_sys_i  : in  std_logic;
-      wb_adr_i   : in  std_logic_vector(3 downto 0);
-      wb_dat_i   : in  std_logic_vector(31 downto 0);
-      wb_dat_o   : out std_logic_vector(31 downto 0);
-      wb_cyc_i   : in  std_logic;
-      wb_sel_i   : in  std_logic_vector(3 downto 0);
-      wb_stb_i   : in  std_logic;
-      wb_we_i    : in  std_logic;
-      wb_ack_o   : out std_logic;
-      wb_stall_o : out std_logic;
-      regs_i     : in  t_wrn_cpu_csr_in_registers;
-      regs_o     : out t_wrn_cpu_csr_out_registers);
-  end component;
+      rst_n_i               : in  std_logic;
+      clk_sys_i             : in  std_logic;
+      wb_adr_i              : in  std_logic_vector(3 downto 0);
+      wb_dat_i              : in  std_logic_vector(31 downto 0);
+      wb_dat_o              : out std_logic_vector(31 downto 0);
+      wb_cyc_i              : in  std_logic;
+      wb_sel_i              : in  std_logic_vector(3 downto 0);
+      wb_stb_i              : in  std_logic;
+      wb_we_i               : in  std_logic;
+      wb_ack_o              : out std_logic;
+      wb_stall_o            : out std_logic;
+      dbg_msg_data_rd_ack_o : out std_logic;
+      regs_i                : in  t_wrn_cpu_csr_in_registers;
+      regs_o                : out t_wrn_cpu_csr_out_registers);
+  end component wrn_cpu_csr_wb_slave;
 
   component wrn_mqueue_host
     generic (
@@ -246,6 +252,14 @@ architecture rtl of wr_node_core is
   type t_wrn_cpu_csr_in_registers_array is array(integer range <>) of t_wrn_cpu_csr_in_registers;
 
   type t_gpio_out_array is array(integer range <>) of std_logic_vector(31 downto 0);
+  type t_dbg_msg_data_array is array(integer range <>) of std_logic_vector(7 downto 0);
+
+  signal cpu_dbg_drdy, cpu_dbg_dack : std_logic_vector(g_config.cpu_count-1 downto 0);
+  signal cpu_dbg_msg_data           : t_dbg_msg_data_array(g_config.cpu_count-1 downto 0);
+  signal dbg_msg_data_read_ack      : std_logic;
+
+
+
 
   signal cpu_csr_towb_cb : t_wrn_cpu_csr_in_registers_array (g_config.cpu_count-1 downto 0);
   signal cpu_gpio_out    : t_gpio_out_array (g_config.cpu_count-1 downto 0);
@@ -338,19 +352,20 @@ begin  -- rtl
 
   U_CPU_CSR : wrn_cpu_csr_wb_slave
     port map (
-      rst_n_i    => rst_n_i,
-      clk_sys_i  => clk_i,
-      wb_adr_i   => hac_master_out(c_hac_master_cpu_csr).adr(5 downto 2),
-      wb_dat_i   => hac_master_out(c_hac_master_cpu_csr).dat,
-      wb_dat_o   => hac_master_in(c_hac_master_cpu_csr).dat,
-      wb_cyc_i   => hac_master_out(c_hac_master_cpu_csr).cyc,
-      wb_sel_i   => hac_master_out(c_hac_master_cpu_csr).sel,
-      wb_stb_i   => hac_master_out(c_hac_master_cpu_csr).stb,
-      wb_we_i    => hac_master_out(c_hac_master_cpu_csr).we,
-      wb_ack_o   => hac_master_in(c_hac_master_cpu_csr).ack,
-      wb_stall_o => hac_master_in(c_hac_master_cpu_csr).stall,
-      regs_i     => cpu_csr_towb,
-      regs_o     => cpu_csr_fromwb);
+      rst_n_i               => rst_n_i,
+      clk_sys_i             => clk_i,
+      wb_adr_i              => hac_master_out(c_hac_master_cpu_csr).adr(5 downto 2),
+      wb_dat_i              => hac_master_out(c_hac_master_cpu_csr).dat,
+      wb_dat_o              => hac_master_in(c_hac_master_cpu_csr).dat,
+      wb_cyc_i              => hac_master_out(c_hac_master_cpu_csr).cyc,
+      wb_sel_i              => hac_master_out(c_hac_master_cpu_csr).sel,
+      wb_stb_i              => hac_master_out(c_hac_master_cpu_csr).stb,
+      wb_we_i               => hac_master_out(c_hac_master_cpu_csr).we,
+      wb_ack_o              => hac_master_in(c_hac_master_cpu_csr).ack,
+      wb_stall_o            => hac_master_in(c_hac_master_cpu_csr).stall,
+      dbg_msg_data_rd_ack_o => dbg_msg_data_read_ack,
+      regs_i                => cpu_csr_towb,
+      regs_o                => cpu_csr_fromwb);
 
   hac_master_in(c_hac_master_cpu_csr).err <= '0';
   hac_master_in(c_hac_master_cpu_csr).rty <= '0';
@@ -382,7 +397,10 @@ begin  -- rtl
         rmq_ready_i => rmq_status,
         hmq_ready_i => hmq_status,
         gpio_o      => cpu_gpio_out(i),
-        gpio_i      => gpio_i);
+        gpio_i      => gpio_i,
+        dbg_drdy_o  => cpu_dbg_drdy(i),
+        dbg_dack_i  => cpu_dbg_dack(i),
+        dbg_data_o  => cpu_dbg_msg_data(i));
 
   end generate gen_cpus;
 
@@ -418,13 +436,48 @@ begin  -- rtl
   
   U_Shared_Mem : wrn_shared_mem
     generic map (
-      g_size => 8192)
+      g_size => 2048)
     port map (
       clk_i   => clk_i,
       rst_n_i => rst_n_i,
       slave_i => si_master_out(c_si_master_smem),
       slave_o => si_master_in(c_si_master_smem));
 
+
+  p_mux_debug_data : process(cpu_dbg_msg_data, cpu_csr_fromwb, dbg_msg_data_read_ack)
+  begin
+
+    cpu_csr_towb.dbg_msg_data_i <= (others => 'X');
+
+    for i in 0 to g_config.cpu_count-1 loop
+      if unsigned(cpu_csr_fromwb.core_sel_o) = to_unsigned(i, 4) then
+        cpu_csr_towb.dbg_msg_data_i <= cpu_dbg_msg_data(i);
+        cpu_dbg_dack(i)             <= dbg_msg_data_read_ack;
+      else
+        cpu_dbg_dack(i) <= '0';
+      end if;
+    end loop;
+  end process;
+
+  p_debug_irq : process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      if rst_n_i = '0' then
+        debug_msg_irq_o <= '0';
+      else
+        debug_msg_irq_o <= '0';
+
+        for i in 0 to g_config.cpu_count-1 loop
+          if (cpu_dbg_drdy(i) and cpu_csr_fromwb.dbg_imsk_enable_o(i)) = '1' then
+            debug_msg_irq_o <= '1';
+          end if;
+        end loop;
+      end if;
+    end if;
+  end process;
+
+  cpu_csr_towb.dbg_poll_ready_i(g_config.cpu_count-1 downto 0) <= cpu_dbg_drdy;
+  
   gpio_o <= f_reduce_or(cpu_gpio_out);
 end rtl;
 

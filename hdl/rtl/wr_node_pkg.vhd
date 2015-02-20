@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2014-12-01
+-- Last update: 2014-12-08
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -48,13 +48,15 @@ use work.wr_fabric_pkg.all;
 
 package wr_node_pkg is
 
+  constant c_wrn_debug_message_fifo_size : integer := 512;
+
   type t_wrn_timing_if is record
-    link_up        : std_logic;
-    dac_value      : std_logic_vector(23 downto 0);
-    dac_wr         : std_logic;
-    time_valid     : std_logic;
-    tai            : std_logic_vector(39 downto 0);
-    cycles         : std_logic_vector(27 downto 0);
+    link_up    : std_logic;
+    dac_value  : std_logic_vector(23 downto 0);
+    dac_wr     : std_logic;
+    time_valid : std_logic;
+    tai        : std_logic_vector(39 downto 0);
+    cycles     : std_logic_vector(27 downto 0);
     aux_locked : std_logic_vector(7 downto 0);
   end record;
 
@@ -83,55 +85,61 @@ package wr_node_pkg is
   function f_dummy_master_in_array(size : integer)
     return t_wishbone_master_in_array;
   
+
   
 
   component wr_node_core is
     generic (
       g_config : t_wr_node_config);
     port (
-      clk_i        : in  std_logic;
-      rst_n_i      : in  std_logic;
-      sp_master_o  : out t_wishbone_master_out;
-      sp_master_i  : in  t_wishbone_master_in                                  := cc_dummy_master_in;
-      dp_master_o  : out t_wishbone_master_out_array(0 to g_config.cpu_count-1);
-      dp_master_i  : in  t_wishbone_master_in_array(0 to g_config.cpu_count-1) := f_dummy_master_in_array(g_config.cpu_count);
-      ebm_master_o : out t_wishbone_master_out;
-      ebm_master_i : in  t_wishbone_master_in                                  := cc_dummy_master_in;
-      ebs_slave_o  : out t_wishbone_slave_out;
-      ebs_slave_i  : in  t_wishbone_slave_in                                   := cc_dummy_slave_in;
-      host_slave_i : in  t_wishbone_slave_in;
-      host_slave_o : out t_wishbone_slave_out;
-      host_irq_o   : out std_logic;
-      clk_ref_i : in std_logic;
-      tm_i         : in  t_wrn_timing_if;
-      gpio_o : out std_logic_vector(31 downto 0);
-      gpio_i : in  std_logic_vector(31 downto 0));
+      clk_i           : in  std_logic;
+      rst_n_i         : in  std_logic;
+      sp_master_o     : out t_wishbone_master_out;
+      sp_master_i     : in  t_wishbone_master_in                                  := cc_dummy_master_in;
+      dp_master_o     : out t_wishbone_master_out_array(0 to g_config.cpu_count-1);
+      dp_master_i     : in  t_wishbone_master_in_array(0 to g_config.cpu_count-1) := f_dummy_master_in_array(g_config.cpu_count);
+      ebm_master_o    : out t_wishbone_master_out;
+      ebm_master_i    : in  t_wishbone_master_in                                  := cc_dummy_master_in;
+      ebs_slave_o     : out t_wishbone_slave_out;
+      ebs_slave_i     : in  t_wishbone_slave_in                                   := cc_dummy_slave_in;
+      host_slave_i    : in  t_wishbone_slave_in;
+      host_slave_o    : out t_wishbone_slave_out;
+      host_irq_o      : out std_logic;
+      clk_ref_i       : in  std_logic;
+      tm_i            : in  t_wrn_timing_if;
+      gpio_o          : out std_logic_vector(31 downto 0);
+      gpio_i          : in  std_logic_vector(31 downto 0);
+      debug_msg_irq_o : out std_logic
+
+      );
   end component wr_node_core;
 
   component wr_node_core_with_etherbone is
     generic (
       g_config : t_wr_node_config);
     port (
-      clk_i        : in  std_logic;
-      rst_n_i      : in  std_logic;
-      rst_net_n_i : in std_logic;
-      sp_master_o  : out t_wishbone_master_out;
-      sp_master_i  : in  t_wishbone_master_in                                  := cc_dummy_master_in;
-      dp_master_o  : out t_wishbone_master_out_array(0 to g_config.cpu_count-1);
-      dp_master_i  : in  t_wishbone_master_in_array(0 to g_config.cpu_count-1) := f_dummy_master_in_array(g_config.cpu_count);
-      wr_src_o     : out t_wrf_source_out;
-      wr_src_i     : in  t_wrf_source_in;
-      wr_snk_o     : out t_wrf_sink_out;
-      wr_snk_i     : in  t_wrf_sink_in;
-      eb_config_i  : in  t_wishbone_slave_in;
-      eb_config_o  : out t_wishbone_slave_out;
-      host_slave_i : in  t_wishbone_slave_in;
-      host_slave_o : out t_wishbone_slave_out;
-      host_irq_o   : out std_logic;
-      clk_ref_i : in std_logic;
-      tm_i         : in  t_wrn_timing_if;
-      gpio_o : out std_logic_vector(31 downto 0);
-      gpio_i : in  std_logic_vector(31 downto 0));
+      clk_i           : in  std_logic;
+      rst_n_i         : in  std_logic;
+      rst_net_n_i     : in  std_logic;
+      sp_master_o     : out t_wishbone_master_out;
+      sp_master_i     : in  t_wishbone_master_in                                  := cc_dummy_master_in;
+      dp_master_o     : out t_wishbone_master_out_array(0 to g_config.cpu_count-1);
+      dp_master_i     : in  t_wishbone_master_in_array(0 to g_config.cpu_count-1) := f_dummy_master_in_array(g_config.cpu_count);
+      wr_src_o        : out t_wrf_source_out;
+      wr_src_i        : in  t_wrf_source_in;
+      wr_snk_o        : out t_wrf_sink_out;
+      wr_snk_i        : in  t_wrf_sink_in;
+      eb_config_i     : in  t_wishbone_slave_in;
+      eb_config_o     : out t_wishbone_slave_out;
+      host_slave_i    : in  t_wishbone_slave_in;
+      host_slave_o    : out t_wishbone_slave_out;
+      host_irq_o      : out std_logic;
+      clk_ref_i       : in  std_logic;
+      tm_i            : in  t_wrn_timing_if;
+      gpio_o          : out std_logic_vector(31 downto 0);
+      gpio_i          : in  std_logic_vector(31 downto 0);
+      debug_msg_irq_o : out std_logic
+      );
   end component wr_node_core_with_etherbone;
 
   constant c_wr_node_sdb : t_sdb_device := (
@@ -149,7 +157,7 @@ package wr_node_pkg is
         version   => x"00000001",
         date      => x"20141201",
         name      => "WR-Node-Core       ")));
-    
+
 end wr_node_pkg;
 
 package body wr_node_pkg is
