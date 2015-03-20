@@ -204,7 +204,7 @@ class MQueueHost;
    endtask // read_incoming
    
    task update();
-      uint32_t in_stat;
+      uint32_t in_stat, irq_mask;
       int i;
       
       
@@ -214,6 +214,10 @@ class MQueueHost;
       gcr_read( `MQUEUE_GCR_SLOT_STATUS, in_stat);
 
       $display("GCR stat %x", in_stat);
+
+      gcr_read( `MQUEUE_GCR_IRQ_MASK, irq_mask);
+
+      $display("GCR irq_mask %x", irq_mask);
       
 
       if(in_stat & `MQUEUE_GCR_INCOMING_STATUS_MASK)

@@ -98,52 +98,41 @@ module main;
       MQueueHost hmq;
       uint64_t d;
       
-      
       #100us;
 
       init_vme64x_core(acc);
       acc_casted.set_default_xfer_size(A24|SINGLE|D32);
  
+      #150us;
 
-/* -----\/----- EXCLUDED -----\/-----
-      acc.read('hc00000, d); $display("%x", d);
-      acc.read('hc40000, d); $display("%x", d);
-      acc.read('hc40004, d); $display("%x", d);
-      acc.read('hc40008, d); $display("%x", d);
- -----/\----- EXCLUDED -----/\----- */
+      acc.read('hc20000, d); 
+      $display("TDC SDB ID : %x", d);
 
-      #10us;
+      acc.read('hc31084, d); 
+      $display("TDC IE : %x", d);
 
-      #400us;
+      acc.write('hc310a0, 1234); 
 
-/* -----\/----- EXCLUDED -----\/-----
-      acc.read('hc20000, d); $display("TDC SDB ID : %x", d);
+      acc.write('hc310fc, (1<<9)); 
 
-      
-      $stop;
-      
-      
-      #10us;
- -----/\----- EXCLUDED -----/\----- */
+      acc.write('hc34000, 1234); 
+      acc.write('hc34004, 5678); 
 
-      
+      acc.read('hc34000, d); 
+      $display("TDC m0 : %x", d);
 
-      
-      cpu_csr = new ( acc, 'h0xcd0000 );
-      hmq = new ( acc, 'h0xcc0000);
+      acc.read('hc34004, d); 
+      $display("TDC m1 : %x", d);
 
+      acc.read('hc30000, d); 
+      $display("OW : %x", d);
+
+      /*cpu_csr = new ( acc, 'h0xcd0000 );
       cpu_csr.init();
 
-      cpu_csr.load_firmware (0, "../../sw/hmq_test/hmq-test.ram");
+      cpu_csr.load_firmware (0, "../../sw/debug-test/debug-test.ram");
       cpu_csr.reset_core(0, 0);
-
-/* -----\/----- EXCLUDED -----\/-----
-      acc.write('hc10000, 1);
-      acc.write('hc10000, 0);
-      acc.write('hc10000, 1);
-      acc.write('hc10000, 0);
- -----/\----- EXCLUDED -----/\----- */
-      
+*/
       
     //  hmq.send(0, '{1,2,3} );
     //  hmq.send(0, '{3,6,9} );
@@ -153,10 +142,12 @@ module main;
    
       
       
+/* -----\/----- EXCLUDED -----\/-----
       forever begin
          hmq.update();
          #1us;
       end
+ -----/\----- EXCLUDED -----/\----- */
       
    end
    

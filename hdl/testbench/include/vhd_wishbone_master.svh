@@ -29,6 +29,7 @@ interface IVHDWishboneMaster
    assign out.sel = TheMaster.sel;
    assign out.adr = TheMaster.adr;
    assign out.dat = TheMaster.dat_o;
+   
    assign TheMaster.ack = in.ack;
    assign TheMaster.stall = in.stall;
    assign TheMaster.rty = in.rty;
