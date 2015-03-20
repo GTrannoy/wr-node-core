@@ -724,3 +724,48 @@ NET "fmc1_fd_clk_ref_n_i" TNM_NET = fmc1_fd_clk_ref_n_i;
 TIMESPEC TS_fmc1_fd_clk_ref_n_i = PERIOD "fmc1_fd_clk_ref_n_i" 8 ns HIGH 50%;
 NET "U_Node_Template/gen_with_phy.U_GTP/ch1_gtp_clkout_int<1>" TNM_NET = U_Node_Template/gen_with_phy.U_GTP/ch1_gtp_clkout_int<1>;
 TIMESPEC TS_U_Node_Template_gen_with_phy_U_GTP_ch1_gtp_clkout_int_1_ = PERIOD "U_Node_Template/gen_with_phy.U_GTP/ch1_gtp_clkout_int<1>" 8 ns HIGH 50%;
+
+
+NET "U_Node_Template/clk_125m_pllref" TNM_NET = clk_125m_pllref;
+NET "U_Node_Template/clk_sys" TNM_NET = clk_sys;
+NET "U_Node_Template/clk_dmtd" TNM_NET = clk_dmtd;
+NET "U_Node_Template/phy_rx_rbclk" TNM_NET = phy_rx_rbclk;
+NET "dcm1_clk_ref_0" TNM_NET = dcm1_clk_ref_0;
+NET "tdc_clk_125m" TNM_NET = tdc_clk_125m;
+
+#TIMESPEC TS_clk_sys = PERIOD "clk_sys" 16 ns HIGH 50%;
+#TIMESPEC TS_clk_sys = PERIOD "clk_sys" 16 ns HIGH 50%;
+
+TIMESPEC TS_crossdomain_1 = FROM "clk_sys" TO "clk_125m_pllref" 20ns DATAPATHONLY;
+TIMESPEC TS_crossdomain_2 = FROM "clk_125m_pllref" TO "clk_sys" 20ns DATAPATHONLY;
+
+TIMESPEC TS_crossdomain_3 = FROM "clk_sys" TO "phy_rx_rbclk" 20ns DATAPATHONLY;
+TIMESPEC TS_crossdomain_4 = FROM "phy_rx_rbclk" TO "clk_sys" 20ns DATAPATHONLY;
+
+TIMESPEC TS_crossdomain_5 = FROM "clk_125m_pllref" TO "phy_rx_rbclk" 20ns DATAPATHONLY;
+TIMESPEC TS_crossdomain_6 = FROM "phy_rx_rbclk" TO "clk_125m_pllref" 20ns DATAPATHONLY;
+
+TIMESPEC TS_crossdomain_7 = FROM "clk_sys" TO "tdc_clk_125m" 20ns DATAPATHONLY;
+TIMESPEC TS_crossdomain_8 = FROM "tdc_clk_125m" TO "clk_sys" 20ns DATAPATHONLY;
+
+TIMESPEC TS_crossdomain_9 = FROM "clk_sys" TO "dcm1_clk_ref_0" 20ns DATAPATHONLY;
+TIMESPEC TS_crossdomain_10 = FROM "dcm1_clk_ref_0" TO "clk_sys" 20ns DATAPATHONLY;
+
+TIMESPEC TS_crossdomain_11 = FROM "clk_125m_pllref" TO "dcm1_clk_ref_0" 20ns DATAPATHONLY;
+TIMESPEC TS_crossdomain_12 = FROM "dcm1_clk_ref_0" TO "clk_125m_pllref" 20ns DATAPATHONLY;
+
+TIMESPEC TS_crossdomain_13 = FROM "clk_125m_pllref" TO "tdc_clk_125m" 20ns DATAPATHONLY;
+TIMESPEC TS_crossdomain_14 = FROM "tdc_clk_125m" TO "clk_125m_pllref" 20ns DATAPATHONLY;
+
+
+
+#TIMESPEC TS_crossdomain_5 = FROM "U_Node_Template/clk_dmtd" TO "U_Node_Template/phy_rx_rbclk" 4ns DATAPATHONLY;
+#TIMESPEC TS_crossdomain_6 = FROM "U_Node_Template/phy_rx_rbclk" TO "U_Node_Template/clk_dmtd" 4ns DATAPATHONLY;
+
+#TIMESPEC TS_crossdomain_7 = FROM "U_Node_Template/clk_dmtd" TO "U_Node_Template/clk_125m_pllref" 4ns DATAPATHONLY;
+#TIMESPEC TS_crossdomain_8 = FROM "U_Node_Template/clk_125m_pllref" TO "U_Node_Template/clk_dmtd" 4ns DATAPATHONLY;
+
+#TIMESPEC TS_crossdomain_9 = FROM "U_Node_Template/clk_dmtd" TO "U_Node_Template/clk_sys" 4ns DATAPATHONLY;
+#TIMESPEC TS_crossdomain_10 = FROM "U_Node_Template/clk_sys" TO "U_Node_Template/clk_dmtd" 4ns DATAPATHONLY;
+
+NET "*/gc_sync_register_in[*]" MAXDELAY=4ns;

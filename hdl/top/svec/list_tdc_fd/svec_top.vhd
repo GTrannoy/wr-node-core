@@ -1,9 +1,47 @@
+-------------------------------------------------------------------------------
+-- Title      : WR Trigger Distribution Node (SVEC)
+-- Project    : LHC Instability Trigger Distribution (LIST)
+-------------------------------------------------------------------------------
+-- File       : svec_top.vhd
+-- Author     : Tomasz Włostowski
+-- Company    : CERN BE-CO-HT
+-- Created    : 2014-04-01
+-- Last update: 2015-02-20
+-- Platform   : FPGA-generic
+-- Standard   : VHDL'93
+-------------------------------------------------------------------------------
+-- Description: 
+--
+-- Top level design of the SVEC-based LIST WR trigger distribution node, with
+-- FMC Fine Delay in slot 2 and FMC TDC in slot 1.
+-------------------------------------------------------------------------------
+--
+-- Copyright (c) 2014 CERN
+--
+-- This source file is free software; you can redistribute it   
+-- and/or modify it under the terms of the GNU Lesser General   
+-- Public License as published by the Free Software Foundation; 
+-- either version 2.1 of the License, or (at your option) any   
+-- later version.                                               
+--
+-- This source is distributed in the hope that it will be       
+-- useful, but WITHOUT ANY WARRANTY; without even the implied   
+-- warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR      
+-- PURPOSE.  See the GNU Lesser General Public License for more 
+-- details.                                                     
+--
+-- You should have received a copy of the GNU Lesser General    
+-- Public License along with this source; if not, download it   
+-- from http://www.gnu.org/licenses/lgpl-2.1.html
+--
+-------------------------------------------------------------------------------
+
 library ieee;
 use ieee.std_logic_1164.all;
 
 library work;
 use work.wishbone_pkg.all;
-use work.list_node_pkg.all;
+use work.svec_node_pkg.all;
 use work.xvme64x_core_pkg.all;
 use work.fine_delay_pkg.all;
 use work.wrn_mqueue_pkg.all;
@@ -39,10 +77,10 @@ entity svec_top is
     fp_gpio2_a2b_o  : out std_logic;
     fp_gpio34_a2b_o : out std_logic;
 
-    fp_gpio1_b : out std_logic;
-    fp_gpio2_b : out std_logic;
-    fp_gpio3_b : out std_logic;
-    fp_gpio4_b : out std_logic;
+    fp_gpio1_b : inout std_logic;
+    fp_gpio2_b : inout std_logic;
+    fp_gpio3_b : inout std_logic;
+    fp_gpio4_b : inout std_logic;
 
     dbg_led0_o : out std_logic;
     dbg_led1_o : out std_logic;
@@ -208,6 +246,7 @@ entity svec_top is
 
     uart_rxd_i : in  std_logic := '1';
     uart_txd_o : out std_logic
+
    -- put the FMC I/Os here
     );
 end svec_top;
@@ -231,16 +270,16 @@ architecture rtl of svec_top is
     (
       out_slot_count  => 4,
       out_slot_config => (
-        0             => (16, 128),
-        1             => (128, 16),
-        2             => (16, 128),
-        3             => (128, 16),
+        0             => (width => 128, entries => 8),   -- control CPU 0 (to host)
+        1             => (width => 128, entries => 8),   -- control CPU 1 (to host)
+        2             => (width => 16, entries => 128),  -- log CPU 0
+        3             => (width => 16, entries => 128),  -- log CPU 1
         others        => (0, 0)),
 
       in_slot_count  => 2,
       in_slot_config => (
-        0            => (16, 128),
-        1            => (16, 128),
+        0            => (width => 32, entries => 8),  -- control CPU 0 (from host)
+        1            => (width => 32, entries => 8),  -- control CPU 1 (from host)
         others       => (0, 0)
         )
       );
@@ -250,13 +289,14 @@ architecture rtl of svec_top is
     (
       out_slot_count  => 1,
       out_slot_config => (
-        0             => (16, 128),
+        0             => (width => 128, entries => 16),  -- TDC remote out
         others        => (0, 0)),
 
       in_slot_count  => 1,
       in_slot_config => (
-        0            => (16, 128),
-        others       => (0, 0)
+        0            => (width => 128, entries => 16),  -- FD remote in
+
+        others => (0, 0)
         )
       );
 
@@ -283,7 +323,14 @@ architecture rtl of svec_top is
   constant c_fd_sdb_record : t_sdb_record       := f_sdb_embed_device(c_FD_SDB_DEVICE, x"00040000");
   constant c_fd_vector     : t_wishbone_address := x"00040000";
 
-  signal tdc_clk_125m : std_logic;
+  attribute keep : string;
+
+  signal tdc_clk_125m     : std_logic;
+  signal dcm1_clk_ref_0   : std_logic;
+  signal dcm1_clk_ref_180 : std_logic;
+
+  attribute keep of tdc_clk_125m   : signal is "TRUE";
+  attribute keep of dcm1_clk_ref_0 : signal is "TRUE";
 
   signal tm_link_up         : std_logic;
   signal tm_dac_value       : std_logic_vector(23 downto 0);
@@ -297,8 +344,6 @@ architecture rtl of svec_top is
   signal fmc1_fd_tdc_start  : std_logic;
   signal ddr1_pll_reset     : std_logic;
   signal ddr1_pll_locked    : std_logic;
-  signal dcm1_clk_ref_0     : std_logic;
-  signal dcm1_clk_ref_180   : std_logic;
   signal fmc1_fd_pll_status : std_logic;
 
   signal fmc1_fd_tdc_data_out, fmc1_fd_tdc_data_in : std_logic_vector(27 downto 0);
@@ -311,18 +356,28 @@ architecture rtl of svec_top is
   signal fmc1_wb_out : t_wishbone_master_out;
   signal fmc1_wb_in  : t_wishbone_master_in;
 
-  component dummy_chipscope is
+  component chipscope_ila
     port (
-      clk_i : in std_logic);
-  end component dummy_chipscope;
+      CONTROL : inout std_logic_vector(35 downto 0);
+      CLK     : in    std_logic;
+      TRIG0   : in    std_logic_vector(31 downto 0);
+      TRIG1   : in    std_logic_vector(31 downto 0);
+      TRIG2   : in    std_logic_vector(31 downto 0);
+      TRIG3   : in    std_logic_vector(31 downto 0));
+  end component;
+
+  component chipscope_icon
+    port (
+      CONTROL0 : inout std_logic_vector (35 downto 0));
+  end component;
+
+  signal CONTROL : std_logic_vector(35 downto 0);
+  signal TRIG    : std_logic_vector(127 downto 0);
   
 begin
 
-  dummy_chipscope_1: dummy_chipscope
-    port map (
-      clk_i => clk_sys);
 
-  U_Node_Template : svec_list_node_template
+  U_Node_Template : svec_node_template
     generic map (
       g_fmc0_sdb        => c_tdc_sdb_record,
       g_fmc0_vic_vector => c_tdc_vector,
@@ -403,7 +458,7 @@ begin
       fmc0_host_irq_i      => fmc_host_irq(0),
       fmc0_dp_wb_o         => fmc_dp_wb_out(0),
       fmc0_dp_wb_i         => fmc_dp_wb_in(0),
-      fmc1_clk_aux_i       => '0',
+      fmc1_clk_aux_i       => dcm1_clk_ref_0,
       fmc1_host_wb_o       => fmc_host_wb_out(1),
       fmc1_host_wb_i       => fmc_host_wb_in(1),
       fmc1_host_irq_i      => fmc_host_irq(1),
@@ -485,9 +540,10 @@ begin
       direct_slave_i => fmc_dp_wb_out(0),
       direct_slave_o => fmc_dp_wb_in(0),
 
-      slave_i => fmc_host_wb_out(0),
-      slave_o => fmc_host_wb_in(0),
-      irq_o   => fmc_host_irq(0));
+      slave_i        => fmc_host_wb_out(0),
+      slave_o        => fmc_host_wb_in(0),
+      irq_o          => fmc_host_irq(0),
+      clk_125m_tdc_o => tdc_clk_125m);
 
 
 
@@ -596,7 +652,7 @@ begin
     generic map (
       g_num_masters => 2,
       g_num_slaves  => 1,
-      g_registered  => false,
+      g_registered  => true,
       g_address     => c_FMC_MUX_ADDR,
       g_mask        => c_FMC_MUX_MASK)
     port map (
@@ -609,6 +665,44 @@ begin
       master_i(0) => fmc1_wb_in,
       master_o(0) => fmc1_wb_out);
 
+  --chipscope_ila_1 : chipscope_ila
+  --  port map (
+  --    CONTROL => CONTROL,
+  --    CLK     => clk_sys,
+  --    TRIG0   => TRIG(31 downto 0),
+  --    TRIG1   => TRIG(63 downto 32),
+  --    TRIG2   => TRIG(95 downto 64),
+  --    TRIG3   => TRIG(127 downto 96));
+
+  --chipscope_icon_1 : chipscope_icon
+  --  port map (
+  --    CONTROL0 => CONTROL);
+
+
+  trig(15 downto 0) <= fmc_dp_wb_out(0).adr(15 downto 0);
+  trig(0+16)        <= fmc_dp_wb_out(0).we;
+  trig(0+17)        <= fmc_dp_wb_out(0).stb;
+  trig(0+18)        <= fmc_dp_wb_out(0).cyc;
+  trig(0+19)        <= fmc_dp_wb_in(0).ack;
+  trig(0+20)        <= fmc_dp_wb_in(0).stall;
+
+  trig(32+15 downto 32) <= fmc_dp_wb_out(1).adr(15 downto 0);
+  trig(32+16)           <= fmc_dp_wb_out(1).we;
+  trig(32+17)           <= fmc_dp_wb_out(1).stb;
+  trig(32+18)           <= fmc_dp_wb_out(1).cyc;
+  trig(32+19)           <= fmc_dp_wb_in(1).ack;
+  trig(32+20)           <= fmc_dp_wb_in(1).stall;
+
+  trig(64+15 downto 64) <= fmc1_wb_out.adr(15 downto 0);
+  trig(64+16)           <= fmc1_wb_out.we;
+  trig(64+17)           <= fmc1_wb_out.stb;
+  trig(64+18)           <= fmc1_wb_out.cyc;
+  trig(64+19)           <= fmc1_wb_in.ack;
+  trig(64+20)           <= fmc1_wb_in.stall;
+
+  trig(127 downto 96) <= fmc1_wb_out.dat;
+
+
   fmc1_wb_in.err <= '0';
   fmc1_wb_in.rty <= '0';
 
@@ -620,8 +714,8 @@ begin
   fmc1_fd_onewire_b <= '0' when fmc1_fd_owr_en = '1' else 'Z';
   fmc1_fd_owr_in    <= fmc1_fd_onewire_b;
 
-  fmc1_scl_b <= '0' when (fmc1_fd_scl_out  = '0') else 'Z';
-  fmc1_sda_b <= '0' when (fmc1_fd_sda_out = '0') else 'Z';
+  fmc1_scl_b     <= '0' when (fmc1_fd_scl_out = '0') else 'Z';
+  fmc1_sda_b     <= '0' when (fmc1_fd_sda_out = '0') else 'Z';
   fmc1_fd_scl_in <= fmc1_scl_b;
   fmc1_fd_sda_in <= fmc1_sda_b;
 
