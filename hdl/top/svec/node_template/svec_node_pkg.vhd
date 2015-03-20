@@ -1,69 +1,53 @@
+-------------------------------------------------------------------------------
+-- Title      : WR Node Core template design for the SVEC carrier
+-- Project    : WR Node Core
+-------------------------------------------------------------------------------
+-- File       : svec_node_pkg.vhd
+-- Author     : Tomasz Włostowski
+-- Company    : CERN BE-CO-HT
+-- Created    : 2014-04-01
+-- Last update: 2015-02-20
+-- Platform   : FPGA-generic
+-- Standard   : VHDL'93
+-------------------------------------------------------------------------------
+-- Description: 
+--
+-- Sample top level SVEC wrapper with WR node code and WR PTP core embedded.
+-- Just connect your FMCs and configure the mqueues to start playing!
+-------------------------------------------------------------------------------
+--
+-- Copyright (c) 2014-2015 CERN
+--
+-- This source file is free software; you can redistribute it   
+-- and/or modify it under the terms of the GNU Lesser General   
+-- Public License as published by the Free Software Foundation; 
+-- either version 2.1 of the License, or (at your option) any   
+-- later version.                                               
+--
+-- This source is distributed in the hope that it will be       
+-- useful, but WITHOUT ANY WARRANTY; without even the implied   
+-- warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR      
+-- PURPOSE.  See the GNU Lesser General Public License for more 
+-- details.                                                     
+--
+-- You should have received a copy of the GNU Lesser General    
+-- Public License along with this source; if not, download it   
+-- from http://www.gnu.org/licenses/lgpl-2.1.html
+--
+-------------------------------------------------------------------------------
+
 library ieee;
 use ieee.STD_LOGIC_1164.all;
+
 library work;
 use work.wishbone_pkg.all;
 use work.wr_node_pkg.all;
 use work.wrn_mqueue_pkg.all;
 use work.xvme64x_core_pkg.all;
 
-package list_node_pkg is
+package svec_node_pkg is
 
-  --type t_svec_front_panel_out is record
-  --  led_line_oen : std_logic_vector(1 downto 0);
-  --  led_line     : std_logic_vector(1 downto 0);
-  --  led_column   : std_logic_vector(3 downto 0);
-
-  --  gpio1_a2b  : std_logic;
-  --  gpio2_a2b  : std_logic;
-  --  gpio34_a2b : std_logic;
-
-  --  gpio1 : std_logic;
-  --  gpio2 : std_logic;
-  --  gpio3 : std_logic;
-  --  gpio4 : std_logic;
-  --end record;
-
-  --type t_svec_clocks_in is record
-  --  clk_20m_vcxo : std_logic;           -- 20MHz VCXO clock
-
-  --  clk_125m_pllref_p : std_logic;      -- 125 MHz PLL reference (global clock)
-  --  clk_125m_pllref_n : std_logic;
-
-  --  clk_125m_gtp_p : std_logic;         -- 125 MHz PLL reference (GTP dedicated
-  --                                      -- clock)
-  --  clk_125m_gtp_n : std_logic;
-  --end record;
-
-  --type t_svec_wr_in is record
-  --  sfp_rxp      : std_logic;
-  --  sfp_rxn      : std_logic;
-  --  sfp_mod_def0 : std_logic;           -- detect pin
-  --  sfp_tx_fault : std_logic;
-  --  sfp_los      : std_logic;
-
-  --end record;
-
-  --type t_svec_wr_out is record
-  --  sfp_txp        : std_logic;
-  --  sfp_txn        : std_logic;
-  --  sfp_tx_disable : std_logic;
-
-  --  pll20dac_din    : std_logic;
-  --  pll20dac_sclk   : std_logic;
-  --  pll20dac_sync_n : std_logic;
-  --  pll25dac_din    : std_logic;
-  --  pll25dac_sclk   : std_logic;
-  --  pll25dac_sync_n : std_logic;
-  --end record;
-
-  --type t_svec_wr_bidir is record
-  --  sfp_mod_def1    : std_logic;
-  --  sfp_mod_def2    : std_logic;
-  --  sfp_rate_select : std_logic;
-  --end record;
-
-
-  component svec_list_node_template is
+  component svec_node_template is
     generic (
       g_fmc0_sdb        : t_sdb_record;
       g_fmc0_vic_vector : t_wishbone_address;
@@ -87,10 +71,10 @@ package list_node_pkg is
       fp_gpio1_a2b_o       : out   std_logic;
       fp_gpio2_a2b_o       : out   std_logic;
       fp_gpio34_a2b_o      : out   std_logic;
-      fp_gpio1_b           : out   std_logic;
-      fp_gpio2_b           : out   std_logic;
-      fp_gpio3_b           : out   std_logic;
-      fp_gpio4_b           : out   std_logic;
+      fp_gpio1_b           : inout   std_logic;
+      fp_gpio2_b           : inout   std_logic;
+      fp_gpio3_b           : inout   std_logic;
+      fp_gpio4_b           : inout   std_logic;
       VME_AS_n_i           : in    std_logic;
       VME_RST_n_i          : in    std_logic;
       VME_WRITE_n_i        : in    std_logic;
@@ -158,5 +142,6 @@ package list_node_pkg is
       tm_cycles_o          : out   std_logic_vector(27 downto 0);
       carrier_scl_b        : inout std_logic;
       carrier_sda_b        : inout std_logic);
-  end component svec_list_node_template;
-end list_node_pkg;
+  end component svec_node_template;
+
+end svec_node_pkg;

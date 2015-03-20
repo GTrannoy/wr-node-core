@@ -1,8 +1,49 @@
+-------------------------------------------------------------------------------
+-- Title      : WR Node Core template design for the SVEC carrier
+-- Project    : WR Node Core
+-------------------------------------------------------------------------------
+-- File       : svec_node_template.vhd
+-- Author     : Tomasz Włostowski
+-- Company    : CERN BE-CO-HT
+-- Created    : 2014-04-01
+-- Last update: 2015-03-16
+-- Platform   : FPGA-generic
+-- Standard   : VHDL'93
+-------------------------------------------------------------------------------
+-- Description: 
+--
+-- Shared part of a typical WR node for the SVEC carrier. Contains pre-configured:
+-- - WR PTP Core
+-- - WR Node Core + Etherbone
+-- - Wishbone interfaces for two mezzanines. This is indented for connecting
+--   FmcTdc/FmcDelay in various combinations, but not limited to these cards.
+-------------------------------------------------------------------------------
+--
+-- Copyright (c) 2014-2015 CERN
+--
+-- This source file is free software; you can redistribute it   
+-- and/or modify it under the terms of the GNU Lesser General   
+-- Public License as published by the Free Software Foundation; 
+-- either version 2.1 of the License, or (at your option) any   
+-- later version.                                               
+--
+-- This source is distributed in the hope that it will be       
+-- useful, but WITHOUT ANY WARRANTY; without even the implied   
+-- warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR      
+-- PURPOSE.  See the GNU Lesser General Public License for more 
+-- details.                                                     
+--
+-- You should have received a copy of the GNU Lesser General    
+-- Public License along with this source; if not, download it   
+-- from http://www.gnu.org/licenses/lgpl-2.1.html
+--
+-------------------------------------------------------------------------------
+
 library ieee;
 use ieee.STD_LOGIC_1164.all;
 use ieee.numeric_std.all;
 
-use work.list_node_pkg.all;
+use work.svec_node_pkg.all;
 use work.wishbone_pkg.all;
 use work.wr_fabric_pkg.all;
 use work.xvme64x_core_pkg.all;
@@ -15,7 +56,7 @@ use work.wr_xilinx_pkg.all;
 library unisim;
 use unisim.vcomponents.all;
 
-entity svec_list_node_template is
+entity svec_node_template is
   generic (
     g_fmc0_sdb        : t_sdb_record;
     g_fmc0_vic_vector : t_wishbone_address;
@@ -54,10 +95,10 @@ entity svec_list_node_template is
     fp_gpio2_a2b_o  : out std_logic;
     fp_gpio34_a2b_o : out std_logic;
 
-    fp_gpio1_b : out std_logic;
-    fp_gpio2_b : out std_logic;
-    fp_gpio3_b : out std_logic;
-    fp_gpio4_b : out std_logic;
+    fp_gpio1_b : inout std_logic;
+    fp_gpio2_b : inout std_logic;
+    fp_gpio3_b : inout std_logic;
+    fp_gpio4_b : inout std_logic;
 
     -------------------------------------------------------------------------
     -- VME Interface pins
@@ -148,9 +189,9 @@ entity svec_list_node_template is
     carrier_sda_b : inout std_logic
     );
 
-end svec_list_node_template;
+end svec_node_template;
 
-architecture rtl of svec_list_node_template is
+architecture rtl of svec_node_template is
 
   component spec_serial_dac
     generic (
@@ -218,11 +259,10 @@ architecture rtl of svec_list_node_template is
   constant c_SLAVE_WR_CORE  : integer := 3;
   constant c_SLAVE_WR_NODE  : integer := 4;
   constant c_SLAVE_VIC      : integer := 2;
-  constant c_DESC_SYNTHESIS : integer := 4;
-  constant c_DESC_REPO_URL  : integer := 5;
+  constant c_DESC_SYNTHESIS : integer := 5;
+  constant c_DESC_REPO_URL  : integer := 6;
 
   constant c_WRCORE_BRIDGE_SDB : t_sdb_bridge := f_xwb_bridge_manual_sdb(x"0003ffff", x"00030000");
-  constant c_WRNODE_BRIDGE_SDB : t_sdb_bridge := f_xwb_bridge_manual_sdb(x"0003ffff", x"00020000");
 
   constant c_INTERCONNECT_LAYOUT : t_sdb_record_array(c_NUM_WB_MASTERS - 1 downto 0) :=
     (
@@ -230,17 +270,19 @@ architecture rtl of svec_list_node_template is
       c_SLAVE_FMC1    => g_fmc1_sdb,
       c_SLAVE_VIC     => f_sdb_embed_device(c_xwb_vic_sdb, x"00070000"),
       c_SLAVE_WR_CORE => f_sdb_embed_bridge(c_WRCORE_BRIDGE_SDB, x"00080000"),
-      c_SLAVE_WR_NODE => f_sdb_embed_bridge(c_WRNODE_BRIDGE_SDB, x"000c0000")
+      c_SLAVE_WR_NODE => f_sdb_embed_device(c_WR_NODE_SDB, x"000c0000")
 --      c_DESC_SYNTHESIS => f_sdb_embed_synthesis(c_sdb_synthesis_info),
 --      c_DESC_REPO_URL  => f_sdb_embed_repo_url(c_sdb_repo_url)
       );
 
   constant c_SDB_ADDRESS : t_wishbone_address := x"00000000";
 
-  constant c_VIC_VECTOR_TABLE : t_wishbone_address_array(0 to 2) :=
+  constant c_VIC_VECTOR_TABLE : t_wishbone_address_array(0 to 3) :=
     (0 => g_fmc0_vic_vector,
      1 => g_fmc1_vic_vector,
-     2 => x"000c0000");
+     2 => x"000c0000", -- WRNC Mqueue interrupt
+     3 => x"000c0001" -- WRNC Debug Msg interrupt
+     );
 
   signal cnx_master_out : t_wishbone_master_out_array(c_NUM_WB_MASTERS-1 downto 0);
   signal cnx_master_in  : t_wishbone_master_in_array(c_NUM_WB_MASTERS-1 downto 0);
@@ -316,6 +358,12 @@ architecture rtl of svec_list_node_template is
   attribute buffer_type                    : string;  --" {bufgdll | ibufg | bufgp | ibuf | bufr | none}";
   attribute buffer_type of clk_125m_pllref : signal is "BUFG";
 
+  attribute keep                    : string;
+  attribute keep of clk_125m_pllref : signal is "TRUE";
+  attribute keep of clk_sys         : signal is "TRUE";
+  attribute keep of phy_rx_rbclk    : signal is "TRUE";
+  attribute keep of clk_dmtd        : signal is "TRUE";
+
   signal powerup_reset_cnt : unsigned(7 downto 0) := "00000000";
   signal powerup_rst_n     : std_logic            := '0';
   signal sys_locked        : std_logic;
@@ -327,8 +375,11 @@ architecture rtl of svec_list_node_template is
   signal led_act    : std_logic;
   signal vme_access : std_logic;
 
-  signal tm : t_wrn_timing_if;
-
+  signal tm                        : t_wrn_timing_if;
+  signal wrn_gpio_out, wrn_gpio_in : std_logic_vector(31 downto 0);
+  signal rst_net_n                 : std_logic;
+  signal wrn_debug_msg_irq : std_logic;
+  
 begin
 
 
@@ -591,7 +642,7 @@ begin
       tm_tai_o             => tm_tai,
       tm_cycles_o          => tm_cycles,
 
-      rst_aux_n_o => open,
+      rst_aux_n_o => rst_net_n,
       pps_p_o     => pps,
       pps_led_o   => pps_led
       );
@@ -652,7 +703,7 @@ begin
     generic map (
       g_interface_mode      => PIPELINED,
       g_address_granularity => BYTE,
-      g_num_interrupts      => 3,
+      g_num_interrupts      => 4,
       g_init_vectors        => c_VIC_VECTOR_TABLE)
     port map (
       clk_sys_i    => clk_sys,
@@ -662,6 +713,7 @@ begin
       irqs_i(0)    => fmc0_host_irq_i,
       irqs_i(1)    => fmc1_host_irq_i,
       irqs_i(2)    => wrn_irq,
+      irqs_i(3)    => wrn_debug_msg_irq,
       irq_master_o => vic_master_irq);
 
   U_WR_Node : wr_node_core_with_etherbone
@@ -669,7 +721,9 @@ begin
       g_config => g_wr_node_config)
     port map (
       clk_i          => clk_sys,
+      clk_ref_i      => clk_125m_pllref,
       rst_n_i        => local_reset_n,
+      rst_net_n_i    => rst_net_n,
       dp_master_o(0) => fmc0_dp_wb_o,
       dp_master_o(1) => fmc1_dp_wb_o,
       dp_master_i(0) => fmc0_dp_wb_i,
@@ -683,8 +737,14 @@ begin
       host_slave_i   => cnx_master_out(c_SLAVE_WR_NODE),
       host_slave_o   => cnx_master_in(c_SLAVE_WR_NODE),
       host_irq_o     => wrn_irq,
-      tm_i           => tm);
+      tm_i           => tm,
+      gpio_o         => wrn_gpio_out,
+      gpio_i         => wrn_gpio_in,
+      debug_msg_irq_o => wrn_debug_msg_irq
+      );
 
+
+  
   gen_with_phy : if(g_with_wr_phy /= 0) generate
 
     U_GTP : wr_gtp_phy_spartan6
@@ -811,26 +871,50 @@ begin
 
   -- Debug signals assignments (FP lemos)
 
-  fp_gpio1_a2b_o  <= '1';
-  fp_gpio2_a2b_o  <= '1';
-  fp_gpio34_a2b_o <= '1';
+  --fp_gpio1_a2b_o  <= '1';
+  --fp_gpio2_a2b_o  <= '1';
+  --fp_gpio34_a2b_o <= '1';
 
   rst_n_sys_o <= local_reset_n;
   clk_sys_o   <= clk_sys;
 
 -- forward timing to the FMC cores in the top level.
-  tm_link_up_o       <= tm_link_up;
-  tm_dac_value_o     <= tm_dac_value;
-  tm_dac_wr_o        <= tm_dac_wr;
-  tm_clk_aux_lock_en <= tm_clk_aux_lock_en_i;
-  tm_time_valid_o    <= tm_time_valid;
-  tm_tai_o           <= tm_tai;
-  tm_cycles_o        <= tm_cycles;
+  tm_link_up_o        <= tm_link_up;
+  tm_dac_value_o      <= tm_dac_value;
+  tm_dac_wr_o         <= tm_dac_wr;
+  tm_clk_aux_lock_en  <= tm_clk_aux_lock_en_i;
+  tm_time_valid_o     <= tm_time_valid;
+  tm_tai_o            <= tm_tai;
+  tm_cycles_o         <= tm_cycles;
+  tm_clk_aux_locked_o <= tm_clk_aux_locked;
 
-  fmc0_host_wb_o <= cnx_master_out(c_SLAVE_FMC0);
-  fmc1_host_wb_o <= cnx_master_out(c_SLAVE_FMC1);
+  tm.cycles                 <= tm_cycles;
+  tm.tai                    <= tm_tai;
+  tm.time_valid             <= tm_time_valid;
+  tm.link_up                <= tm_link_up;
+  tm.aux_locked(1 downto 0) <= tm_clk_aux_locked;
+  tm.aux_locked(7 downto 6) <= (others => '0');
+
+  fmc0_host_wb_o              <= cnx_master_out(c_SLAVE_FMC0);
+  fmc1_host_wb_o              <= cnx_master_out(c_SLAVE_FMC1);
   cnx_master_in(c_SLAVE_FMC0) <= fmc0_host_wb_i;
   cnx_master_in(c_SLAVE_FMC1) <= fmc1_host_wb_i;
+
+
+  fp_gpio1_a2b_o  <= wrn_gpio_out(24);
+  fp_gpio2_a2b_o  <= wrn_gpio_out(25);
+  fp_gpio34_a2b_o <= wrn_gpio_out(26);
+
+  wrn_gpio_in(0) <= fp_gpio1_b;
+  wrn_gpio_in(1) <= fp_gpio2_b;
+  wrn_gpio_in(2) <= fp_gpio3_b;
+  wrn_gpio_in(3) <= fp_gpio4_b;
+
+  fp_gpio1_b <= 'Z' when wrn_gpio_out(24) = '0' else wrn_gpio_out(0);
+  fp_gpio2_b <= 'Z' when wrn_gpio_out(25) = '0' else wrn_gpio_out(1);
+  fp_gpio3_b <= 'Z' when wrn_gpio_out(26) = '0' else wrn_gpio_out(2);
+  fp_gpio4_b <= 'Z' when wrn_gpio_out(26) = '0' else wrn_gpio_out(3);
+  
   
 end rtl;
 
