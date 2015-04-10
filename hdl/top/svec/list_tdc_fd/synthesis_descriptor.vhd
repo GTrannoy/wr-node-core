@@ -42,16 +42,16 @@ package synthesis_descriptor is
   
 constant c_sdb_synthesis_info : t_sdb_synthesis :=
   (
-    syn_module_name => "svec-fine-delay ",              
-    syn_commit_id => "a3f676c402a931c43ed2654bddd7dbaf",
+    syn_module_name => "svec-wrtd-tdc-fd",              
+    syn_commit_id => "00000000000000000000000000000000",
     syn_tool_name => "ISE     ",
-    syn_tool_version => x"00000145",
-    syn_date => x"20140325",
+    syn_tool_version => x"00000147",
+    syn_date => x"20150409",
     syn_username => "twlostow       ");
 
 constant c_sdb_repo_url : t_sdb_repo_url :=
   (
-    repo_url => "git://ohwr.org/fmc-projects/fmc-delay-1ns-8cha.git             " 
+    repo_url => "git://ohwr.org/white-rabbit/wr-node-core.git                   "
   );
 
 end package synthesis_descriptor;

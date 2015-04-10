@@ -15,4 +15,4 @@
 	url = git://ohwr.org/fmc-projects/fmc-delay-1ns-8cha.git
 [submodule "hdl/ip_cores/fmc-tdc"]
 	path = hdl/ip_cores/fmc-tdc
-	url = https://github.com/twlostow/fmc-tdc
+	url = git://ohwr.org/fmc-projects/fmc-tdc/fmc-tdc-1ns-5cha-gw.git

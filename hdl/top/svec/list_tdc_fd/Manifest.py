@@ -6,6 +6,6 @@ modules = {
     "local" : [	"../../../rtl/wrnc", 
 		"../node_template", 
 		"../../../ip_cores/fine-delay/hdl", 
-		"../../../ip_cores/fmc-tdc/hdl",
+		"../../../ip_cores/fmc-tdc/hdl/rtl",
 		"../../../ip_cores/vme64x-core" ],
     }

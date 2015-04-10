@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-02-20
+-- Last update: 2015-04-10
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -252,6 +252,16 @@ entity svec_top is
 end svec_top;
 
 architecture rtl of svec_top is
+
+  function f_int_to_bool ( x: integer) return boolean is
+    begin
+      if (x = 0) then
+        return false;
+        else
+          return true;
+          end if;
+          end function;
+        
   component fd_ddr_pll
     port (
       RST       : in  std_logic;
@@ -318,7 +328,7 @@ architecture rtl of svec_top is
 
   constant c_tdc_bridge_sdb : t_sdb_bridge       := f_xwb_bridge_manual_sdb(x"0001FFFF", x"00000000");
   constant c_tdc_sdb_record : t_sdb_record       := f_sdb_embed_bridge(c_tdc_bridge_sdb, x"00020000");
-  constant c_tdc_vector     : t_wishbone_address := x"00032000";
+  constant c_tdc_vector     : t_wishbone_address := x"00023000";
 
   constant c_fd_sdb_record : t_sdb_record       := f_sdb_embed_device(c_FD_SDB_DEVICE, x"00040000");
   constant c_fd_vector     : t_wishbone_address := x"00040000";
@@ -352,6 +362,8 @@ architecture rtl of svec_top is
   signal fmc1_fd_owr_en, fmc1_fd_owr_in  : std_logic;
   signal fmc1_fd_scl_out, fmc1_fd_scl_in : std_logic;
   signal fmc1_fd_sda_out, fmc1_fd_sda_in : std_logic;
+  signal fmc0_scl_out : std_logic;
+  signal fmc0_sda_out : std_logic;
 
   signal fmc1_wb_out : t_wishbone_master_out;
   signal fmc1_wb_in  : t_wishbone_master_in;
@@ -478,7 +490,7 @@ begin
 
   U_TDC_Core : fmc_tdc_wrapper
     generic map (
-      g_simulation => false)
+      g_simulation => f_int_to_bool(g_simulation))
     port map (
       clk_sys_i         => clk_sys,
       rst_sys_n_i       => rst_n,
@@ -523,8 +535,10 @@ begin
       tdc_in_fpga_3_i   => fmc0_tdc_in_fpga_3_i,
       tdc_in_fpga_4_i   => fmc0_tdc_in_fpga_4_i,
       tdc_in_fpga_5_i   => fmc0_tdc_in_fpga_5_i,
-      mezz_scl_b        => fmc0_scl_b,
-      mezz_sda_b        => fmc0_sda_b,
+      mezz_scl_i        => fmc0_scl_b, 
+      mezz_sda_i        => fmc0_sda_b,
+      mezz_scl_o        => fmc0_scl_out, 
+      mezz_sda_o        => fmc0_sda_out,
       mezz_one_wire_b   => fmc0_tdc_one_wire_b,
 
       tm_link_up_i         => tm_link_up,
@@ -545,6 +559,8 @@ begin
       irq_o          => fmc_host_irq(0),
       clk_125m_tdc_o => tdc_clk_125m);
 
+	fmc0_scl_b <= '0' when fmc0_scl_out = '0' else 'Z';
+	fmc0_sda_b <= '0' when fmc0_sda_out = '0' else 'Z';
 
 
   -------------------------------------------------------------------------------
@@ -577,7 +593,7 @@ begin
   U_FineDelay_Core : fine_delay_core
     generic map (
       g_with_wr_core        => true,
-      g_simulation          => false,
+      g_simulation          => f_int_to_bool(g_simulation),
       g_interface_mode      => PIPELINED,
       g_address_granularity => BYTE)
     port map (
