@@ -490,7 +490,8 @@ begin
 
   U_TDC_Core : fmc_tdc_wrapper
     generic map (
-      g_simulation => f_int_to_bool(g_simulation))
+      g_simulation => f_int_to_bool(g_simulation),
+      g_with_direct_readout => true)
     port map (
       clk_sys_i         => clk_sys,
       rst_sys_n_i       => rst_n,
