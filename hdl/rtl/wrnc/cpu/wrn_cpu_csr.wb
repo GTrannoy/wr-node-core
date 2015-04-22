@@ -62,6 +62,7 @@ peripheral {
 				 name = "CPU reset lines";
 				 size = 8;
 				 type = SLV;
+				 reset_value = 0xff;
 				 access_bus = READ_WRITE;
 				 access_dev = READ_ONLY;
 			};
