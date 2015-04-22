@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2014-12-01
+-- Last update: 2015-04-22
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -141,6 +141,17 @@ architecture wrapper of wrn_lm32_wrapper is
   end function;
 
 
+  impure function f_pick_init_file return string is
+  begin
+    if g_cpu_id = 0 then
+--      return "rt-tdc.ram";
+      return "none";
+        else
+          return "none";
+            end if;
+  end function;
+
+
   signal jtag_clk        : std_logic;
   signal jtag_update     : std_logic;
   signal jtag_reg_q      : std_logic_vector(7 downto 0);
@@ -148,137 +159,139 @@ architecture wrapper of wrn_lm32_wrapper is
   signal jtag_reg_d      : std_logic_vector(7 downto 0);
   signal jtag_reg_addr_d : std_logic_vector (2 downto 0);
 
-  signal cm_out : t_wishbone_master_out;
-  signal cm_in  : t_wishbone_master_in;
-
-  signal data_addr_reg : t_wishbone_address;
-
   signal cpu_reset, cpu_enable, cpu_reset_n : std_logic;
   signal host_rdata                         : std_logic_vector(31 downto 0);
   signal host_write                         : std_logic;
-  signal data_was_busy, data_remaining      : std_logic;
 
   signal rst : std_logic;
 
   signal d_adr : std_logic_vector(31 downto 0);
 
-
-  component chipscope_ila
-    port (
-      CONTROL : inout std_logic_vector(35 downto 0);
-      CLK     : in    std_logic;
-      TRIG0   : in    std_logic_vector(31 downto 0);
-      TRIG1   : in    std_logic_vector(31 downto 0);
-      TRIG2   : in    std_logic_vector(31 downto 0);
-      TRIG3   : in    std_logic_vector(31 downto 0));
-  end component;
-
-  component chipscope_icon
-    port (
-      CONTROL0 : inout std_logic_vector (35 downto 0));
-  end component;
-
-  signal CONTROL : std_logic_vector(35 downto 0);
-  signal CLK     : std_logic;
-  signal TRIG0   : std_logic_vector(31 downto 0);
-  signal TRIG1   : std_logic_vector(31 downto 0);
-  signal TRIG2   : std_logic_vector(31 downto 0);
-  signal TRIG3   : std_logic_vector(31 downto 0);
-
   signal core_sel_match : std_logic;
 
-  signal cpu_dwb_out, cpu_iwb_out : t_wishbone_master_out;
-  signal cpu_dwb_in, cpu_iwb_in   : t_wishbone_master_in;
-
-  signal iram_access          : std_logic;
-  signal iram_access_d0       : std_logic;
   signal iram_i_wr, iram_d_wr : std_logic;
-  signal iram_i_adr           : std_logic_vector(f_log2_size(g_iram_size)-3 downto 0);
-  signal iram_i_d, iram_d_q   : std_logic_vector(31 downto 0);
+  signal iram_i_en, iram_i_en_cpu, iram_d_en : std_logic;
 
+  signal iram_i_adr_cpu, iram_d_adr: std_logic_vector(31 downto 0);
+  signal iram_i_adr, iram_i_adr_host : std_logic_vector(f_log2_size(g_iram_size)-3 downto 0);
+  signal iram_i_dat_q, iram_i_dat_d, iram_d_dat_d, iram_d_dat_q : std_logic_vector(31 downto 0);
+  signal iram_d_sel : std_logic_vector(3 downto 0);
+
+  signal cpu_dwb_out : t_wishbone_master_out;
+  signal cpu_dwb_in : t_wishbone_master_in;
+signal bwe: std_logic_vector(3 downto 0);
+  signal wr_d: std_logic_vector(3 downto 0);
+  signal data_d0, iram_d_dat_out : std_logic_vector(31 downto 0);
 begin
 
-  xwb_lm32_1 : xwb_lm32
+  U_CPU: lm32_cpu_wr_node
     generic map (
-      g_profile => "medium_icache")
+      eba_reset => x"00000000")
     port map (
-      clk_sys_i => clk_sys_i,
-      rst_n_i   => cpu_reset_n,
-      irq_i     => x"00000000",
-      dwb_o     => cpu_dwb_out,
-      dwb_i     => cpu_dwb_in,
-      iwb_o     => cpu_iwb_out,
-      iwb_i     => cpu_iwb_in);
+      clk_i        => clk_sys_i,
+      rst_i        => cpu_reset,
+      interrupt    => x"00000000",
+-- instruction bus
+      iram_i_adr_o => iram_i_adr_cpu,
+      iram_i_dat_i => iram_i_dat_q,
+      iram_i_en_o  => iram_i_en_cpu,
+-- data bus (IRAM)
+      iram_d_adr_o => iram_d_adr,
+      iram_d_dat_o => iram_d_dat_d,
+      iram_d_dat_i => iram_d_dat_q,
+      iram_d_sel_o => iram_d_sel,
+      iram_d_we_o  => iram_d_wr,
+      iram_d_en_o  => iram_d_en,
 
-  iram : generic_dpram
+      D_DAT_O      => cpu_dwb_out.dat,
+      D_ADR_O      => cpu_dwb_out.adr,
+      D_CYC_O      => cpu_dwb_out.cyc,
+      D_SEL_O      => cpu_dwb_out.sel,
+      D_STB_O      => cpu_dwb_out.stb,
+      D_WE_O       => cpu_dwb_out.we,
+      D_DAT_I      => cpu_dwb_in.dat,
+      D_ACK_I      => cpu_dwb_in.ack,
+      D_ERR_I      => cpu_dwb_in.err,
+      D_RTY_I      => cpu_dwb_in.rty);
+
+
+
+   iram : generic_dpram
     generic map (
       g_data_width       => 32,
       g_size             => g_iram_size / 4,
       g_with_byte_enable => true,
-      g_dual_clock       => false)
+      g_dual_clock       => false,
+      g_addr_conflict_resolution => "read_first",
+      g_init_file => f_pick_init_file)
     port map (
       rst_n_i => rst_n_i,
       clka_i  => clk_sys_i,
 
+      
       wea_i => iram_i_wr,
+--      ena_i => iram_i_en,
       aa_i  => iram_i_adr,
-      da_i  => iram_i_d,
-      qa_o  => cpu_iwb_in.dat,
+      da_i  => iram_i_dat_d,
+      qa_o  => iram_i_dat_q,
 
       clkb_i => clk_sys_i,
-      bweb_i => cpu_dwb_out.sel,
+--      enb_i => iram_d_en,
+      bweb_i => iram_d_sel,
       web_i  => iram_d_wr,
-      ab_i   => cpu_dwb_out.adr(f_log2_size(g_iram_size)-1 downto 2),
-      db_i   => cpu_dwb_out.dat,
-      qb_o   => iram_d_q
+      ab_i   => iram_d_adr(f_log2_size(g_iram_size)-1 downto 2),
+      db_i   => iram_d_dat_d,
+      qb_o   => iram_d_dat_q
       );
 
-  iram_access <= '1' when cpu_dwb_out.adr (31 downto 20) = x"000" and cpu_dwb_out.cyc = '1' and cpu_dwb_out.stb = '1' else '0';
+  --process(clk_sys_i)
 
-  cpu_dwb_in.ack   <= iram_access_d0 or dwb_i.ack;
-  cpu_dwb_in.dat   <= iram_d_q when iram_access_d0 = '1' else dwb_i.dat;
-  cpu_dwb_in.stall <= '0'      when iram_access = '1'    else dwb_i.stall;
-  cpu_dwb_in.err   <= '0';
-  cpu_dwb_in.rty   <= '0';
-  iram_d_wr        <= iram_access and cpu_dwb_out.we;
+  --begin
+  --  if rising_edge(clk_sys_i) then
+  --    wr_d(0) <= iram_d_wr and iram_d_sel(0);
+  --    wr_d(1) <= iram_d_wr and iram_d_sel(1);
+  --    wr_d(2) <= iram_d_wr and iram_d_sel(2);
+  --    wr_d(3) <= iram_d_wr and iram_d_sel(3);
+  --    data_d0 <= iram_d_dat_d;
+  --  end if;   
+  --end process;
 
-  dwb_o.cyc <= cpu_dwb_out.cyc;
-  dwb_o.stb <= cpu_dwb_out.stb and not iram_access;
-  dwb_o.sel <= cpu_dwb_out.sel;
-  dwb_o.we  <= cpu_dwb_out.we;
-  dwb_o.adr <= cpu_dwb_out.adr;
-  dwb_o.dat <= cpu_dwb_out.dat;
+  --iram_d_dat_q(7 downto 0) <= data_d0(7 downto 0) when wr_d(0) = '1' else iram_d_dat_out(7 downto 0);
+  --iram_d_dat_q(15 downto 8) <= data_d0(15 downto 8) when wr_d(1) = '1' else iram_d_dat_out(15 downto 8);
+  --iram_d_dat_q(23 downto 16) <= data_d0(23 downto 16) when wr_d(2) = '1' else iram_d_dat_out(23 downto 16);
+  --iram_d_dat_q(31 downto 24) <= data_d0(31 downto 24) when wr_d(3) = '1' else iram_d_dat_out(31 downto 24);
+  
 
-  p_decode : process(clk_sys_i)
-  begin
-    if rising_edge(clk_sys_i) then
-      if cpu_reset_n = '0' then
-        iram_access_d0 <= '0';
-      else
-        iram_access_d0 <= iram_access;
-        cpu_iwb_in.ack <= cpu_iwb_out.cyc and cpu_iwb_out.stb;
-      end if;
-    end if;
-  end process;
-
-  cpu_iwb_in.stall <= '0';
-  cpu_iwb_in.err   <= '0';
-  cpu_iwb_in.rty   <= '0';
-
+  wb_slave_adapter_1: wb_slave_adapter
+    generic map (
+      g_master_use_struct  => true,
+      g_master_mode        => PIPELINED,
+      g_master_granularity => BYTE,
+      g_slave_use_struct   => true,
+      g_slave_mode         => CLASSIC,
+      g_slave_granularity  => BYTE)
+    port map (
+      clk_sys_i  => clk_sys_i,
+      rst_n_i    => rst_n_i,
+      slave_i    => cpu_dwb_out,
+      slave_o    => cpu_dwb_in,
+      master_i   => dwb_i,
+      master_o   => dwb_o);
 
   core_sel_match <= '1' when unsigned(cpu_csr_i.core_sel_o) = g_cpu_id else '0';
+
   cpu_reset      <= not rst_n_i or cpu_csr_i.reset_o(g_cpu_id);
   cpu_enable     <= not cpu_reset;
   cpu_reset_n <= not cpu_reset;
 
-  iram_i_d   <= cpu_csr_i.udata_o;
+  iram_i_dat_d  <= cpu_csr_i.udata_o;
   iram_i_wr  <= cpu_csr_i.udata_load_o and core_sel_match;
   iram_i_adr <= cpu_csr_i.uaddr_addr_o(f_log2_size(g_iram_size)-3 downto 0) when cpu_enable = '0' else
-                cpu_iwb_out.adr(f_log2_size(g_iram_size)-1 downto 2);
+                iram_i_adr_cpu(f_log2_size(g_iram_size)-1 downto 2);
+
+  iram_i_en <= '1' when cpu_enable = '0' else iram_i_en_cpu;
   
-  cpu_csr_o.udata_i <= cpu_iwb_in.dat;
-
-
+  cpu_csr_o.udata_i <= iram_i_dat_q;
 
   p_jtag_regs : process(clk_sys_i)
   begin
