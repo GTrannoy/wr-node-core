@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2014-12-08
+-- Last update: 2015-04-23
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -85,14 +85,13 @@ package wr_node_pkg is
   function f_dummy_master_in_array(size : integer)
     return t_wishbone_master_in_array;
   
-
-  
-
   component wr_node_core is
     generic (
-      g_config : t_wr_node_config);
+      g_config            : t_wr_node_config;
+      g_double_core_clock : boolean := false);
     port (
       clk_i           : in  std_logic;
+      clk_cpu_i       : in  std_logic                                             := '0';
       rst_n_i         : in  std_logic;
       sp_master_o     : out t_wishbone_master_out;
       sp_master_i     : in  t_wishbone_master_in                                  := cc_dummy_master_in;
@@ -116,9 +115,11 @@ package wr_node_pkg is
 
   component wr_node_core_with_etherbone is
     generic (
-      g_config : t_wr_node_config);
+      g_config            : t_wr_node_config;
+      g_double_core_clock : boolean := false);
     port (
       clk_i           : in  std_logic;
+      clk_cpu_i       : in  std_logic                                             := '0';
       rst_n_i         : in  std_logic;
       rst_net_n_i     : in  std_logic;
       sp_master_o     : out t_wishbone_master_out;

@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2014-12-11
+-- Last update: 2015-04-23
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -53,16 +53,20 @@ entity wrn_cpu_cb is
   
   generic (
     g_cpu_id    : integer;
-    g_iram_size : integer
+    g_iram_size : integer;
+    g_double_core_clock : boolean
     );
 
   port (
+   
     clk_sys_i : in std_logic;
     rst_n_i   : in std_logic;
 
     clk_ref_i   : in std_logic;
     rst_n_ref_i : in std_logic;
 
+    clk_cpu_i : in std_logic;
+    
     tm_i : in t_wrn_timing_if;
 
     sh_master_i : in  t_wishbone_master_in := cc_dummy_master_in;
@@ -112,9 +116,11 @@ architecture rtl of wrn_cpu_cb is
   component wrn_lm32_wrapper
     generic (
       g_iram_size : integer;
-      g_cpu_id    : integer);
+      g_cpu_id    : integer;
+      g_double_core_clock : boolean);
     port (
       clk_sys_i : in  std_logic;
+      clk_cpu_i : in std_logic;
       rst_n_i   : in  std_logic;
       irq_i     : in  std_logic_vector(31 downto 0) := x"00000000";
       dwb_o     : out t_wishbone_master_out;
@@ -259,9 +265,11 @@ begin  -- rtl
   U_TheCoreCPU : wrn_lm32_wrapper
     generic map (
       g_iram_size => g_iram_size,
-      g_cpu_id    => g_cpu_id)
+      g_cpu_id    => g_cpu_id,
+      g_double_core_clock => g_double_core_clock)
     port map (
       clk_sys_i => clk_sys_i,
+      clk_cpu_i => clk_cpu_i,
       rst_n_i   => rst_n_i,
       irq_i     => x"00000000",  -- no irqs, we want to be deterministic...
       dwb_o     => cpu_dwb_out,

@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2014-12-08
+-- Last update: 2015-04-23
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -49,10 +49,13 @@ use work.gencores_pkg.all;
 entity wr_node_core is
   
   generic (
-    g_config : t_wr_node_config := c_default_node_config);
+    g_config : t_wr_node_config := c_default_node_config;
+    g_double_core_clock : boolean := false);
 
   port (
     clk_i   : in std_logic;
+    -- optional, 2x faster CPU core clock
+    clk_cpu_i : in std_logic := '0';
     rst_n_i : in std_logic;
 
     sp_master_o : out t_wishbone_master_out;
@@ -87,12 +90,14 @@ architecture rtl of wr_node_core is
   component wrn_cpu_cb
     generic (
       g_cpu_id    : integer;
-      g_iram_size : integer);
+      g_iram_size : integer;
+      g_double_core_clock : boolean);
     port (
       clk_sys_i   : in  std_logic;
       rst_n_i     : in  std_logic;
       clk_ref_i   : in  std_logic;
       rst_n_ref_i : in  std_logic;
+      clk_cpu_i : in std_logic;
       tm_i        : in  t_wrn_timing_if;
       sh_master_i : in  t_wishbone_master_in;
       sh_master_o : out t_wishbone_master_out;
@@ -381,12 +386,14 @@ begin  -- rtl
     U_CPU_Block : wrn_cpu_cb
       generic map (
         g_cpu_id    => i,
-        g_iram_size => g_config.cpu_memsizes(i))
+        g_iram_size => g_config.cpu_memsizes(i),
+        g_double_core_clock => g_double_core_clock)
       port map (
         clk_sys_i   => clk_i,
         rst_n_i     => rst_n_i,
         clk_ref_i   => clk_ref_i,
         rst_n_ref_i => rst_n_ref,
+        clk_cpu_i => clk_cpu_i,
         tm_i        => tm_i,
         sh_master_i => si_slave_out(c_si_slave_cpu0 + i),
         sh_master_o => si_slave_in(c_si_slave_cpu0 + i),

@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2014-12-08
+-- Last update: 2015-04-23
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -50,10 +50,12 @@ use work.etherbone_pkg.all;
 entity wr_node_core_with_etherbone is
   
   generic (
-    g_config : t_wr_node_config := c_default_node_config);
+    g_config : t_wr_node_config := c_default_node_config;
+    g_double_core_clock : boolean := false);
 
   port (
     clk_i       : in std_logic;
+    clk_cpu_i   : in std_logic := '0';
     rst_n_i     : in std_logic;
     rst_net_n_i : in std_logic;
 
@@ -198,9 +200,11 @@ begin
 
   U_WRNode_Core : wr_node_core
     generic map (
-      g_config => g_config)
+      g_config => g_config,
+      g_double_core_clock => g_double_core_clock)
     port map (
       clk_i        => clk_i,
+      clk_cpu_i => clk_cpu_i,
       rst_n_i      => rst_n_i,
       dp_master_o  => dp_master_o,
       dp_master_i  => dp_master_i,
