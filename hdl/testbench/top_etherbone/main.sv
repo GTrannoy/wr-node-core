@@ -100,11 +100,13 @@ module main;
    t_wrf_source_out wr_src_out;
    t_wrf_source_in wr_src_in;
 
+/* -----\/----- EXCLUDED -----\/-----
    assign  wr_src_in.stall = 0;
    assign  wr_src_in.err = 0;
    assign  wr_src_in.rty = 0;
    always@(posedge clk_sys)
      wr_src_in.ack <= wr_src_out.cyc & wr_src_out.stb;
+ -----/\----- EXCLUDED -----/\----- */
    
 
    wire t_wrn_timing_if timing;
@@ -115,6 +117,7 @@ module main;
    wr_node_core_with_etherbone DUT (
 				    .clk_i   (clk_sys),
 				    .rst_n_i (rst_n),
+				    .rst_net_n_i(1'b1),
 
 				    .clk_ref_i(clk_ref),
 				
@@ -126,6 +129,9 @@ module main;
 
 				    .wr_src_i(wr_src_in),
 				    .wr_src_o(wr_src_out),
+
+				    .wr_snk_i(wr_src_out),
+				    .wr_snk_o(wr_src_in),
 				    .tm_i(timing)
 				    );
 
@@ -167,15 +173,16 @@ module main;
       cpu_csr = new ( Host.get_accessor(), 'h10000 );
       hmq = new ( Host.get_accessor(), 0 );
 
-      eb.write('h30, 0);
+      //eb.write('h30, 0);
       
       cpu_csr.init();
 
-      cpu_csr.load_firmware (0, "../../sw/hmq_test/hmq-test.ram");
+      cpu_csr.load_firmware (0, "../../sw/hmq-test-host/hmq-test.ram");
       cpu_csr.reset_core(0, 0);
 
+      
 
-
+      
 /* -----\/----- EXCLUDED -----\/-----
 
       hmq.send(0, '{1,2,3} );

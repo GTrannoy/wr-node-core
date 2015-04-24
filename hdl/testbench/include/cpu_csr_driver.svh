@@ -24,6 +24,8 @@ class NodeCPUControl;
    task readl (  uint32_t r, ref uint32_t v );
       uint64_t tmp;
       bus.read (base + r, tmp );
+      //$display("Read %x : %x", base+r, tmp);
+      
       v= tmp;
    endtask // readl
    
@@ -130,8 +132,13 @@ class NodeCPUControl;
    task update();
       int i;
 
+      
       for(i=0;i<core_count;i++)
-	dbgq[i].update();
+	begin
+	   
+	   dbgq[i].update();
+	end
+      
 
    endtask // update
    
@@ -155,16 +162,15 @@ class NodeCPUDbgQueue;
    task update();
       uint32_t rval;
       
-      forever begin
-		 cctl.readl(`ADDR_WRN_CPU_CSR_DBG_POLL , rval);
+      cctl.readl(`ADDR_WRN_CPU_CSR_DBG_POLL , rval);
 	 if(! (rval & (1<<core_id)))
-	   break;
-	 cctl.writel(`ADDR_WRN_CPU_CSR_CORE_SEL, core_id);
-	 cctl.readl(`ADDR_WRN_CPU_CSR_DBG_MSG, rval);
-	 queue.push_back(rval);
-	 $display("dbg rx '%c'", rval);
-      end
-	   
+	   return;
+      
+      cctl.writel(`ADDR_WRN_CPU_CSR_CORE_SEL, core_id);
+      cctl.readl(`ADDR_WRN_CPU_CSR_DBG_MSG, rval);
+      queue.push_back(rval);
+      $display("dbg rx '%c'", rval);
+   	   
    endtask // update
    
 

@@ -6,4 +6,4 @@ set NumericStdNoWarnings 1
 
 do wave.do
 radix -hexadecimal
-run 350us
+run 1350us

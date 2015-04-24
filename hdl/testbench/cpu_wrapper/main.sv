@@ -1,20 +1,52 @@
-`include "mqueue_regs.vh"
-
+//`include "mqueue_regs.vh"
+`timescale 1ps/1ps
 
 import wishbone_pkg::*;
 import wrn_cpu_csr_wbgen2_pkg::*;
+import wr_node_pkg::*;
+
 
 module main;
 
    reg rst_n = 0;
    reg clk_sys = 0;
-
-   always #4ns clk_sys <= ~clk_sys;
+   reg clk_ref = 0;
+   
+   always #8ns clk_sys <= ~clk_sys;
+   always #4.023ns clk_ref <= ~clk_ref;
    
    initial begin
       repeat(20) @(posedge clk_sys);
       rst_n = 1;
    end
+
+   
+   
+   t_wrn_timing_if tm;
+
+   initial begin
+      tm.tai = 0;
+      tm.cycles = 0;
+   end
+
+   always@(posedge clk_ref)
+     begin
+	if(tm.cycles == 1000)
+	  begin
+	     tm.cycles <= 0;
+	     tm.tai<=tm.tai+1;
+	  end
+	else
+	  tm.cycles<=tm.cycles+1;
+	
+	
+	    
+     end
+   
+   
+      
+      
+   
 
    t_wishbone_master_out cpu_wb_out;
    t_wishbone_master_in cpu_wb_in;
@@ -23,16 +55,19 @@ module main;
    t_wrn_cpu_csr_in_registers cpu_csr_in;
 
    
-   wrn_lm32_wrapper #(
+   wrn_cpu_cb #(
                       .g_iram_size(16384),
                       .g_cpu_id(0)
                       ) DUT (
                              .clk_sys_i (clk_sys),
                              .rst_n_i   (rst_n),
 
-                             .dwb_o(cpu_wb_out),
-                             .dwb_i (cpu_wb_in),
-
+			     .clk_ref_i(clk_ref),
+			     .rst_n_ref_i(rst_n),
+			     
+//                             .dwb_o(cpu_wb_out),
+//                             .dwb_i (cpu_wb_in),
+			     .tm_i(tm),
                              .cpu_csr_i(cpu_csr_out),
                              .cpu_csr_o(cpu_csr_in)
                              );
@@ -75,7 +110,7 @@ module main;
    endtask // load_firmware
 
    initial begin
-      load_firmware ( "../../sw/wrapper-test/wrn-test.ram", 0, cpu_csr_out);
+      load_firmware ( "../../sw/lr-test/lr-test.ram", 0, cpu_csr_out);
       
       
    end
