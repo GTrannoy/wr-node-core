@@ -15,9 +15,16 @@ main()
 {   
     int n = 0;
 
-    volatile int v =    dp_readl( 0x30000 );
-volatile int w=    dp_readl( 0x10000 );
+    
 
-    for(;;);
+
+//    puts("Test\n");
+
+    for(;;)
+    {
+        pp_printf("Hello, world %d\n\r", n++);
+
+
+    }
 
 }
