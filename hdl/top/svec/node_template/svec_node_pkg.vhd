@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-02-20
+-- Last update: 2015-04-23
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -53,8 +53,9 @@ package svec_node_pkg is
       g_fmc0_vic_vector : t_wishbone_address;
       g_fmc1_sdb        : t_sdb_record;
       g_fmc1_vic_vector : t_wishbone_address;
-      g_simulation      : integer;
-      g_with_wr_phy     : integer;
+      g_simulation      : boolean := false;
+      g_with_wr_phy     : boolean := true;
+      g_double_wrnode_core_clock : boolean := false;
       g_wr_node_config  : t_wr_node_config);
     port (
       rst_n_a_i            : in    std_logic;

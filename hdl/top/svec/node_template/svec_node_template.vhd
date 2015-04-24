@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-03-16
+-- Last update: 2015-04-23
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -63,8 +63,9 @@ entity svec_node_template is
     g_fmc1_sdb        : t_sdb_record;
     g_fmc1_vic_vector : t_wishbone_address;
 
-    g_simulation     : integer := 0;
-    g_with_wr_phy    : integer := 0;
+    g_simulation     : boolean := false;
+    g_with_wr_phy    : boolean := false;
+    g_double_wrnode_core_clock : boolean := false;
     g_wr_node_config : t_wr_node_config
     );
 
@@ -308,6 +309,7 @@ architecture rtl of svec_node_template is
   signal wrc_owr_en, wrc_owr_in                           : std_logic_vector(1 downto 0);
 
   signal pllout_clk_sys       : std_logic;
+  signal pllout_clk_cpu       : std_logic;
   signal pllout_clk_dmtd      : std_logic;
   signal pllout_clk_fb_pllref : std_logic;
   signal pllout_clk_fb_dmtd   : std_logic;
@@ -316,6 +318,7 @@ architecture rtl of svec_node_template is
   signal clk_125m_pllref  : std_logic;
   signal clk_125m_gtp     : std_logic;
   signal clk_sys          : std_logic;
+  signal clk_cpu         : std_logic;
   signal clk_dmtd         : std_logic;
 
   signal local_reset_n : std_logic;
@@ -327,14 +330,14 @@ architecture rtl of svec_node_template is
 
   signal vic_master_irq : std_logic;
 
-  function f_int2bool (x : integer) return boolean is
+  function f_bool2int (x : boolean) return integer is
   begin
-    if(x = 0) then
-      return false;
+    if(x) then
+      return 1;
     else
-      return true;
+      return 0;
     end if;
-  end f_int2bool;
+  end f_bool2int;
 
   function f_resize_slv (x : std_logic_vector; len : integer) return std_logic_vector is
     variable tmp : std_logic_vector(len-1 downto 0);
@@ -361,6 +364,7 @@ architecture rtl of svec_node_template is
   attribute keep                    : string;
   attribute keep of clk_125m_pllref : signal is "TRUE";
   attribute keep of clk_sys         : signal is "TRUE";
+  attribute keep of clk_cpu         : signal is "TRUE";
   attribute keep of phy_rx_rbclk    : signal is "TRUE";
   attribute keep of clk_dmtd        : signal is "TRUE";
 
@@ -416,7 +420,7 @@ begin
       CLKOUT0_DIVIDE     => 16,         -- 62.5 MHz
       CLKOUT0_PHASE      => 0.000,
       CLKOUT0_DUTY_CYCLE => 0.500,
-      CLKOUT1_DIVIDE     => 16,         -- 125 MHz
+      CLKOUT1_DIVIDE     => 8,         -- 125 MHz
       CLKOUT1_PHASE      => 0.000,
       CLKOUT1_DUTY_CYCLE => 0.500,
       CLKOUT2_DIVIDE     => 16,
@@ -427,7 +431,7 @@ begin
     port map (
       CLKFBOUT => pllout_clk_fb_pllref,
       CLKOUT0  => pllout_clk_sys,
-      CLKOUT1  => open,
+      CLKOUT1  => pllout_clk_cpu,
       CLKOUT2  => open,
       CLKOUT3  => open,
       CLKOUT4  => open,
@@ -502,6 +506,11 @@ begin
       O => clk_sys,
       I => pllout_clk_sys);
 
+  cmp_clk_cpu_buf : BUFG
+    port map (
+      O => clk_cpu,
+      I => pllout_clk_cpu);
+
   cmp_clk_dmtd_buf : BUFG
     port map (
       O => clk_dmtd,
@@ -565,7 +574,7 @@ begin
 
   U_WR_CORE : xwr_core
     generic map (
-      g_simulation                => g_simulation,
+      g_simulation                => f_bool2int(g_simulation),
       g_phys_uart                 => true,
       g_virtual_uart              => true,
       g_with_external_clock_input => false,
@@ -718,9 +727,11 @@ begin
 
   U_WR_Node : wr_node_core_with_etherbone
     generic map (
-      g_config => g_wr_node_config)
+      g_config => g_wr_node_config,
+      g_double_core_clock => g_double_wrnode_core_clock)
     port map (
       clk_i          => clk_sys,
+      clk_cpu_i => clk_cpu,
       clk_ref_i      => clk_125m_pllref,
       rst_n_i        => local_reset_n,
       rst_net_n_i    => rst_net_n,
@@ -745,13 +756,13 @@ begin
 
 
   
-  gen_with_phy : if(g_with_wr_phy /= 0) generate
+  gen_with_phy : if(g_with_wr_phy) generate
 
     U_GTP : wr_gtp_phy_spartan6
       generic map (
         g_enable_ch0 => 0,
         g_enable_ch1 => 1,
-        g_simulation => g_simulation)
+        g_simulation => f_bool2int(g_simulation))
       port map (
         gtp_clk_i          => clk_125m_gtp,
         ch0_ref_clk_i      => clk_125m_pllref,
