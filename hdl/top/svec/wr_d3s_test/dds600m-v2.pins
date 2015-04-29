@@ -1,0 +1,102 @@
+
+#
+# Mezzanine top level pin assignment file:
+# syntax: pin FMC_pin_name Core_Pin_name IO_Standard
+# % is replaced with FMC number if the carrier supports more than 1 mezzanine
+#
+
+mezzanine fmc-dds-600m
+
+#DAC outut
+pin la_p1 fmc%_dac_p_o[13] lvds_25
+pin la_n1 fmc%_dac_n_o[13] lvds_25
+pin la_p6 fmc%_dac_p_o[12] lvds_25
+pin la_n6 fmc%_dac_n_o[12] lvds_25
+pin la_n2 fmc%_dac_n_o[11] lvds_25
+pin la_p2 fmc%_dac_p_o[11] lvds_25
+pin la_p3 fmc%_dac_p_o[10] lvds_25
+pin la_n3 fmc%_dac_n_o[10] lvds_25
+pin la_n4 fmc%_dac_n_o[9] lvds_25
+pin la_p4 fmc%_dac_p_o[9] lvds_25
+pin la_p5 fmc%_dac_p_o[8] lvds_25
+pin la_n5 fmc%_dac_n_o[8] lvds_25
+pin la_p8 fmc%_dac_p_o[7] lvds_25
+pin la_n8 fmc%_dac_n_o[7] lvds_25
+pin la_n7 fmc%_dac_n_o[6] lvds_25
+pin la_p7 fmc%_dac_p_o[6] lvds_25
+pin la_p9 fmc%_dac_p_o[5] lvds_25
+pin la_n9 fmc%_dac_n_o[5] lvds_25
+pin la_p12 fmc%_dac_p_o[4] lvds_25
+pin la_n12 fmc%_dac_n_o[4] lvds_25
+pin la_n11 fmc%_dac_n_o[3] lvds_25
+pin la_p11 fmc%_dac_p_o[3] lvds_25
+pin la_p13 fmc%_dac_p_o[2] lvds_25
+pin la_n13 fmc%_dac_n_o[2] lvds_25
+pin la_p16 fmc%_dac_p_o[1] lvds_25
+pin la_n16 fmc%_dac_n_o[1] lvds_25
+pin la_n15 fmc%_dac_n_o[0] lvds_25
+pin la_p15 fmc%_dac_p_o[0] lvds_25
+
+pin la_p22 fmc%_pll_sclk_o lvcmos25
+pin la_n22 fmc%_pll_sdio_b lvcmos25
+pin la_p21 fmc%_pll_sdo_i lvcmos25
+
+pin la_n19 fmc%_pll_sys_ld_i lvcmos25
+pin la_n21 fmc%_pll_sys_reset_n_o lvcmos25
+pin la_p26 fmc%_pll_sys_cs_n_o lvcmos25
+pin la_p14 fmc%_pll_sys_sync_n_o lvcmos25
+
+pin la_p17 fmc%_pll_vcxo_cs_n_o lvcmos25
+pin la_n14 fmc%_pll_vcxo_sync_n_o lvcmos25
+pin la_p19 fmc%_pll_vcxo_status_i lvcmos25
+
+pin la_p24 fmc%_adc_sdo_i lvcmos25
+pin la_n24 fmc%_adc_sck_o lvcmos25
+pin la_p25 fmc%_adc_cnv_o lvcmos25
+pin la_n25 fmc%_adc_sdi_o lvcmos25
+
+pin la_p23 fmc%_pd_lockdet_i lvcmos25
+pin la_n23 fmc%_pd_clk_o lvcmos25
+pin la_p27 fmc%_pd_data_b lvcmos25
+pin la_n27 fmc%_pd_le_o lvcmos25
+
+
+pin la_n0 fmc%_wr_ref_clk_n_i lvds_25
+pin la_p0 fmc%_wr_ref_clk_p_i lvds_25
+
+pin la_p20 fmc%_wr_dac_din_o lvcmos25
+pin la_p29 fmc%_wr_dac_sync_n_o lvcmos25
+pin la_p28 fmc%_wr_dac_sclk_o lvcmos25
+
+pin la_n32 fmc%_delay_d_o[9] lvcmos25
+pin la_n33 fmc%_delay_d_o[8] lvcmos25
+pin la_p32 fmc%_delay_d_o[7] lvcmos25
+pin la_p33 fmc%_delay_d_o[6] lvcmos25
+pin la_n30 fmc%_delay_d_o[5] lvcmos25
+pin la_n31 fmc%_delay_d_o[4] lvcmos25
+pin la_p30 fmc%_delay_d_o[3] lvcmos25
+pin la_p31 fmc%_delay_d_o[2] lvcmos25
+pin la_n28 fmc%_delay_d_o[1] lvcmos25
+pin la_n29 fmc%_delay_d_o[0] lvcmos25
+
+pin la_n17 fmc%_delay_fb_i lvcmos25
+pin la_n26 fmc%_delay_len_o lvcmos25
+pin la_n10 fmc%_delay_pulse_o lvcmos25
+
+#clk0out = DDS raw output
+#clk1out = system pll output
+#clk2out = vcxo pll output
+
+pin clk1m2c_n fmc%_vcxo_pll_clk_n_i lvds_25
+pin clk1m2c_p fmc%_vcxo_pll_clk_p_i lvds_25
+
+
+pin la_n20 fmc%_onewire_b lvcmos25
+
+
+pin la_p18 fmc%_trig_p_i lvds_25
+pin la_n18 fmc%_trig_n_i lvds_25
+
+
+
+#eof

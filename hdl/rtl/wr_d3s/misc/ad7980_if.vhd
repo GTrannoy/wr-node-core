@@ -25,7 +25,7 @@ end ad7980_if;
 
 architecture rtl of ad7980_if is
 
-  component spi_master
+  component ad7980_spi_master
     generic (
       g_div_ratio_log2 : integer;
       g_num_data_bits  : integer);
@@ -54,7 +54,7 @@ architecture rtl of ad7980_if is
   signal d_rdy : std_logic;
 begin  -- rtl
 
-  U_SPI_Master : spi_master
+  U_SPI_Master : ad7980_spi_master
     generic map (
       g_div_ratio_log2 => 3,
       g_num_data_bits  => 16)

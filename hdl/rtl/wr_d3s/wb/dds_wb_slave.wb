@@ -1,0 +1,324 @@
+-- -*- Mode: LUA; tab-width: 2 -*-
+
+peripheral {
+   name = "DDS RF distribution WB Slave";
+   hdl_entity = "dds_wb_slave";
+   prefix = "dds";
+
+	 reg {
+			prefix = "CR";
+			name = "Control Register";
+			
+			field {
+				 name = "Sampling Enable";
+				 prefix = "SAMP_EN";
+				 type = BIT;
+				 clock = "clk_ref_i";
+				 access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+			};
+
+			field {
+				 name = "Sample rate divider";
+				 prefix = "SAMP_DIV";
+				 type = SLV;
+				 size = 16;
+				 clock = "clk_ref_i";
+				 access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+			};
+	 };
+
+	 reg {
+			prefix = "TCR";
+			name = "Time Control Register";
+			
+			field {
+				 name = "WR Lock Enable";
+				 prefix = "WR_LOCK_EN";
+				 type = BIT;
+				 access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+			};
+
+			field {
+				 name = "WR Locked";
+				 prefix = "WR_LOCKED";
+				 type = BIT;
+				 access_bus = READ_ONLY;
+         access_dev = WRITE_ONLY;
+			};
+
+			field {
+				 name = "WR Link";
+				 prefix = "WR_LINK";
+				 type = BIT;
+				 access_bus = READ_ONLY;
+         access_dev = WRITE_ONLY;
+			};
+
+			field {
+				 name = "WR Time Valid";
+				 prefix = "WR_TIME_VALID";
+				 type = BIT;
+				 access_bus = READ_ONLY;
+         access_dev = WRITE_ONLY;
+			};
+		
+	 };
+
+   reg {
+      prefix = "GPIOR";
+      name = "GPIO register";
+
+      field {
+         name = "System PLL CS";
+         prefix = "PLL_SYS_CS_N";
+         type = BIT;
+         access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+      };
+
+      field {
+         name = "System Reset";
+         prefix = "PLL_SYS_RESET_N";
+         type = BIT;
+         access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+      };
+
+      field {
+         name = "PLL SCLK (shared)";
+         prefix = "PLL_SCLK";
+         type = BIT;
+         access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+      };
+
+      field {
+         name = "PLL SDIO (shared)";
+         prefix = "PLL_SDIO";
+         type = BIT;
+         access_bus = READ_WRITE;
+         access_dev = READ_WRITE;
+         load = LOAD_EXT;
+      };
+
+      field {
+         name = "PLL SDIO direction (shared)";
+         prefix = "PLL_SDIO_DIR";
+         type = BIT;
+         access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+      };
+
+      field {
+         name = "VCXO PLL Reset";
+         prefix = "PLL_VCXO_RESET_N";
+         type = BIT;
+         access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+      };
+
+			field {
+         name = "VCXO PLL Chip Select";
+         prefix = "PLL_VCXO_CS_N";
+         type = BIT;
+         access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+      };
+
+      field {
+         name = "VCXO PLL SDO";
+         prefix = "PLL_VCXO_SDO";
+         type = BIT;
+         access_bus = READ_ONLY;
+         access_dev = WRITE_ONLY;
+      };
+
+      field {
+         name = "ADF4002 Chip Enable";
+         prefix = "ADF_CE";
+         type = BIT;
+         access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+
+      };
+
+      field {
+         name = "ADF4002 Clock";
+         prefix = "ADF_CLK";
+         type = BIT;
+         access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+
+      };
+
+      field {
+         name = "ADF4002 Latch Enable";
+         prefix = "ADF_LE";
+         type = BIT;
+         access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+
+      };
+
+      field {
+         name = "ADF4002 Data";
+         prefix = "ADF_DATA";
+         type = BIT;
+         access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+      };
+   };
+
+   reg {
+      name = "PD ADC Data register";
+      prefix = "PD_DATA";
+
+      field {
+         name = "ADC data";
+         prefix = "DATA";
+         size = 16;
+         type = SLV;
+				 access_dev = WRITE_ONLY;
+				 access_bus = READ_ONLY;
+      };
+			
+			field {
+				 name = "ADC data valid";
+				 prefix = "VALID";
+				 type = BIT;
+				 access_dev = READ_WRITE;
+				 access_bus = READ_WRITE;
+				 load = LOAD_EXT;
+			};
+	 };
+
+   reg {
+      name = "DDS Tune Value";
+      prefix = "TUNE_VAL";
+      field {
+				 clock = "clk_ref_i";
+         name = "DDS tune word";
+         prefix = "TUNE";
+         size = 32;
+         type = SLV;
+				 access_bus = READ_WRITE;
+         access_dev = READ_WRITE;
+				 load = LOAD_EXT;
+      };
+   };
+
+	 reg {
+			name = "DDS Tune Control";
+      prefix = "TUNE_CR";
+      field {
+				 clock = "clk_ref_i";
+         name = "DDS tune word request";
+         prefix = "TUNE_REQ";
+         type = BIT;
+				 access_bus = READ_WRITE;
+         access_dev = READ_WRITE;
+				 load = LOAD_EXT;
+      };
+	 };
+
+   reg {
+      name = "DDS Center frequency hi";
+      prefix = "FREQ_HI";
+      field {
+         name = "Center freq HI";
+         size = 32;
+         type = SLV;
+         clock = "clk_ref_i";
+         access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+      };    
+   };
+
+   reg {
+      name = "DDS Center frequency lo";
+      prefix = "FREQ_LO";
+      field {
+         name = "Center freq LO";
+         size = 32;
+         type = SLV;
+         clock = "clk_ref_i";
+         access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+         
+      };
+   };
+
+   reg {
+      name = "DDS Gain";
+      prefix = "GAIN";
+      field {
+         name = "DDS gain (4.12 unsigned)";
+         size = 16;
+         type = SLV;
+         clock = "clk_ref_i";
+         access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+         
+      };
+   };
+
+   reg {
+      name = "Reset Register";
+      prefix = "RSTR";
+      field {
+         name = "FPGA REF/Serdes PLL Reset";
+         prefix = "PLL_RST";
+         type = BIT;
+         access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+         
+      };
+      field {
+         name = "FPGA DDS Logic software reset";
+         prefix = "SW_RST";
+				 reset_value = 1;
+         type = BIT;
+         access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+         
+      };
+   };
+
+   reg {
+      name = "I2C bitbanged IO register";
+      prefix = "I2CR";
+      field {
+         name = "SCL Line out";
+         prefix = "SCL_OUT";
+         type = BIT;
+         reset_value = 1;
+         access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+      };
+      field {
+         name = "SDA Line out";
+         prefix = "SDA_OUT";
+         type = BIT;
+         reset_value = 1;
+         access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+      };
+      field {
+         name = "SCL Line in";
+         prefix = "SCL_IN";
+         type = BIT;
+         access_bus = READ_ONLY;
+         access_dev = WRITE_ONLY;
+      };
+      field {
+         name = "SDA Line in";
+         prefix = "SDA_IN";
+         type = BIT;
+         access_bus = READ_ONLY;
+         access_dev = WRITE_ONLY;
+      };
+   };
+};

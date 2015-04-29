@@ -11,5 +11,5 @@ include_dirs=["../../sim", "../include", "../include/vme64x_bfm"]
 
 files = [ "main.sv" ]
 
-modules = { "local" :  [ "../../rtl" , "../../top/svec/list_tdc_fd" ] }
+modules = { "local" :  [ "../../rtl" , "../../top/svec/wr_d3s_test" ] }
 
