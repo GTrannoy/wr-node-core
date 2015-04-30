@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-04-28
+-- Last update: 2015-04-30
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -291,7 +291,7 @@ architecture rtl of svec_top is
     wbd_width     => x"7",                 -- 8/16/32-bit port granularity
     sdb_component => (
       addr_first  => x"0000000000000000",
-      addr_last   => x"000000000000ffff",
+      addr_last   => x"0000000000000fff",
       product     => (
         vendor_id => x"000000000000CE42",  -- CERN
         device_id => x"dd334410",          
@@ -351,7 +351,7 @@ architecture rtl of svec_top is
   signal fmc_host_irq                   : std_logic_vector(1 downto 0);
 
   constant c_d3s0_sdb_record : t_sdb_record       := f_sdb_embed_device(c_D3S_SDB_DEVICE, x"00010000");
-  constant c_d3s1_sdb_record : t_sdb_record       := f_sdb_embed_device(c_D3S_SDB_DEVICE, x"00020000");
+  constant c_d3s1_sdb_record : t_sdb_record       := f_sdb_embed_device(c_D3S_SDB_DEVICE, x"00011000");
   constant c_d3s_vector     : t_wishbone_address := x"ffffffff";
 
   signal tm_link_up         : std_logic;
