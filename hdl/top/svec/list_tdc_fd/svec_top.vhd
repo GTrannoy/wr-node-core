@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-04-23
+-- Last update: 2015-04-29
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -326,12 +326,12 @@ architecture rtl of svec_top is
   signal fmc_host_wb_in, fmc_dp_wb_in   : t_wishbone_master_in_array(0 to 1);
   signal fmc_host_irq                   : std_logic_vector(1 downto 0);
 
-  constant c_tdc_bridge_sdb : t_sdb_bridge       := f_xwb_bridge_manual_sdb(x"0001FFFF", x"00000000");
-  constant c_tdc_sdb_record : t_sdb_record       := f_sdb_embed_bridge(c_tdc_bridge_sdb, x"00020000");
-  constant c_tdc_vector     : t_wishbone_address := x"00023000";
+  constant c_tdc_bridge_sdb : t_sdb_bridge       := f_xwb_bridge_manual_sdb(x"00007FFF", x"00000000");
+  constant c_tdc_sdb_record : t_sdb_record       := f_sdb_embed_bridge(c_tdc_bridge_sdb, x"00010000");
+  constant c_tdc_vector     : t_wishbone_address := x"00013000";
 
-  constant c_fd_sdb_record : t_sdb_record       := f_sdb_embed_device(c_FD_SDB_DEVICE, x"00040000");
-  constant c_fd_vector     : t_wishbone_address := x"00040000";
+  constant c_fd_sdb_record : t_sdb_record       := f_sdb_embed_device(c_FD_SDB_DEVICE, x"00018000");
+  constant c_fd_vector     : t_wishbone_address := x"00018000";
 
   attribute keep : string;
 

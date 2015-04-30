@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-04-23
+-- Last update: 2015-04-29
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -151,7 +151,7 @@ package wr_node_pkg is
     wbd_width     => x"7",                 -- 8/16/32-bit port granularity
     sdb_component => (
       addr_first  => x"0000000000000000",
-      addr_last   => x"000000000003ffff",
+      addr_last   => x"000000000001ffff",
       product     => (
         vendor_id => x"000000000000CE42",  -- CERN
         device_id => x"000090de",

@@ -150,7 +150,7 @@ module main;
 
       #150us;
       
-      cpu_csr = new ( acc, 'h0xcd0000 );
+      cpu_csr = new ( acc, 'h0xc30000 );
       cpu_csr.init();
       cpu_csr.reset_core(0, 0);
 

@@ -8,6 +8,7 @@ syn_grade = "-3"
 syn_package = "fgg900"
 syn_top = "svec_top"
 syn_project = "svec_list_tdc_fd.xise"
+syn_tool="ise"
 
 #files = [ "wrc-release.ram" ]
 modules = { "local" : [ "../../../top/svec/list_tdc_fd" ] }

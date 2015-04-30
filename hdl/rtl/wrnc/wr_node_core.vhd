@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-04-23
+-- Last update: 2015-04-29
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -186,10 +186,10 @@ architecture rtl of wr_node_core is
       master_o : out t_wishbone_master_out);
   end component wb_remapper;
 
-  constant c_smem_remap_mask_in  : t_wishbone_address_array(0 downto 0) := (0 => x"00030000");
-  constant c_smem_remap_mask_out : t_wishbone_address_array(0 downto 0) := (0 => x"0000ffff");
+  constant c_smem_remap_mask_in  : t_wishbone_address_array(0 downto 0) := (0 => x"00018000");
+  constant c_smem_remap_mask_out : t_wishbone_address_array(0 downto 0) := (0 => x"00007fff");
 
-  constant c_smem_remap_base_in  : t_wishbone_address_array(0 downto 0) := (0 => x"00020000");
+  constant c_smem_remap_base_in  : t_wishbone_address_array(0 downto 0) := (0 => x"00018000");
   constant c_smem_remap_base_out : t_wishbone_address_array(0 downto 0) := (0 => x"00200000");
 
 

@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-04-23
+-- Last update: 2015-04-30
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -269,9 +269,9 @@ architecture rtl of svec_node_template is
     (
       c_SLAVE_FMC0    => g_fmc0_sdb,
       c_SLAVE_FMC1    => g_fmc1_sdb,
-      c_SLAVE_VIC     => f_sdb_embed_device(c_xwb_vic_sdb, x"00070000"),
-      c_SLAVE_WR_CORE => f_sdb_embed_bridge(c_WRCORE_BRIDGE_SDB, x"00080000"),
-      c_SLAVE_WR_NODE => f_sdb_embed_device(c_WR_NODE_SDB, x"000c0000")
+      c_SLAVE_VIC     => f_sdb_embed_device(c_xwb_vic_sdb, x"00002000"),
+      c_SLAVE_WR_CORE => f_sdb_embed_bridge(c_WRCORE_BRIDGE_SDB, x"00040000"),
+      c_SLAVE_WR_NODE => f_sdb_embed_device(c_WR_NODE_SDB, x"00020000")
 --      c_DESC_SYNTHESIS => f_sdb_embed_synthesis(c_sdb_synthesis_info),
 --      c_DESC_REPO_URL  => f_sdb_embed_repo_url(c_sdb_repo_url)
       );
@@ -281,8 +281,8 @@ architecture rtl of svec_node_template is
   constant c_VIC_VECTOR_TABLE : t_wishbone_address_array(0 to 3) :=
     (0 => g_fmc0_vic_vector,
      1 => g_fmc1_vic_vector,
-     2 => x"000c0000", -- WRNC Mqueue interrupt
-     3 => x"000c0001" -- WRNC Debug Msg interrupt
+     2 => x"00020000", -- WRNC Mqueue interrupt
+     3 => x"00020001" -- WRNC Debug Msg interrupt
      );
 
   signal cnx_master_out : t_wishbone_master_out_array(c_NUM_WB_MASTERS-1 downto 0);
@@ -523,7 +523,7 @@ begin
 
   U_VME_Core : xvme64x_core
     generic map (
-      g_adem_a24 => x"fff00000")
+      g_adem_a24 => x"fff80000")
     port map (
       clk_i           => clk_sys,
       rst_n_i         => powerup_rst_n,
