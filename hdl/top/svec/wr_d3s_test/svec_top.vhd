@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-04-30
+-- Last update: 2015-05-06
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -392,7 +392,7 @@ begin
       g_fmc1_vic_vector          => c_d3s_vector,
       g_simulation               => g_simulation,
       g_with_wr_phy              => true,
-      g_double_wrnode_core_clock => true,
+      g_double_wrnode_core_clock => false,
       g_wr_node_config           => c_node_config)
     port map (
       rst_n_a_i           => rst_n_a_i,
