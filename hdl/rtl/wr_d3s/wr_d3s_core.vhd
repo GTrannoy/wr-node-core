@@ -13,7 +13,7 @@ use unisim.vcomponents.all;
 entity wr_d3s_core is
   generic
     ( g_simulation : boolean := false;
-      g_sim_pps_period: integer := 1000
+      g_sim_pps_period: integer := 125000
     );
   
   port (
@@ -105,7 +105,7 @@ architecture behavioral of wr_d3s_core is
     port (
       rst_n_i    : in  std_logic;
       clk_sys_i  : in  std_logic;
-      wb_adr_i   : in  std_logic_vector(3 downto 0);
+      wb_adr_i   : in  std_logic_vector(4 downto 0);
       wb_dat_i   : in  std_logic_vector(31 downto 0);
       wb_dat_o   : out std_logic_vector(31 downto 0);
       wb_cyc_i   : in  std_logic;
@@ -207,10 +207,6 @@ architecture behavioral of wr_d3s_core is
 
   signal swrst, swrst_n, rst_n_ref, rst_ref : std_logic;
 
-  signal slave_cic_rst                     : std_logic;
-  signal cic_out                           : std_logic_vector(77 downto 0);
-  signal slave_tune, cic_in, cic_out_clamp : std_logic_vector(17 downto 0);
-  signal cic_ce                            : std_logic;
 
   function f_signed_multiply(a : std_logic_vector; b : std_logic_vector; shift : integer; output_length : integer)
     return std_logic_vector is
@@ -227,10 +223,6 @@ architecture behavioral of wr_d3s_core is
 
   signal adc_data   : std_logic_vector(15 downto 0);
   signal adc_dvalid : std_logic;
-
-  signal mdsp_out : std_logic_vector(23 downto 0);
-  signal pi_out   : std_logic_vector(15 downto 0);
-  signal mdsp_in  : std_logic_vector(23 downto 0);
 
   function f_sign_extend(x : std_logic_vector; output_length : integer) return std_logic_vector is
     variable tmp : std_logic_vector(output_length-1 downto 0);
@@ -270,6 +262,35 @@ architecture behavioral of wr_d3s_core is
 
   signal clk_dds_locked, fpll_reset : std_logic;
   signal trig_p_a: std_logic;
+  signal pll_sdio_val : std_logic;
+  signal cic_out_clamp: std_logic_vector(17 downto 0);
+
+  component chipscope_ila
+    port (
+      CONTROL : inout std_logic_vector(35 downto 0);
+      CLK     : in    std_logic;
+      TRIG0   : in    std_logic_vector(31 downto 0);
+      TRIG1   : in    std_logic_vector(31 downto 0);
+      TRIG2   : in    std_logic_vector(31 downto 0);
+      TRIG3   : in    std_logic_vector(31 downto 0));
+  end component;
+
+  component chipscope_icon
+    port (
+      CONTROL0 : inout std_logic_vector (35 downto 0));
+  end component;
+  signal CONTROL                    : std_logic_vector(35 downto 0);
+  signal CLK                        : std_logic;
+  signal TRIG0                      : std_logic_vector(31 downto 0);
+  signal TRIG1                      : std_logic_vector(31 downto 0);
+  signal TRIG2                      : std_logic_vector(31 downto 0);
+  signal TRIG3                      : std_logic_vector(31 downto 0);
+
+  signal freq_gate_cntr: unsigned(31 downto 0);
+  signal freq_gate : std_logic;
+
+  signal sample_idx : unsigned(23 downto 0);
+  signal load_acc_scheduled : std_logic;
   
 begin  -- behavioral
 
@@ -338,6 +359,41 @@ begin  -- behavioral
       CLKFBIN  => pllout_clk_fb_pllref,
       CLKIN    => clk_wr_ref_pllin);
 
+  p_freq_meas_gating: process(clk_sys_i)
+  begin
+    if rising_edge(clk_sys_i) then
+      if swrst_n = '0' then
+        freq_gate_cntr <= (others => '0');
+        freq_gate <= '0';
+      else
+        if(freq_gate_cntr = 0) then
+          freq_gate_cntr <= unsigned(regs_out.freq_meas_gate_o);
+          freq_gate <= '1';
+        else
+          freq_gate_cntr <= freq_gate_cntr - 1;
+          freq_gate <= '0';
+        end if;
+      end if;
+    end if;
+  end process;
+    
+  
+  U_Meas_VCXOClk: gc_frequency_meter
+    generic map (
+      g_with_internal_timebase => false,
+      g_clk_sys_freq           => 62500000,
+      g_counter_bits           => 32)
+    port map (
+      clk_sys_i    => clk_sys_i,
+      clk_in_i     => clk_dds_vcxo,
+      rst_n_i      => rst_n_i,
+      pps_p1_i     => freq_gate,
+      freq_o       => regs_in.freq_meas_vcxo_ref_i,
+      freq_valid_o => open);
+
+
+  regs_in.gpior_serdes_pll_locked_i <= clk_dds_locked;
+    
   cmp_dds_ref_buf : BUFG
     port map (
       O => clk_wr_ref,
@@ -356,7 +412,7 @@ begin  -- behavioral
     port map (
       rst_n_i    => rst_n_i,
       clk_sys_i  => clk_sys_i,
-      wb_adr_i   => slave_i.adr(5 downto 2),
+      wb_adr_i   => slave_i.adr(6 downto 2),
       wb_dat_i   => slave_i.dat,
       wb_dat_o   => slave_o.dat,
       wb_cyc_i   => slave_i.cyc,
@@ -400,7 +456,8 @@ begin  -- behavioral
         presc_counter <= (others => '0');
         presc_tick    <= '0';
       else
-        if(wr_pps_prepulse(2) = '1' or presc_counter = x"ff") then
+        if(wr_pps_prepulse(5) = '1' or presc_counter = x"7c") then -- divide by
+                                                                   -- 125
           presc_counter <= (others => '0');
           presc_tick    <= '1';
         else
@@ -417,7 +474,7 @@ begin  -- behavioral
       if rst_n_ref = '0' or regs_out.cr_samp_en_o = '0' then
         sampling_div <= (others => '0');
         sample_p     <= '0';
-      else
+      elsif presc_tick = '1' then
         if sampling_div = unsigned(regs_out.cr_samp_div_o) then
           sample_p     <= '1';
           sampling_div <= (others => '0');
@@ -425,9 +482,30 @@ begin  -- behavioral
           sample_p     <= '0';
           sampling_div <= sampling_div + 1;
         end if;
+      else
+        sample_p <= '0';
       end if;
     end if;
   end process;
+
+  p_sample_counter : process(clk_wr_ref)
+  begin
+    if rising_edge(clk_wr_ref) then
+      if rst_n_ref = '0' or regs_out.cr_samp_en_o = '0' then
+        sample_idx <= (others => '0');
+      else
+        if sample_p = '1' then
+          if wr_pps_prepulse(3) = '1' then
+            sample_idx <= (others => '0');
+          else
+            sample_idx <= sample_idx + 1;
+          end if;
+        end if;
+      end if;
+    end if;
+  end process;
+
+  regs_in.sample_idx_i <= std_logic_vector(sample_idx);
 
   U_ADC_Interface : ad7980_if
     port map (
@@ -491,14 +569,6 @@ begin  -- behavioral
       y3_o        => synth_y3);
 
   
-  U_Cic : cic_1024x
-    port map (
-      clk_i    => clk_wr_ref,
-      en_i     => '1',
-      rst_i    => slave_cic_rst,
-      x_i      => cic_in,
-      y_o      => cic_out,
-      ce_out_o => cic_ce);
 
 
   U_WR_DAC: gc_serial_dac
@@ -518,11 +588,30 @@ begin  -- behavioral
       dac_sclk_o    => wr_dac_sclk_o,
       dac_sdata_o   => wr_dac_din_o);
   
-  slave_cic_rst <= rst_ref or sample_p;
-  
-  cic_in <= (others => '0');
-  cic_out_clamp <= cic_out(cic_out'length-1 downto cic_out'length - cic_out_clamp'length);
+  cic_out_clamp <= regs_out.tune_val_tune_o(17 downto 0);
 
+  p_load_acc : process(clk_wr_ref)
+  begin
+    if rising_edge(clk_wr_ref) then
+      if(rst_n_ref = '0' or regs_out.cr_samp_en_o = '0') then
+        load_acc_scheduled <= '0';
+        synth_acc_load<= '0';
+      else
+        if(regs_out.tune_val_load_acc_load_o = '1' and regs_out.tune_val_load_acc_o = '1') then
+          load_acc_scheduled <= '1';
+          synth_acc_load <= '0';
+        elsif (sample_p = '1' and load_acc_scheduled = '1' )then
+          load_acc_scheduled <= '0';
+          synth_acc_load <= '1';
+          synth_acc_in <= regs_out.acc_load_hi_o(10 downto 0) & regs_out.acc_load_lo_o;
+        else
+          synth_acc_load <= '0';
+        end if;
+      end if;
+    end if;
+  end process;
+  regs_in.tune_val_load_acc_i <= load_acc_scheduled;
+  
   p_gen_tune : process(clk_wr_ref)
   begin
     if rising_edge(clk_wr_ref) then
@@ -542,13 +631,26 @@ begin  -- behavioral
         synth_tune_d1 <= synth_tune_d0;
 
         synth_tune_load <= '1';
-        synth_acc_load  <= '0';
         dac_data_par    <= synth_y3 & synth_y2 & synth_y1 & synth_y0;
+
       end if;
     end if;
   end process;
 
-
+  p_latch_dds_accu : process(clk_wr_ref)
+  begin
+    if rising_edge(clk_wr_ref) then
+      if(rst_n_ref = '0' or regs_out.cr_samp_en_o = '0') then
+        regs_in.acc_snap_hi_i <= (others => '0');
+        regs_in.acc_snap_lo_i <= (others => '0');
+      else
+        if(sample_p = '1') then
+          regs_in.acc_snap_hi_i(10 downto 0) <= synth_acc_out(42 downto 32);
+          regs_in.acc_snap_lo_i <= synth_acc_out(31 downto 0);
+        end if;
+      end if;
+    end if;
+  end process;
 
   swrst        <= regs_out.rstr_sw_rst_o or (not rst_n_i);
 --  swrst_o      <= swrst;
@@ -570,12 +672,14 @@ begin  -- behavioral
   begin
     if rising_edge(clk_sys_i) then
       if regs_out.gpior_pll_sdio_load_o = '1' then
-        pll_sdio_b <= regs_out.gpior_pll_sdio_o;
+        pll_sdio_val <= regs_out.gpior_pll_sdio_o;
+        regs_in.gpior_pll_sdio_i <= pll_sdio_b;
+
       end if;
     end if;
   end process;
 
-  regs_in.gpior_pll_sdio_i <= pll_sdo_i;
+  pll_sdio_b <= pll_sdio_val when regs_out.gpior_pll_sdio_dir_o = '1' else 'Z';
 
 --  pd_ce_o   <= regs_out.gpior_adf_ce_o;
   pd_clk_o  <= regs_out.gpior_adf_clk_o;
@@ -586,5 +690,23 @@ begin  -- behavioral
   tm_clk_aux_lock_en_o <= regs_out.tcr_wr_lock_en_o;
   regs_in.tcr_wr_link_i <= tm_link_up_i;
   regs_in.tcr_wr_time_valid_i <= tm_time_valid_i;
+
+  chipscope_ila_1 : chipscope_ila
+    port map (
+      CONTROL => CONTROL,
+      CLK     => clk_wr_ref,
+      TRIG0   => TRIG0,
+      TRIG1   => TRIG1,
+      TRIG2   => TRIG2,
+      TRIG3   => TRIG3);
+
+  chipscope_icon_1 : chipscope_icon
+    port map (
+      CONTROL0 => CONTROL);
+
+  trig0(13 downto 0) <= synth_y0;
+  trig1(31 downto 0) <= synth_tune(31 downto 0);
+  trig2(9 downto 0) <= synth_tune(41 downto 32);
+  
   
 end behavioral;

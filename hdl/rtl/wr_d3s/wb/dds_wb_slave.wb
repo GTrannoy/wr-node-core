@@ -12,6 +12,9 @@ peripheral {
 			field {
 				 name = "Sampling Enable";
 				 prefix = "SAMP_EN";
+				 description = "write 1: enable sampling of the DDS control loop (PD_DATA will be periodically updated withthe ADC value, DDS frequency tune will be loaded from the TUNE_VAL register)\
+write 0: disable sampling";
+
 				 type = BIT;
 				 clock = "clk_ref_i";
 				 access_bus = READ_WRITE;
@@ -21,6 +24,7 @@ peripheral {
 			field {
 				 name = "Sample rate divider";
 				 prefix = "SAMP_DIV";
+				 description = "Defines the sample rate of the control loop: Fs = 1 MHz / (SAMP_DIV + 1)";
 				 type = SLV;
 				 size = 16;
 				 clock = "clk_ref_i";
@@ -36,6 +40,7 @@ peripheral {
 			field {
 				 name = "WR Lock Enable";
 				 prefix = "WR_LOCK_EN";
+				 description = "write 1: enables locking core's time to WR";
 				 type = BIT;
 				 access_bus = READ_WRITE;
          access_dev = READ_ONLY;
@@ -44,6 +49,7 @@ peripheral {
 			field {
 				 name = "WR Locked";
 				 prefix = "WR_LOCKED";
+				 description = "read 1: DDS time base locked to WR";
 				 type = BIT;
 				 access_bus = READ_ONLY;
          access_dev = WRITE_ONLY;
@@ -52,6 +58,7 @@ peripheral {
 			field {
 				 name = "WR Link";
 				 prefix = "WR_LINK";
+				 description = "read 1: WR link is up";
 				 type = BIT;
 				 access_bus = READ_ONLY;
          access_dev = WRITE_ONLY;
@@ -60,6 +67,7 @@ peripheral {
 			field {
 				 name = "WR Time Valid";
 				 prefix = "WR_TIME_VALID";
+				 description = "read 1: WR link is synchronized";
 				 type = BIT;
 				 access_bus = READ_ONLY;
          access_dev = WRITE_ONLY;
@@ -74,6 +82,7 @@ peripheral {
       field {
          name = "System PLL CS";
          prefix = "PLL_SYS_CS_N";
+				 description = "System PLL CS_N line output";
          type = BIT;
          access_bus = READ_WRITE;
          access_dev = READ_ONLY;
@@ -82,6 +91,7 @@ peripheral {
       field {
          name = "System Reset";
          prefix = "PLL_SYS_RESET_N";
+				 description = "System PLL RESET_N line output";
          type = BIT;
          access_bus = READ_WRITE;
          access_dev = READ_ONLY;
@@ -90,6 +100,7 @@ peripheral {
       field {
          name = "PLL SCLK (shared)";
          prefix = "PLL_SCLK";
+				 description = "System/VCXO PLL SPI clock output";
          type = BIT;
          access_bus = READ_WRITE;
          access_dev = READ_ONLY;
@@ -98,6 +109,7 @@ peripheral {
       field {
          name = "PLL SDIO (shared)";
          prefix = "PLL_SDIO";
+				 description = "System/VCXO PLL SPI data input/output";
          type = BIT;
          access_bus = READ_WRITE;
          access_dev = READ_WRITE;
@@ -107,6 +119,7 @@ peripheral {
       field {
          name = "PLL SDIO direction (shared)";
          prefix = "PLL_SDIO_DIR";
+				 description = "System/VCXO PLL SPI data line direction (1 = FPGA output)";
          type = BIT;
          access_bus = READ_WRITE;
          access_dev = READ_ONLY;
@@ -115,6 +128,7 @@ peripheral {
       field {
          name = "VCXO PLL Reset";
          prefix = "PLL_VCXO_RESET_N";
+				 description = "VCXO PLL SPI RESET_N line";
          type = BIT;
          access_bus = READ_WRITE;
          access_dev = READ_ONLY;
@@ -123,6 +137,7 @@ peripheral {
 			field {
          name = "VCXO PLL Chip Select";
          prefix = "PLL_VCXO_CS_N";
+				 description = "VCXO PLL SPI CS_N line";
          type = BIT;
          access_bus = READ_WRITE;
          access_dev = READ_ONLY;
@@ -131,6 +146,8 @@ peripheral {
       field {
          name = "VCXO PLL SDO";
          prefix = "PLL_VCXO_SDO";
+				 description = "unused";
+
          type = BIT;
          access_bus = READ_ONLY;
          access_dev = WRITE_ONLY;
@@ -170,6 +187,16 @@ peripheral {
          access_bus = READ_WRITE;
          access_dev = READ_ONLY;
       };
+
+			field {
+         name = "Serdes PLL locked";
+         prefix = "SERDES_PLL_LOCKED";
+				 description = "read 1: FPGA internal PLL for deriving 500 MHz DAC serdes clock is locked.";
+
+         type = BIT;
+         access_bus = READ_ONLY;
+         access_dev = WRITE_ONLY;
+      };
    };
 
    reg {
@@ -179,6 +206,7 @@ peripheral {
       field {
          name = "ADC data";
          prefix = "DATA";
+				 description = "Output of the ADF4002 phase detector sampled by the ADC at the last sample";
          size = 16;
          type = SLV;
 				 access_dev = WRITE_ONLY;
@@ -188,6 +216,8 @@ peripheral {
 			field {
 				 name = "ADC data valid";
 				 prefix = "VALID";
+				 description = "read 1: next phase sample is waiting in the DATA field\
+                        write 0: clears the VALID flag";
 				 type = BIT;
 				 access_dev = READ_WRITE;
 				 access_bus = READ_WRITE;
@@ -202,33 +232,32 @@ peripheral {
 				 clock = "clk_ref_i";
          name = "DDS tune word";
          prefix = "TUNE";
-         size = 32;
+				 description = "Current frequency tune value, loaded to the DDS at the beginning of each sampling interval. The actual DDS step is (TUNE * DDS_GAIN) / 4096 + FREQ";
+         size = 28;
          type = SLV;
 				 access_bus = READ_WRITE;
-         access_dev = READ_WRITE;
-				 load = LOAD_EXT;
+         access_dev = READ_ONLY;
       };
-   };
 
-	 reg {
-			name = "DDS Tune Control";
-      prefix = "TUNE_CR";
-      field {
+			field {
 				 clock = "clk_ref_i";
-         name = "DDS tune word request";
-         prefix = "TUNE_REQ";
-         type = BIT;
+         name = "Load DDS Accumulator along with next tune sample.";
+ 			 description = "write 1: forces re-load of the DDS accumulator (from ACC_LOAD registers) along with the next frequency tune value";
+         prefix = "LOAD_ACC";
+				 type = BIT;
 				 access_bus = READ_WRITE;
          access_dev = READ_WRITE;
 				 load = LOAD_EXT;
-      };
-	 };
+			};
+   };
+	
 
    reg {
       name = "DDS Center frequency hi";
       prefix = "FREQ_HI";
       field {
          name = "Center freq HI";
+				 description = "Center frequnency of the DDS, high part - 11 bits. Check scripts/calc_tune.py for the equation.";
          size = 32;
          type = SLV;
          clock = "clk_ref_i";
@@ -242,6 +271,7 @@ peripheral {
       prefix = "FREQ_LO";
       field {
          name = "Center freq LO";
+				 description = "Center frequnency of the DDS, low part - 32 bits. Check scripts/calc_tune.py for the equation.";
          size = 32;
          type = SLV;
          clock = "clk_ref_i";
@@ -252,10 +282,71 @@ peripheral {
    };
 
    reg {
+      name = "DDS Accumulator Snapshot HI";
+      prefix = "ACC_SNAP_HI";
+      field {
+         name = "HI";
+				 description = "Value of the DDS accumulator taken at the beginning of the previous sampling period (high 11 bits)";
+         size = 32;
+         type = SLV;
+         clock = "clk_ref_i";
+         access_bus = READ_ONLY;
+         access_dev = WRITE_ONLY;
+      };    
+   };
+
+   reg {
+      name = "DDS Accumulator Snapshot LO";
+      prefix = "ACC_SNAP_LO";
+      field {
+         name = "LO";
+				 description = "Value of the DDS accumulator taken at the beginning of the previous sampling period (lower 32 bits)";
+         size = 32;
+         type = SLV;
+         clock = "clk_ref_i";
+         access_bus = READ_ONLY;
+         access_dev = WRITE_ONLY;
+         
+      };
+   };
+
+ reg {
+      name = "DDS Accumulator Load Value HI";
+      prefix = "ACC_LOAD_HI";
+      field {
+         name = "HI";
+				 description = "Value of the DDS accumulator to load at the beginning of the next sampling period (if TUNE_VAL.LOAD_ACC = 1). High 11 bits.";
+         size = 32;
+         type = SLV;
+         clock = "clk_ref_i";
+         access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+      };    
+   };
+
+   reg {
+      name = "DDS Accumulator Load Value LO";
+      prefix = "ACC_LOAD_LO";
+      field {
+         name = "LO";
+				 description = "Value of the DDS accumulator to load at the beginning of the next sampling period (if TUNE_VAL.LOAD_ACC = 1). Lower 32 bits.";
+         size = 32;
+         type = SLV;
+         clock = "clk_ref_i";
+         access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+         
+      };
+   };
+
+
+   reg {
       name = "DDS Gain";
       prefix = "GAIN";
       field {
          name = "DDS gain (4.12 unsigned)";
+				 description = "Gain of the DDS tuning. The DDS frequency control word is equal to: \
+                        CTRL = (DDS_GAIN * TUNE_VAL) / 4096 + FREQ(HI,LO)";
          size = 16;
          type = SLV;
          clock = "clk_ref_i";
@@ -271,6 +362,8 @@ peripheral {
       field {
          name = "FPGA REF/Serdes PLL Reset";
          prefix = "PLL_RST";
+				 description = "write 1: resets the internal PLL producing the DDS DAC serdes clock\
+                        write 0: un-reset";
          type = BIT;
          access_bus = READ_WRITE;
          access_dev = READ_ONLY;
@@ -279,6 +372,8 @@ peripheral {
       field {
          name = "FPGA DDS Logic software reset";
          prefix = "SW_RST";
+				 description = "write 1: software reset of the DDS core\
+                        write 0: un-reset";
 				 reset_value = 1;
          type = BIT;
          access_bus = READ_WRITE;
@@ -321,4 +416,46 @@ peripheral {
          access_dev = WRITE_ONLY;
       };
    };
+
+	 reg {
+      name = "VCXO/Reference Clock Frequency";
+      prefix = "FREQ_MEAS_VCXO_REF";
+      field {
+         name = "Freq";
+				 description = "Frequency of the REF CLK front panel input (divided by AD9510)";
+         size = 32;
+         type = SLV;
+         access_bus = READ_ONLY;
+         access_dev = WRITE_ONLY;
+      };    
+   };
+
+	 reg {
+      name = "Frequency Measurement Gating";
+      prefix = "FREQ_MEAS_GATE";
+      field {
+				 reset_value = 62500000;
+				 description = "Frequency measurement gating period, in 16ns ticks";
+         name = "Freq";
+         size = 32;
+         type = SLV;
+         access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+      };    
+   };
+
+	 reg {
+      name = "Current Sample Index";
+      prefix = "SAMPLE_IDX";
+      field {
+         name = "IDX";
+				 description = "Index of the current sampling period. The one that starts exactly at the PPS has index 0.";
+         size = 24;
+         type = SLV;
+				 clock = "clk_ref_i";
+         access_bus = READ_ONLY;
+         access_dev = WRITE_ONLY;
+      };    
+   };
+
 };
