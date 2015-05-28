@@ -33,7 +33,7 @@ module main;
    reg [27:0]  tm_cycles = 0;
 
    always@(posedge clk_wr) begin
-      if(tm_cycles == 999) begin
+      if(tm_cycles == 1249) begin
 	 tm_tai <= tm_tai + 1;
 	 tm_cycles <= 0;
       end      else
@@ -44,7 +44,7 @@ module main;
    
    wr_d3s_core #(
 		 .g_simulation(1),
-		 .g_sim_pps_period(1000) )
+		 .g_sim_pps_period(1250) )
    DUT (
                     .clk_sys_i   (clk_sys),
 		    .clk_ref_i   (clk_wr),
@@ -76,7 +76,16 @@ module main;
 
       
       host_acc.write(`ADDR_DDS_RSTR, 0); // unreset the core
-      host_acc.write(`ADDR_DDS_CR, (20 << 1) | 1); // set prescaler, enable sampling
+      host_acc.write(`ADDR_DDS_CR, (4 << 1) | 1); // set prescaler, enable sampling
+      host_acc.write(`ADDR_DDS_FREQ_HI, 'h28f);
+      host_acc.write(`ADDR_DDS_FREQ_LO, 'ha73cf04b);
+      host_acc.write(`ADDR_DDS_FREQ_MEAS_GATE, 1000);
+
+      host_acc.write(`ADDR_DDS_GAIN, 1<<12);
+      host_acc.write(`ADDR_DDS_ACC_LOAD_HI, 'hdead);
+      host_acc.write(`ADDR_DDS_ACC_LOAD_LO, 'hcafebabe);
+      host_acc.write(`ADDR_DDS_TUNE_VAL, 12345 | `DDS_TUNE_VAL_LOAD_ACC);
+      
       
    end // initial begin
    

@@ -105,8 +105,11 @@ add wave -noupdate /main/DUT/wr_cycles
 add wave -noupdate /main/DUT/wr_pps_prepulse
 add wave -noupdate /main/DUT/clk_dds_locked
 add wave -noupdate /main/DUT/fpll_reset
+add wave -noupdate /main/DUT/freq_gate
+add wave -noupdate /main/DUT/sample_idx
+add wave -noupdate /main/DUT/freq_gate_cntr
 TreeUpdate [SetDefaultTree]
-WaveRestoreCursors {{Cursor 1} {209900407 ps} 0}
+WaveRestoreCursors {{Cursor 1} {30001739 ps} 0}
 configure wave -namecolwidth 406
 configure wave -valuecolwidth 40
 configure wave -justifyvalue left
@@ -121,4 +124,4 @@ configure wave -griddelta 40
 configure wave -timeline 0
 configure wave -timelineunits ps
 update
-WaveRestoreZoom {209886 ns} {210006 ns}
+WaveRestoreZoom {29788 ns} {30268 ns}

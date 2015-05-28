@@ -7,7 +7,7 @@ target = "xilinx"
 fetchto = "../../ip_cores"
 include_dirs=["../../sim", "../include", "../include/vme64x_bfm"]
 
-#vcom_opt="-mixedsvvh l"
+vcom_opt="-mixedsvvh l"
 
 files = [ "main.sv" ]
 

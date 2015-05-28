@@ -113,6 +113,7 @@ class NodeCPUControl;
              end
         end
 
+/* -----\/----- EXCLUDED -----\/-----
       for(i=0;i<n;i++)
 	begin
 	   uint32_t rv;
@@ -123,6 +124,7 @@ class NodeCPUControl;
 	     $display("verification error\n");
 	   
 	end
+ -----/\----- EXCLUDED -----/\----- */
       
       
    endtask
