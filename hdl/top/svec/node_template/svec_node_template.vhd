@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-04-30
+-- Last update: 2015-05-27
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -17,6 +17,9 @@
 -- - WR Node Core + Etherbone
 -- - Wishbone interfaces for two mezzanines. This is indented for connecting
 --   FmcTdc/FmcDelay in various combinations, but not limited to these cards.
+-- Just instantiate this in the top level of your SVEC (see list_tdc_fd
+-- project), replacing the FineDelay/TDC mezzanines with any cores you want,
+-- synthesize and play!
 -------------------------------------------------------------------------------
 --
 -- Copyright (c) 2014-2015 CERN
@@ -58,15 +61,33 @@ use unisim.vcomponents.all;
 
 entity svec_node_template is
   generic (
+-- SDB record of the mezzanine connected to slot 0
     g_fmc0_sdb        : t_sdb_record;
+-- VIC interrupt vector address of the mezzanine in slot 0
     g_fmc0_vic_vector : t_wishbone_address;
+-- SDB record of the mezzanine connected to slot 1
     g_fmc1_sdb        : t_sdb_record;
+-- VIC interrupt vector address of the mezzanine in slot 1
     g_fmc1_vic_vector : t_wishbone_address;
 
+-- Reduces some timeouts to speed up simulations.
     g_simulation     : boolean := false;
+-- Enable/disable instantiation of the gigabit transceiver core.
+-- Speeds up the simulations a lot.
     g_with_wr_phy    : boolean := false;
+-- When true, the CPUs in the WR node run at 125 MHz (twice the
+-- 62.5 MHz system clock). May not meet the timing for heavily
+-- congested designs.
     g_double_wrnode_core_clock : boolean := false;
-    g_wr_node_config : t_wr_node_config
+
+-- Configuration of the WR Node Core. Fill in according to your needs.
+    g_wr_node_config : t_wr_node_config;
+
+-- Use external LEDs. When true, the front panel LEDs on the SVEC are
+-- driven by the "led_state_i" signal. Otherwise, they display the default
+-- board status (WR Link, timing, etc.)
+    g_use_external_fp_leds: boolean := false
+    
     );
 
   port (
@@ -147,7 +168,7 @@ entity svec_node_template is
     sfp_tx_fault_i    : in    std_logic := '0';
     sfp_tx_disable_o  : out   std_logic;
     sfp_los_i         : in    std_logic := '0';
-
+   
     pll20dac_din_o    : out std_logic;
     pll20dac_sclk_o   : out std_logic;
     pll20dac_sync_n_o : out std_logic;
@@ -163,19 +184,35 @@ entity svec_node_template is
     uart_rxd_i : in  std_logic := '1';
     uart_txd_o : out std_logic;
 
+    -------------------------------------------------------------------------
+    -- FMC <> WRNode interface (FMC slot 1)
+    -------------------------------------------------------------------------
+
+    -- aux clock for WR core to lock-
     fmc0_clk_aux_i  : in  std_logic;
+    -- host Wishbone bus (i.e. for the device driver to access the mezzanine regs)
     fmc0_host_wb_o  : out t_wishbone_master_out;
     fmc0_host_wb_i  : in  t_wishbone_master_in;
+    -- DP0 port of WR Node CPU 0
     fmc0_dp_wb_o    : out t_wishbone_master_out;
     fmc0_dp_wb_i    : in  t_wishbone_master_in;
+    -- host interrupt line
     fmc0_host_irq_i : in  std_logic;
 
+    -------------------------------------------------------------------------
+    -- FMC <> WRNode interface (FMC slot 2)
+    -------------------------------------------------------------------------
+    
     fmc1_clk_aux_i  : in  std_logic;
     fmc1_host_wb_o  : out t_wishbone_master_out;
     fmc1_host_wb_i  : in  t_wishbone_master_in;
     fmc1_dp_wb_o    : out t_wishbone_master_out;
     fmc1_dp_wb_i    : in  t_wishbone_master_in;
     fmc1_host_irq_i : in  std_logic;
+
+    -------------------------------------------------------------------------
+    -- WR Core timing interface.
+    -------------------------------------------------------------------------
 
     tm_link_up_o         : out std_logic;
     tm_dac_value_o       : out std_logic_vector(23 downto 0);
@@ -187,7 +224,9 @@ entity svec_node_template is
     tm_cycles_o          : out std_logic_vector(27 downto 0);
 
     carrier_scl_b : inout std_logic;
-    carrier_sda_b : inout std_logic
+    carrier_sda_b : inout std_logic;
+
+    led_state_i: in std_logic_vector(15 downto 0)
     );
 
 end svec_node_template;
@@ -844,9 +883,15 @@ begin
   -- WR Node stuff begins here    --
   ----------------------------------
 
+  gen_with_external_leds: if(g_use_external_fp_leds) generate
+    led_state <= led_state_i;
+    end generate gen_with_external_leds;
+
+  gen_without_external_leds: if(not g_use_external_fp_leds) generate
+ 
   -- Drive the front panel LEDs:
 
-  -- LED 1: WR Link status
+    -- LED 1: WR Link status
   led_state(6) <= led_link;
   led_state(7) <= '0';
 
@@ -877,14 +922,12 @@ begin
   led_state(8) <= '0';
   led_state(9) <= '0';
 
+  end generate gen_without_external_leds;
+
   -- The SFP is permanently enabled.
   sfp_tx_disable_o <= '0';
 
   -- Debug signals assignments (FP lemos)
-
-  --fp_gpio1_a2b_o  <= '1';
-  --fp_gpio2_a2b_o  <= '1';
-  --fp_gpio34_a2b_o <= '1';
 
   rst_n_sys_o <= local_reset_n;
   clk_sys_o   <= clk_sys;
