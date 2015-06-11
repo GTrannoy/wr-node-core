@@ -56,7 +56,7 @@ begin  -- rtl
 
   U_SPI_Master : ad7980_spi_master
     generic map (
-      g_div_ratio_log2 => 3,
+      g_div_ratio_log2 => 4,
       g_num_data_bits  => 16)
     port map (
       clk_sys_i  => clk_i,
@@ -91,7 +91,7 @@ begin  -- rtl
             end if;
           when START_CNV =>
             count<= count +1;
-            if(count = 100) then
+            if(count = 200) then
               adc_cnv_o <= '0';
               do_acq    <= '1';
               state     <= READBACK;

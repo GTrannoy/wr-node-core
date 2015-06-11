@@ -209,6 +209,7 @@ write 0: disable sampling";
 				 description = "Output of the ADF4002 phase detector sampled by the ADC at the last sample";
          size = 16;
          type = SLV;
+				 clock = "clk_ref_i";
 				 access_dev = WRITE_ONLY;
 				 access_bus = READ_ONLY;
       };
@@ -219,6 +220,7 @@ write 0: disable sampling";
 				 description = "read 1: next phase sample is waiting in the DATA field\
                         write 0: clears the VALID flag";
 				 type = BIT;
+				 clock = "clk_ref_i";
 				 access_dev = READ_WRITE;
 				 access_bus = READ_WRITE;
 				 load = LOAD_EXT;
@@ -419,10 +421,23 @@ write 0: disable sampling";
 
 	 reg {
       name = "VCXO/Reference Clock Frequency";
-      prefix = "FREQ_MEAS_VCXO_REF";
+      prefix = "FREQ_MEAS_RF_IN";
       field {
          name = "Freq";
 				 description = "Frequency of the REF CLK front panel input (divided by AD9510)";
+         size = 32;
+         type = SLV;
+         access_bus = READ_ONLY;
+         access_dev = WRITE_ONLY;
+      };    
+   };
+
+	 reg {
+      name = "DDS Output Frequency";
+      prefix = "FREQ_MEAS_DDS";
+      field {
+         name = "Freq";
+				 description = "Frequency of the DDS output signal";
          size = 32;
          type = SLV;
          access_bus = READ_ONLY;
@@ -457,5 +472,137 @@ write 0: disable sampling";
          access_dev = WRITE_ONLY;
       };    
    };
+
+	 reg {
+			name = "RF Counter reset safe phase value";
+			prefix = "RF_RST_PHASE";
+			field {
+         prefix = "LO";
+				 name = "Lower bound";
+         size = 8;
+         type = SLV;
+				 clock = "clk_ref_i";
+         access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+      };    
+
+			field {
+         prefix = "HI";
+				 name = "Upper bound";
+         size = 8;
+         type = SLV;
+				 clock = "clk_ref_i";
+         access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+      };    
+	 };
+
+	 reg {
+			name = "RF Load TAI Trigger cycles";
+			prefix = "RF_CNT_TRIGGER";
+			field {
+				 prefix = "CYCLES";
+				 name = "TAI cycles";
+				 type = SLV;
+				 size = 28;
+				 clock = "clk_ref_i";
+         access_bus = READ_WRITE;
+         access_dev = READ_WRITE;
+				 load = LOAD_EXT;
+			};
+
+			field {
+				 name = "ARM RF Counter Load";
+				 prefix = "ARM";
+				 type = MONOSTABLE;
+				 clock = "clk_ref_i";
+			};
+
+		
+			field {
+				 name = "DONE";
+				 prefix = "DONE";
+				 type = BIT;
+				 clock = "clk_ref_i";
+				 access_bus = READ_ONLY;
+         access_dev = WRITE_ONLY;
+			};			
+
+	 };
+
+	 reg {
+			name = "RF Counter Sync Value";
+			prefix = "RF_CNT_SYNC_VALUE";
+			field {
+				 name = "RF ticks";
+				 type = SLV;
+				 size = 32;
+				 clock = "clk_ref_i";
+				 access_bus = READ_WRITE;
+				 access_dev = READ_ONLY;
+			};
+	 };
+
+	 reg {
+			name = "RF Counter Period";
+			prefix = "RF_CNT_PERIOD";
+			field {
+				 name = "RF Counter Period";
+				 type = SLV;
+				 size = 32;
+				 clock = "clk_dds_i";
+				 access_bus = READ_WRITE;
+				 access_dev = READ_ONLY;
+			};
+	 };
+
+	 reg {
+			name = "RF Counter Snapshot";
+			prefix = "RF_CNT_SNAPSHOT";
+			field {
+				 name = "RF Counter Snapshot";
+				 type = SLV;
+				 size = 32;
+				 clock = "clk_ref_i";
+				 access_bus = READ_ONLY;
+				 access_dev = WRITE_ONLY;
+			};
+	 };
+
+
+	 reg {
+			name = "Trigger In Snapshot";
+			prefix = "TRIG_IN_SNAPSHOT";
+			field {
+				 name = "Trigger In Snapshot";
+				 type = SLV;
+				 size = 32;
+				 clock = "clk_dds_i";
+				 access_bus = READ_ONLY;
+				 access_dev = WRITE_ONLY;
+			};
+	 };
+
+	 reg {
+			name = "Trigger In Control";
+			prefix = "TRIG_IN_CSR";
+
+			field {
+				 name = "Trigger In Arm (Snapshot)";
+				 type = MONOSTABLE;
+				 prefix = "ARM";
+				 clock = "clk_dds_i";
+			};
+
+			field {
+				 name = "DONE";
+				 prefix = "DONE";
+				 type = BIT;
+				 clock = "clk_dds_i";
+				 access_bus = READ_ONLY;
+         access_dev = WRITE_ONLY;
+			};			
+	 };
+
 
 };
