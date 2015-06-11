@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-05-06
+-- Last update: 2015-06-10
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -147,20 +147,20 @@ entity svec_top is
     fmc0_dac_p_o : out std_logic_vector(13 downto 0);
 
     -- SPI bus to both PLL chips
-    fmc0_pll_sclk_o : out   std_logic;
+    fmc0_pll_sclk_o : buffer  std_logic;
     fmc0_pll_sdio_b : inout std_logic;
     fmc0_pll_sdo_i  : in    std_logic;
 
 
     -- System/WR PLL dedicated lines
     fmc0_pll_sys_ld_i      : in  std_logic;
-    fmc0_pll_sys_reset_n_o : out std_logic;
-    fmc0_pll_sys_cs_n_o    : out std_logic;
-    fmc0_pll_sys_sync_n_o  : out std_logic;
+    fmc0_pll_sys_reset_n_o : buffer std_logic;
+    fmc0_pll_sys_cs_n_o    : buffer std_logic;
+    fmc0_pll_sys_sync_n_o  : buffer std_logic;
 
     -- VCXO PLL dedicated lines
-    fmc0_pll_vcxo_cs_n_o   : out std_logic;
-    fmc0_pll_vcxo_sync_n_o : out std_logic;
+    fmc0_pll_vcxo_cs_n_o   : buffer std_logic;
+    fmc0_pll_vcxo_sync_n_o : buffer std_logic;
     fmc0_pll_vcxo_status_i : in  std_logic;
 
     -- Phase Detector & ADC
@@ -177,9 +177,11 @@ entity svec_top is
     fmc0_wr_ref_clk_n_i : in std_logic;
     fmc0_wr_ref_clk_p_i : in std_logic;
 
-    -- VCXO PLL clock output (cleaned DDS clock)
-    fmc0_vcxo_pll_clk_n_i : in std_logic;
-    fmc0_vcxo_pll_clk_p_i : in std_logic;
+    fmc0_synth_clk_n_i : in std_logic;
+    fmc0_synth_clk_p_i : in std_logic;
+
+    fmc0_rf_clk_n_i : in std_logic;
+    fmc0_rf_clk_p_i : in std_logic;
 
     -- Delay generator
     fmc0_delay_d_o     : out std_logic_vector(9 downto 0);
@@ -227,7 +229,7 @@ architecture rtl of svec_top is
     end if;
   end function;
 
-  
+
   component wr_d3s_core is
     generic (
       g_simulation     : boolean;
@@ -236,21 +238,23 @@ architecture rtl of svec_top is
       clk_sys_i            : in    std_logic;
       rst_n_i              : in    std_logic;
       clk_ref_i            : in    std_logic;
-      clk_wr_o : out std_logic;
+      clk_wr_o             : out   std_logic;
       tm_link_up_i         : in    std_logic := '1';
       tm_time_valid_i      : in    std_logic;
       tm_tai_i             : in    std_logic_vector(39 downto 0);
       tm_cycles_i          : in    std_logic_vector(27 downto 0);
       tm_clk_aux_lock_en_o : out   std_logic;
       tm_clk_aux_locked_i  : in    std_logic;
-      tm_dac_value_i       : in  std_logic_vector(23 downto 0);
-      tm_dac_wr_i          : in  std_logic;
+      tm_dac_value_i       : in    std_logic_vector(23 downto 0);
+      tm_dac_wr_i          : in    std_logic;
       dac_n_o              : out   std_logic_vector(13 downto 0);
       dac_p_o              : out   std_logic_vector(13 downto 0);
       wr_ref_clk_n_i       : in    std_logic;
       wr_ref_clk_p_i       : in    std_logic;
-      pll_vcxo_clk_n_i     : in    std_logic;
-      pll_vcxo_clk_p_i     : in    std_logic;
+      synth_clk_n_i        : in    std_logic;
+      synth_clk_p_i        : in    std_logic;
+      rf_clk_n_i           : in    std_logic;
+      rf_clk_p_i           : in    std_logic;
       pll_sys_cs_n_o       : out   std_logic;
       pll_sys_ld_i         : in    std_logic;
       pll_sys_reset_n_o    : out   std_logic;
@@ -274,15 +278,15 @@ architecture rtl of svec_top is
       delay_len_o          : out   std_logic;
       delay_pulse_o        : out   std_logic;
       trig_p_i             : in    std_logic;
-      trig_n_i             : in    std_logic;      
+      trig_n_i             : in    std_logic;
       onewire_b            : inout std_logic;
-      wr_dac_sclk_o : out std_logic;
-      wr_dac_din_o : out std_logic;
-      wr_dac_sync_n_o : out std_logic;
+      wr_dac_sclk_o        : out   std_logic;
+      wr_dac_din_o         : out   std_logic;
+      wr_dac_sync_n_o      : out   std_logic;
       slave_i              : in    t_wishbone_slave_in;
       slave_o              : out   t_wishbone_slave_out);
   end component wr_d3s_core;
-
+  
  constant c_D3S_SDB_DEVICE : t_sdb_device := (
     abi_class     => x"0000",              -- undocumented device
     abi_ver_major => x"01",
@@ -383,7 +387,35 @@ architecture rtl of svec_top is
   signal fmc0_clk_wr : std_logic;
 begin
 
+  chipscope_icon_1: chipscope_icon
+    port map (
+      CONTROL0 => CONTROL);
 
+  chipscope_ila_1: chipscope_ila
+    port map (
+      CONTROL => CONTROL,
+      CLK     => clk_sys,
+      TRIG0   => TRIG(31 downto 0),
+      TRIG1   => TRIG(63 downto 32),
+      TRIG2   => TRIG(95 downto 64),
+      TRIG3   => TRIG(127 downto 96));
+
+  TRIG(0) <= fmc0_pll_sclk_o;
+  trig(1) <= fmc0_pll_sdio_b;
+  trig(2) <= fmc0_pll_sdo_i;
+
+
+  -- System/WR PLL dedicated lines
+  trig(3) <=  fmc0_pll_sys_ld_i      ;
+  trig(4) <=    fmc0_pll_sys_reset_n_o ;
+  trig(5) <=    fmc0_pll_sys_cs_n_o    ;
+  trig(6) <=    fmc0_pll_sys_sync_n_o  ;
+
+  -- VCXO PLL dedicated lines
+  trig(7) <=    fmc0_pll_vcxo_cs_n_o   ;
+  trig(8) <=    fmc0_pll_vcxo_sync_n_o ;
+  trig(9) <=    fmc0_pll_vcxo_status_i ;
+  
   U_Node_Template : svec_node_template
     generic map (
       g_fmc0_sdb                 => c_d3s0_sdb_record,
@@ -522,8 +554,12 @@ begin
       dac_p_o              => fmc0_dac_p_o,
       wr_ref_clk_n_i       => fmc0_wr_ref_clk_n_i,
       wr_ref_clk_p_i       => fmc0_wr_ref_clk_p_i,
-      pll_vcxo_clk_n_i     => fmc0_vcxo_pll_clk_n_i,
-      pll_vcxo_clk_p_i     => fmc0_vcxo_pll_clk_p_i,
+      synth_clk_n_i     => fmc0_synth_clk_n_i,
+      synth_clk_p_i     => fmc0_synth_clk_p_i,
+      rf_clk_n_i     => fmc0_rf_clk_n_i,
+      rf_clk_p_i     => fmc0_rf_clk_p_i,
+      
+      
       pll_sys_cs_n_o       => fmc0_pll_sys_cs_n_o,
       pll_sys_ld_i         => fmc0_pll_sys_ld_i,
       pll_sys_reset_n_o    => fmc0_pll_sys_reset_n_o,

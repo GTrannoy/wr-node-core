@@ -87,12 +87,13 @@ pin la_n10 fmc%_delay_pulse_o lvcmos25
 #clk1out = system pll output
 #clk2out = vcxo pll output
 
-pin clk1m2c_n fmc%_vcxo_pll_clk_n_i lvds_25
-pin clk1m2c_p fmc%_vcxo_pll_clk_p_i lvds_25
+pin clk0m2c_n fmc%_synth_clk_n_i lvds_25
+pin clk0m2c_p fmc%_synth_clk_p_i lvds_25
 
+pin clk1m2c_n fmc%_rf_clk_n_i lvds_25
+pin clk1m2c_p fmc%_rf_clk_p_i lvds_25
 
 pin la_n20 fmc%_onewire_b lvcmos25
-
 
 pin la_p18 fmc%_trig_p_i lvds_25
 pin la_n18 fmc%_trig_n_i lvds_25
