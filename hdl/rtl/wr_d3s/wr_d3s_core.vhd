@@ -252,7 +252,7 @@ architecture behavioral of wr_d3s_core is
   signal clk_wr_ref, clk_wr_ref_pllin : std_logic;
   -- Cleaned up VCXO PLL output
   signal clk_dds_synth                : std_logic;
-  signal clk_rf_in                    : std_logic;
+  --signal clk_rf_in                    : std_logic;
 
   signal pllout_clk_fb_pllref, pllout_clk_wr_ref : std_logic;
   -- 500 MHz PHY serial clock for the DAC
@@ -326,16 +326,16 @@ begin  -- behavioral
       IB => wr_ref_clk_n_i  -- Diff_n buffer input (connect directly to top-level port)
       );
 
-  U_Buf_CLK_RF : IBUFGDS
-    generic map (
-      DIFF_TERM    => true,
-      IBUF_LOW_PWR => false  -- Low power (TRUE) vs. performance (FALSE) setting for referenced
-      )
-    port map (
-      O  => clk_rf_in,                  -- Buffer output
-      I  => rf_clk_p_i,  -- Diff_p buffer input (connect directly to top-level port)
-      IB => rf_clk_n_i  -- Diff_n buffer input (connect directly to top-level port)
-      );
+  --U_Buf_CLK_RF : IBUFGDS
+  --  generic map (
+  --    DIFF_TERM    => true,
+  --    IBUF_LOW_PWR => false  -- Low power (TRUE) vs. performance (FALSE) setting for referenced
+  --    )
+  --  port map (
+  --    O  => clk_rf_in,                  -- Buffer output
+  --    I  => rf_clk_p_i,  -- Diff_p buffer input (connect directly to top-level port)
+  --    IB => rf_clk_n_i  -- Diff_n buffer input (connect directly to top-level port)
+  --    );
 
 
   U_Buf_CLK_DDS : IBUFGDS
@@ -411,18 +411,18 @@ begin  -- behavioral
   end process;
 
 
-  U_Meas_RFInClk : gc_frequency_meter
-    generic map (
-      g_with_internal_timebase => false,
-      g_clk_sys_freq           => 62500000,
-      g_counter_bits           => 32)
-    port map (
-      clk_sys_i    => clk_sys_i,
-      clk_in_i     => clk_rf_in,
-      rst_n_i      => rst_n_i,
-      pps_p1_i     => freq_gate,
-      freq_o       => regs_in.freq_meas_rf_in_i,
-      freq_valid_o => open);
+  --U_Meas_RFInClk : gc_frequency_meter
+  --  generic map (
+  --    g_with_internal_timebase => false,
+  --    g_clk_sys_freq           => 62500000,
+  --    g_counter_bits           => 32)
+  --  port map (
+  --    clk_sys_i    => clk_sys_i,
+  --    clk_in_i     => clk_rf_in,
+  --    rst_n_i      => rst_n_i,
+  --    pps_p1_i     => freq_gate,
+  --    freq_o       => regs_in.freq_meas_rf_in_i,
+  --    freq_valid_o => open);
 
   U_MeasDDSClk : gc_frequency_meter
     generic map (
@@ -521,17 +521,23 @@ begin  -- behavioral
       if rst_n_ref = '0' or regs_out.cr_samp_en_o = '0' then
         sampling_div <= (others => '0');
         sample_p     <= '0';
-      elsif presc_tick = '1' then
-        if sampling_div = unsigned(regs_out.cr_samp_div_o) then
-          sample_p     <= '1';
+      else
+        if(wr_pps_prepulse(4) = '1') then
+          sample_p <= '1';
           sampling_div <= (others => '0');
-        else
-          sample_p     <= '0';
-          sampling_div <= sampling_div + 1;
-        end if;
+        elsif(presc_tick = '1') then
+          if sampling_div = unsigned(regs_out.cr_samp_div_o) then
+            sample_p     <= '1';
+            sampling_div <= (others => '0');
+          else
+            sample_p     <= '0';
+            sampling_div <= sampling_div + 1;
+          end if;
       else
         sample_p <= '0';
       end if;
+      end if;
+      
     end if;
   end process;
 
@@ -541,12 +547,10 @@ begin  -- behavioral
       if rst_n_ref = '0' or regs_out.cr_samp_en_o = '0' then
         sample_idx <= (others => '0');
       else
-        if sample_p = '1' then
-          if wr_pps_prepulse(3) = '1' then
-            sample_idx <= (others => '0');
-          else
-            sample_idx <= sample_idx + 1;
-          end if;
+        if wr_pps_prepulse(3) = '1' then
+          sample_idx <= (others => '0');
+        elsif sample_p = '1' then
+          sample_idx <= sample_idx + 1;
         end if;
       end if;
     end if;
@@ -802,20 +806,20 @@ begin  -- behavioral
 
   U_Sync_Trigger : gc_sync_ffs
     port map (
-      clk_i    => clk_dds_synth,
+      clk_i    => clk_wr_ref,
       rst_n_i  => '1',
       data_i   => trig_p_a,
       ppulse_o => trig_p);
   
-  p_trigger_snapshot : process(clk_dds_synth)
+  p_trigger_snapshot : process(clk_wr_ref)
   begin
-    if rising_edge(clk_dds_synth) then
+    if rising_edge(clk_wr_ref) then
       if(regs_out.trig_in_csr_arm_o = '1') then
         trig_armed <= '1';
         regs_in.trig_in_csr_done_i <= '0';
       elsif ( trig_p = '1' and trig_armed = '1' ) then
         trig_armed <= '0';
-        regs_in.trig_in_snapshot_i <= std_logic_vector(rf_counter);
+        regs_in.trig_in_snapshot_i <= "0000" & tm_cycles_i ;
         regs_in.trig_in_csr_done_i <= '1';
       end if;
       
@@ -875,9 +879,11 @@ begin  -- behavioral
   --  port map (
   --    CONTROL0 => CONTROL);
 
-  --trig0(13 downto 0) <= synth_y0;
-  --trig1(31 downto 0) <= synth_tune(31 downto 0);
-  --trig2(9 downto 0)  <= synth_tune(41 downto 32);
-
+  
+  trig0(27 downto 0) <= std_logic_vector(wr_cycles);
+  trig1(5 downto 0) <= wr_pps_prepulse;
+  trig1(6) <= sample_p;
+  trig1(7) <= presc_tick;
+  trig2(23 downto 0) <= std_logic_vector(sample_idx);
 
 end behavioral;

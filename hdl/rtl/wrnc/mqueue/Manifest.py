@@ -4,4 +4,5 @@ files = [ "wrn_mqueue_host.vhd",
           "wrn_mqueue_irq_unit.vhd",
           "wrn_mqueue_pkg.vhd",
           "wrn_mqueue_slot.vhd",
+          "wrn_eb_cycle_gen.vhd",
           "wrn_mqueue_wishbone_slave.vhd" ];

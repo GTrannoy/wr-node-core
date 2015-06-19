@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-06-10
+-- Last update: 2015-06-19
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -180,8 +180,8 @@ entity svec_top is
     fmc0_synth_clk_n_i : in std_logic;
     fmc0_synth_clk_p_i : in std_logic;
 
-    fmc0_rf_clk_n_i : in std_logic;
-    fmc0_rf_clk_p_i : in std_logic;
+    --fmc0_rf_clk_n_i : in std_logic;
+    --fmc0_rf_clk_p_i : in std_logic;
 
     -- Delay generator
     fmc0_delay_d_o     : out std_logic_vector(9 downto 0);
@@ -387,18 +387,18 @@ architecture rtl of svec_top is
   signal fmc0_clk_wr : std_logic;
 begin
 
-  chipscope_icon_1: chipscope_icon
-    port map (
-      CONTROL0 => CONTROL);
+  --chipscope_icon_1: chipscope_icon
+  --  port map (
+  --    CONTROL0 => CONTROL);
 
-  chipscope_ila_1: chipscope_ila
-    port map (
-      CONTROL => CONTROL,
-      CLK     => clk_sys,
-      TRIG0   => TRIG(31 downto 0),
-      TRIG1   => TRIG(63 downto 32),
-      TRIG2   => TRIG(95 downto 64),
-      TRIG3   => TRIG(127 downto 96));
+  --chipscope_ila_1: chipscope_ila
+  --  port map (
+  --    CONTROL => CONTROL,
+  --    CLK     => clk_sys,
+  --    TRIG0   => TRIG(31 downto 0),
+  --    TRIG1   => TRIG(63 downto 32),
+  --    TRIG2   => TRIG(95 downto 64),
+  --    TRIG3   => TRIG(127 downto 96));
 
   TRIG(0) <= fmc0_pll_sclk_o;
   trig(1) <= fmc0_pll_sdio_b;
@@ -556,8 +556,8 @@ begin
       wr_ref_clk_p_i       => fmc0_wr_ref_clk_p_i,
       synth_clk_n_i     => fmc0_synth_clk_n_i,
       synth_clk_p_i     => fmc0_synth_clk_p_i,
-      rf_clk_n_i     => fmc0_rf_clk_n_i,
-      rf_clk_p_i     => fmc0_rf_clk_p_i,
+      rf_clk_n_i     =>'0', --fmc0_rf_clk_n_i,
+      rf_clk_p_i     =>'0', --fmc0_rf_clk_p_i,
       
       
       pll_sys_cs_n_o       => fmc0_pll_sys_cs_n_o,

@@ -57,7 +57,7 @@ module main;
    reg [27:0]  tm_cycles = 0;
 
    always@(posedge clk_wr) begin
-      if(tm_cycles == 1249) begin
+      if(tm_cycles == 10249) begin
 	 tm_tai <= tm_tai + 1;
 	 tm_cycles <= 0;
       end      else

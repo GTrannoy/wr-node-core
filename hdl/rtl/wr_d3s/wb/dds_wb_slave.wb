@@ -569,15 +569,14 @@ write 0: disable sampling";
 			};
 	 };
 
-
 	 reg {
 			name = "Trigger In Snapshot";
 			prefix = "TRIG_IN_SNAPSHOT";
 			field {
-				 name = "Trigger In Snapshot";
+				 name = "Trigger In Snapshot (TAI cycles)";
 				 type = SLV;
 				 size = 32;
-				 clock = "clk_dds_i";
+				 clock = "clk_ref_i";
 				 access_bus = READ_ONLY;
 				 access_dev = WRITE_ONLY;
 			};

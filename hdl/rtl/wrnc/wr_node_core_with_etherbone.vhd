@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-04-23
+-- Last update: 2015-06-19
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -189,7 +189,7 @@ begin
   U_WRNode_Etherbone_Master : eb_master_top
     generic map (
       g_adr_bits_hi => 8,
-      g_mtu         => 1024)
+      g_mtu         => 32)
     port map (
       clk_i   => clk_i,
       rst_n_i => rst_net_n,

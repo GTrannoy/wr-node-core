@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-05-28
+-- Last update: 2015-05-29
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -339,6 +339,8 @@ begin
       gpio_in_i  => cpu_gpio_in,
       gpio_oen_o => cpu1_gpio_oen);
 
+  cpu_gpio_out <= cpu0_gpio_out or cpu1_gpio_out;
+  
   -- FP GPIO directions
   fp_gpio1_a2b_o  <= cpu0_gpio_oen(0) or cpu1_gpio_oen(0);
   fp_gpio2_a2b_o  <= cpu0_gpio_oen(1) or cpu1_gpio_oen(1);

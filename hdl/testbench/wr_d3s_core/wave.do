@@ -84,12 +84,13 @@ add wave -noupdate -expand -group DDSCore /main/DUT/pllout_clk_fb_pllref
 add wave -noupdate -expand -group DDSCore /main/DUT/pllout_clk_wr_ref
 add wave -noupdate -expand -group DDSCore /main/DUT/clk_dds_phy
 add wave -noupdate -expand -group DDSCore /main/DUT/sample_p
-add wave -noupdate -expand -group DDSCore /main/DUT/presc_counter
+add wave -noupdate -expand -group DDSCore /main/DUT/sample_idx
+add wave -noupdate -expand -group DDSCore -expand /main/DUT/wr_pps_prepulse
 add wave -noupdate -expand -group DDSCore /main/DUT/presc_tick
+add wave -noupdate -expand -group DDSCore /main/DUT/presc_counter
 add wave -noupdate -expand -group DDSCore /main/DUT/sampling_div
 add wave -noupdate -expand -group DDSCore /main/DUT/wr_tai
 add wave -noupdate -expand -group DDSCore /main/DUT/wr_cycles
-add wave -noupdate -expand -group DDSCore /main/DUT/wr_pps_prepulse
 add wave -noupdate -expand -group DDSCore /main/DUT/clk_dds_locked
 add wave -noupdate -expand -group DDSCore /main/DUT/fpll_reset
 add wave -noupdate -expand -group DDSCore /main/DUT/trig_p_a
@@ -97,7 +98,6 @@ add wave -noupdate -expand -group DDSCore /main/DUT/pll_sdio_val
 add wave -noupdate -expand -group DDSCore /main/DUT/cic_out_clamp
 add wave -noupdate -expand -group DDSCore /main/DUT/freq_gate_cntr
 add wave -noupdate -expand -group DDSCore /main/DUT/freq_gate
-add wave -noupdate -expand -group DDSCore /main/DUT/sample_idx
 add wave -noupdate -expand -group DDSCore /main/DUT/load_acc_scheduled
 add wave -noupdate -expand -group DDSCore /main/DUT/rf_counter
 add wave -noupdate -expand -group DDSCore /main/DUT/rf_counter_load_dds
@@ -108,7 +108,7 @@ add wave -noupdate -expand -group DDSCore /main/DUT/rf_cnt_trigger_cycles
 add wave -noupdate -expand -group DDSCore /main/DUT/cnt_phase_safe
 add wave -noupdate -expand -group DDSCore -height 16 /main/DUT/rf_counter_load_state
 TreeUpdate [SetDefaultTree]
-WaveRestoreCursors {{Cursor 1} {28008793 ps} 0}
+WaveRestoreCursors {{Cursor 1} {1814017000 ps} 0}
 configure wave -namecolwidth 406
 configure wave -valuecolwidth 40
 configure wave -justifyvalue left
@@ -123,4 +123,4 @@ configure wave -griddelta 40
 configure wave -timeline 0
 configure wave -timelineunits ps
 update
-WaveRestoreZoom {27987 ns} {28047 ns}
+WaveRestoreZoom {1733056 ns} {2224576 ns}

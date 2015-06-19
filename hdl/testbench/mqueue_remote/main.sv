@@ -115,8 +115,11 @@ module main;
    
    
    initial begin
-      uint32_t test_d[] = '{32'hffffffff,32'hebd0,32'h120000,4,5};
-      uint32_t test_d2[] = '{32'hffffffff,32'hebd0,32'h140000,1,2,3,4,5};
+      uint32_t test_d[] = '{32'hffffffff,32'hebd0,32'h120000 , 'h10, 'h11, 'h12, 'h13, 'h14, 'h15, 'h16, 'h17 };
+      
+      uint32_t test_d2[] = '{32'hffffffff,32'hebd0,32'h120000, 'h20, 'h21  };
+      
+
 
       MQueueCB cpu0;
       CBusAccessor eb_cfg;
@@ -128,8 +131,8 @@ module main;
       #1us;
 
       cpu0.send(0, test_d);
-      #10us;
-      
+//      #10us;
+
       cpu0.send(0, test_d2);
 //      cpu0.send(0, '{10,11,12});
 

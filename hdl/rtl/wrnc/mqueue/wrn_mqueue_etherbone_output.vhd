@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2014-12-01
+-- Last update: 2015-06-19
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -71,6 +71,22 @@ entity wrn_mqueue_etherbone_output is
 end wrn_mqueue_etherbone_output;
 
 architecture rtl of wrn_mqueue_etherbone_output is
+
+  component wrn_eb_cycle_gen is
+    port (
+      clk_i      : in  std_logic;
+      rst_n_i    : in  std_logic;
+      rq_adr_i   : in  std_logic_vector(31 downto 0);
+      rq_dat_i   : in  std_logic_vector(31 downto 0);
+      rq_wr_i    : in  std_logic;
+      rq_rd_i    : in  std_logic;
+      rq_dat_o   : out std_logic_vector(31 downto 0);
+      rq_ready_o : out std_logic;
+      rq_done_o : out std_logic;
+      master_o   : out t_wishbone_master_out;
+      master_i   : in  t_wishbone_master_in);
+  end component wrn_eb_cycle_gen;
+
   function f_prio_encode (x : std_logic_vector) return std_logic_vector is
     variable rv : std_logic_vector(f_log2_size(x'length) -1 downto 0);
   begin
@@ -83,44 +99,6 @@ architecture rtl of wrn_mqueue_etherbone_output is
     end loop;  -- i 
     return rv;
   end function;
-
-  type t_wishbone_op is (INACTIVE, NO_XFER, READ, WRITE);
-  
-  procedure f_wishbone_op (signal master : out t_wishbone_master_out;
-                           op            :     t_wishbone_op;
-                           addr          :     unsigned         := x"00000000";
-                           data          :     std_logic_vector := x"00000000") is
-  begin
-    if(op = INACTIVE) then
-      master.cyc <= '0';
-    else
-      master.cyc <= '1';
-    end if;
-
-    if(op = NO_XFER or op = INACTIVE) then
-      master.stb <= '0';
-    else
-      master.stb <= '1';
-    end if;
-
-    master.adr <= std_logic_vector(resize(addr, 32));
-    master.dat <= data;
-    master.sel <= "1111";
-    if(op = WRITE) then
-      master.we <= '1';
-    else
-      master.we <= '0';
-    end if;
-  end procedure;
-
-  procedure f_wishbone_op (signal master : out t_wishbone_master_out;
-                           op            :     t_wishbone_op;
-                           addr          :     natural;
-                           data          :     std_logic_vector := x"00000000") is
-  begin
-    f_wishbone_op(master, op, to_unsigned(addr, 24), data);
-  end procedure;
-
 
 
   constant c_CLEAR        : natural := 0;                  --wo    00
@@ -176,7 +154,8 @@ architecture rtl of wrn_mqueue_etherbone_output is
                       EB_SEND_READY,
                       EB_WAIT_XFER_DONE,
                       EB_SET_MAX_OPS,
-                      EB_DUMMY_WAIT);
+                      EB_DUMMY_WAIT,
+                      EB_FINISH_TRANSFER);
 
   signal eb_state : t_eb_state;
 
@@ -187,10 +166,32 @@ architecture rtl of wrn_mqueue_etherbone_output is
   signal ack_count : unsigned(7 downto 0);
 
 
-signal ebm_out : t_wishbone_master_out;
   signal slot_addr : unsigned(9 downto 0);
+
+  signal rq_adr    : std_logic_vector(31 downto 0);
+  signal rq_dat_wr : std_logic_vector(31 downto 0);
+  signal rq_wr     : std_logic;
+  signal rq_rd     : std_logic;
+  signal rq_done     : std_logic;
+  signal rq_dat_rd : std_logic_vector(31 downto 0);
+  signal rq_ready  : std_logic;
   
 begin  -- rtl
+
+  wrn_eb_cycle_gen_1 : wrn_eb_cycle_gen
+    port map (
+      clk_i      => clk_i,
+      rst_n_i    => rst_n_i,
+      rq_adr_i   => rq_adr,
+      rq_dat_i   => rq_dat_wr,
+      rq_wr_i    => rq_wr,
+      rq_rd_i    => rq_rd,
+      rq_dat_o   => rq_dat_rd,
+      rq_ready_o => rq_ready,
+      rq_done_o => rq_done,
+
+      master_o   => ebm_o,
+      master_i   => ebm_i);
 
   gen_slot_status : for i in 0 to g_config.out_slot_count-1 generate
     slot_req(i) <= stat_i(i).ready;
@@ -256,97 +257,154 @@ begin  -- rtl
         eb_state     <= EB_WAIT_SLOT;
         slot_discard <= '0';
         slot_done    <= '0';
+        rq_wr        <= '0';
+        rq_rd        <= '0';
+        
       else
         case eb_state is
           when EB_WAIT_SLOT =>
             slot_done    <= '0';
             slot_discard <= '0';
-            slot_addr    <= to_unsigned(8, 10);
+            slot_addr    <= to_unsigned(4, 10);
+
+            rq_rd <= '0';
+            rq_wr <= '0';
 
             if(slot_ready = '1') then
               eb_state      <= EB_SET_TARGET_IP;
               msg_size      <= unsigned(slot_stat.current_size) - 2;  -- fixme
               msg_remaining <= unsigned(slot_stat.current_size) - 3;
+              rq_dat_wr    <= slot_in.dat;
+              rq_wr  <= '0';
             end if;
             
           when EB_SET_TARGET_IP =>
-            if(ebm_i.stall = '0') then
-              eb_state  <= EB_SET_TARGET_PORT;
+              rq_adr    <= std_logic_vector(to_unsigned(c_DST_IPV4, 32));
+              rq_wr     <= '1';
               slot_addr <= slot_addr + 4;
-            end if;
+              eb_state  <= EB_SET_TARGET_PORT;
 
           when EB_SET_TARGET_PORT =>
-            if(ebm_i.stall = '0') then
+            if(rq_done = '1') then
+              rq_adr   <= std_logic_vector(to_unsigned(c_DST_UDP_PORT, 32));
+              rq_dat_wr   <= slot_in.dat;
+              rq_wr    <= '1';
               eb_state <= EB_SET_MAX_OPS;
+                            slot_addr <= slot_addr + 4;
+
             end if;
 
           when EB_SET_MAX_OPS =>
-            if(ebm_i.stall = '0') then
+            if(rq_done = '1') then
+
+              rq_adr <= std_logic_vector(to_unsigned(c_OPS_MAX, 32));
+              rq_dat_wr <= std_logic_vector (resize(msg_size + 2, 32));
+              rq_wr  <= '1';
+
               eb_state  <= EB_SET_TARGET_BASE;
-              slot_addr <= slot_addr + 4;
             end if;
 
             
           when EB_SET_TARGET_BASE =>
+            rq_wr <= '0';
+
             eb_write_addr  <= unsigned(slot_in.dat(23 downto 0)) + 8;
             eb_write_start <= unsigned(slot_in.dat(23 downto 0));
             eb_state       <= EB_SET_XFER_SIZE;
 
           when EB_SET_XFER_SIZE =>
-            if(ebm_i.stall = '0') then
+            if(rq_done = '1') then
+
+              rq_adr <= std_logic_vector(to_unsigned(c_PAC_LEN, 32));
+              rq_dat_wr <= x"00000080";
+              rq_wr  <= '1';
+
               eb_state <= EB_SEND_CLAIM;
             end if;
 
 
           when EB_SEND_CLAIM =>
-            if(ebm_i.stall = '0') then
+            if(rq_done = '1') then
+              rq_adr <= std_logic_vector(resize(eb_write_start, 32)) or x"03000000";
+              rq_dat_wr <= x"01000000";
+              rq_wr  <= '1';
+
+
               slot_addr <= slot_addr + 4;
               eb_state  <= EB_WRITE_DATA;
             end if;
             
 
           when EB_WRITE_DATA =>
-            if(ebm_i.stall = '0') then
-              if(msg_remaining = 1) then
+            if(rq_done = '1') then
+              if(msg_remaining = 0) then
+                rq_adr <= std_logic_vector(resize(eb_write_start, 32)) or x"03000000";
+                rq_dat_wr <= x"04000000";
+                rq_wr  <= '1';
+
+
                 eb_state <= EB_SEND_READY;
               else
+
+                rq_adr <= std_logic_vector(resize(eb_write_addr, 32)) or x"03000000";
+                rq_dat_wr <= slot_in.dat;
+                rq_wr  <= '1';
+
                 msg_remaining <= msg_remaining - 1;
                 eb_write_addr <= eb_write_addr + 4;
-                eb_state <= EB_DUMMY_WAIT;
+                eb_state      <= EB_DUMMY_WAIT;
 
               end if;
             end if;
 
           when EB_DUMMY_WAIT =>
-            eb_state <= EB_WRITE_DATA;
-            slot_addr     <= slot_addr + 4;
+            rq_wr <= '0';
+            rq_rd <= '0';
+
+            eb_state  <= EB_WRITE_DATA;
+            slot_addr <= slot_addr + 4;
             
             
           when EB_SEND_READY =>
-            if(ebm_i.stall = '0') then
+            if(rq_done = '1') then
+              rq_adr   <= std_logic_vector(to_unsigned(c_FLUSH, 32));
+              rq_dat_wr   <= x"00000001";
+              rq_wr    <= '1';
               eb_state <= EB_FLUSH_XFER;
             end if;
             
           when EB_FLUSH_XFER =>
-            if(ebm_i.stall = '0') then
-              --  slot_discard <= '1';
+            rq_wr <= '0';
+            if(rq_done = '1') then
+--  slot_discard <= '1';
               eb_state <= EB_READ_STATUS;
             end if;
 
           when EB_READ_STATUS =>
-            if(ebm_i.stall = '0') then
-              eb_state     <= EB_WAIT_XFER_DONE;
-              slot_done    <= '1';
-              slot_discard <= '1';
-            end if;
+
+            eb_state <= EB_WAIT_XFER_DONE;
+            rq_rd    <= '1';
+            rq_adr   <= std_logic_vector(to_unsigned(c_STATUS, 32));
+
+
             
           when EB_WAIT_XFER_DONE =>
-            slot_done    <= '0';
-            slot_discard <= '0';
-            if(ack_count = 0) then
-              eb_state <= EB_WAIT_SLOT;
+            rq_rd <= '0';
+            if (rq_done = '1') then
+              if(rq_dat_rd(31 downto 16) = x"0000") then
+                slot_done    <= '1';
+                slot_discard <= '1';
+                eb_state     <= EB_FINISH_TRANSFER;
+              else
+                
+                eb_state <= EB_READ_STATUS;
+              end if;
             end if;
-            
+
+            when EB_FINISH_TRANSFER =>
+            slot_discard <= '0';
+            slot_done<='0';
+            eb_state <= EB_WAIT_SLOT;
             
         end case;
 
@@ -357,127 +415,84 @@ begin  -- rtl
 
 
 
-  p_eb_fsm_comb : process(eb_state, slot_in, slot_out, eb_write_addr, msg_size)
-  begin
-    
-    case eb_state is
-      when EB_WAIT_SLOT =>
-        f_wishbone_op(ebm_out, INACTIVE);
-      when EB_SET_TARGET_IP =>
-        f_wishbone_op(ebm_out, WRITE, c_DST_IPV4, slot_in.dat);
-      when EB_SET_TARGET_PORT =>
-        f_wishbone_op(ebm_out, WRITE, c_DST_UDP_PORT, slot_in.dat);
-      when EB_SET_TARGET_BASE =>
-        f_wishbone_op(ebm_out, NO_XFER);
-      when EB_SET_MAX_OPS =>
-        f_wishbone_op(ebm_out, WRITE, c_OPS_MAX, std_logic_vector (resize(msg_size + 2, 32)));
-      when EB_SET_XFER_SIZE =>
-        f_wishbone_op(ebm_out, WRITE, c_PAC_LEN, x"00000080" ); --std_logic_vector (resize(msg_size, 32)));
-      when EB_SEND_CLAIM =>
-        f_wishbone_op(ebm_out, WRITE, resize(eb_write_start, 32) or x"03000000", x"01000000");
-      when EB_WRITE_DATA =>
-        f_wishbone_op(ebm_out, WRITE, resize(eb_write_addr, 32) or x"03000000", std_logic_vector (slot_in.dat));
-      when EB_SEND_READY =>
-        f_wishbone_op(ebm_out, WRITE, resize(eb_write_start, 32) or x"03000000", x"04000000" or std_logic_vector(resize(msg_size,32)));
-      when EB_FLUSH_XFER =>
-        f_wishbone_op(ebm_out, WRITE, c_FLUSH, x"00000001");
-      when EB_READ_STATUS =>
-        f_wishbone_op(ebm_out, READ, c_STATUS);
-      when EB_WAIT_XFER_DONE =>
-        f_wishbone_op(ebm_out, NO_XFER);
-      when EB_DUMMY_WAIT =>
-        f_wishbone_op(ebm_out, NO_XFER);
-      when others =>
-        f_wishbone_op(ebm_out, INACTIVE);
-    end case;
-    
-
-  end process;
-
   p_slot_output_address : process(eb_state, ebm_i, slot_addr)
   begin
-    case eb_state is
-      when EB_WAIT_SLOT =>
-        slot_out.adr <= std_logic_vector(to_unsigned(8, 10));
 
-      when EB_SET_TARGET_IP =>
-        if(ebm_i.stall = '0') then
-          slot_out.adr <= std_logic_vector(slot_addr + 4);
-        else
-          slot_out.adr <= std_logic_vector(slot_addr);
-        end if;
-        
-      when EB_SET_TARGET_PORT =>
-        if(ebm_i.stall = '0') then
-          slot_out.adr <= std_logic_vector(slot_addr + 4);
-        else
-          slot_out.adr <= std_logic_vector(slot_addr);
-        end if;
-        
-      when EB_SET_TARGET_BASE =>
-        if(ebm_i.stall = '0') then
-          slot_out.adr <= std_logic_vector(slot_addr + 4);
-        else
-          slot_out.adr <= std_logic_vector(slot_addr);
-        end if;
-
-      when EB_SET_MAX_OPS =>
-        if(ebm_i.stall = '0') then
-          slot_out.adr <= std_logic_vector(slot_addr + 4);
-        else
-          slot_out.adr <= std_logic_vector(slot_addr);
-        end if;
-        
-      when EB_WRITE_DATA =>
-        if(ebm_i.stall = '0') then
-          slot_out.adr <= std_logic_vector(slot_addr + 4);
-        else
-          slot_out.adr <= std_logic_vector(slot_addr);
-        end if;
-
-      when EB_SET_XFER_SIZE =>
-        if(ebm_i.stall = '0') then
-          slot_out.adr <= std_logic_vector(slot_addr + 4);
-        else
-          slot_out.adr <= std_logic_vector(slot_addr);
-        end if;
-
-        
-      when EB_SEND_CLAIM =>
-        if(ebm_i.stall = '0') then
-          slot_out.adr <= std_logic_vector(slot_addr + 4);
-        else
-          slot_out.adr <= std_logic_vector(slot_addr);
-        end if;
-
-
-      when EB_DUMMY_WAIT =>
-        if(ebm_i.stall = '0') then
-          slot_out.adr <= std_logic_vector(slot_addr + 4);
-        else
-          slot_out.adr <= std_logic_vector(slot_addr);
-        end if;
-        
-        
-      when others =>
-        slot_out.adr <= (others => '0');
-    end case;
-  end process;
-
-  p_count_acks : process(clk_i)
-  begin
-    if rising_edge(clk_i) then
-      if(ebm_out.cyc = '0') then
-        ack_count <= (others => '0');
-      elsif(ebm_out.cyc = '1' and ebm_out.stb = '1' and ebm_i.stall = '0' and ebm_i.ack = '0') then
-        ack_count <= ack_count + 1;
-      elsif(ebm_out.cyc = '1' and (ebm_out.stb = '0' or ebm_i.stall = '1') and ebm_i.ack = '1') then
-        ack_count <= ack_count - 1;
+    if(eb_state = EB_SET_TARGET_BASE) then
+    slot_out.adr <= std_logic_vector(slot_addr + 4);
+    else
+      slot_out.adr <= std_logic_vector(slot_addr + 4);
       end if;
-      
-    end if;
-  end process;
 
-  ebm_o <= ebm_out;
-  
+              end process;
+              
+  --  case eb_state is
+  --    when EB_WAIT_SLOT =>
+  --      slot_out.adr <= std_logic_vector(to_unsigned(8, 10));
+
+  --    when EB_SET_TARGET_IP =>
+  --      if(rq_done = '1') then
+  --      else
+  --        slot_out.adr <= std_logic_vector(slot_addr);
+  --      end if;
+        
+  --    when EB_SET_TARGET_PORT =>
+  --      if(rq_done = '1') then
+  --        slot_out.adr <= std_logic_vector(slot_addr + 4);
+  --      else
+  --        slot_out.adr <= std_logic_vector(slot_addr);
+  --      end if;
+        
+  --    when EB_SET_TARGET_BASE =>
+  --      if(rq_done = '1') then
+  --        slot_out.adr <= std_logic_vector(slot_addr + 4);
+  --      else
+  --        slot_out.adr <= std_logic_vector(slot_addr);
+  --      end if;
+
+  --    when EB_SET_MAX_OPS =>
+  --      if(rq_done = '1') then
+  --        slot_out.adr <= std_logic_vector(slot_addr + 4);
+  --      else
+  --        slot_out.adr <= std_logic_vector(slot_addr);
+  --      end if;
+        
+  --    when EB_WRITE_DATA =>
+  --      if(rq_done = '1') then
+  --        slot_out.adr <= std_logic_vector(slot_addr + 4);
+  --      else
+  --        slot_out.adr <= std_logic_vector(slot_addr);
+  --      end if;
+
+  --    when EB_SET_XFER_SIZE =>
+  --      if(rq_done = '1') then
+  --        slot_out.adr <= std_logic_vector(slot_addr + 4);
+  --      else
+  --        slot_out.adr <= std_logic_vector(slot_addr);
+  --      end if;
+
+        
+  --    when EB_SEND_CLAIM =>
+  --      if(rq_done = '1') then
+  --        slot_out.adr <= std_logic_vector(slot_addr + 4);
+  --      else
+  --        slot_out.adr <= std_logic_vector(slot_addr);
+  --      end if;
+
+
+  --    when EB_DUMMY_WAIT =>
+  --      if(rq_done = '1') then
+  --        slot_out.adr <= std_logic_vector(slot_addr + 4);
+  --      else
+  --        slot_out.adr <= std_logic_vector(slot_addr);
+  --      end if;
+        
+        
+  --    when others =>
+  --      slot_out.adr <= (others => '0');
+  --  end case;
+  --end process;
+
+
+
 end rtl;
