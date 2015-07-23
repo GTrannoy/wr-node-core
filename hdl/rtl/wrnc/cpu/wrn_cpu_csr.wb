@@ -248,5 +248,24 @@ peripheral {
 			};
    };
 
+	reg {
+		 name = "SMEM Operation Select";
+		 description = "Selects the operation mode for Shared Memory writes from host";
+		 prefix = "SMEM_OP";
+
+		 field {
+				name = "Operation code";
+				description = "0x0: write\
+0x1: add\
+0x2: subtract\
+0x3: bit set\
+0x3: bit clear\
+0x3: bit flip";
+				type = SLV;
+				size = 3;
+access_bus = READ_WRITE;
+access_dev = READ_ONLY;
+		 };
+	};
 };
 

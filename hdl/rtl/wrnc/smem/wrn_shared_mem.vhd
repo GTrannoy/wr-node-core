@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2014-11-18
+-- Last update: 2015-07-23
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -71,25 +71,44 @@ architecture rtl of wrn_shared_mem is
   type t_smem_array is array (0 to c_SMEM_SIZE-1) of std_logic_vector(31 downto 0);
   type t_state is (FETCH_IDLE, WRITEBACK);
 
+  function f_is_synthesis return boolean is
+  begin
+    -- synthesis translate_off
+    return false;
+    -- synthesis translate_on
+    return true;
+  end f_is_synthesis;
+
+
+  impure function f_sanitize_address (adr : std_logic_vector) return integer is
+  begin
+    if f_is_synthesis then
+      return to_integer(unsigned(adr));
+    else
+      return to_integer(unsigned(adr)) mod g_size;
+    end if;
+  end f_sanitize_address;
+
+
   signal mem                : t_smem_array;
+  signal op_addr            : integer;
   signal op_sel             : std_logic_vector(2 downto 0);
-  signal op_addr            : std_logic_vector(12 downto 0);
   signal fetch_data, result : std_logic_vector(31 downto 0);
   signal state              : t_state;
 begin  -- rtl
 
-  op_sel  <= slave_i.adr(15 downto 13);
-  op_addr <= slave_i.adr(12 downto 0);
+  op_sel  <= slave_i.adr(18 downto 16);
+  op_addr <= f_sanitize_address( slave_i.adr(15 downto 0) );
 
   p_readout : process(clk_i)
   begin
     if rising_edge(clk_i) then
       if(slave_i.cyc = '1' and slave_i.stb = '1') then
         if(state = WRITEBACK or (op_sel = c_RANGE_DIRECT and slave_i.we = '1')) then
-          mem(to_integer(unsigned(op_addr))) <= result;
+          mem(op_addr) <= result;
         end if;
 
-        fetch_data <= mem(to_integer(unsigned(op_addr)));
+        fetch_data <= mem(op_addr);
       end if;
     end if;
   end process;

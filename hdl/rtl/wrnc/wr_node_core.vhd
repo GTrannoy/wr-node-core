@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-04-29
+-- Last update: 2015-07-23
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -49,14 +49,19 @@ use work.gencores_pkg.all;
 entity wr_node_core is
   
   generic (
-    g_config : t_wr_node_config := c_default_node_config;
-    g_double_core_clock : boolean := false);
+-- Message Queue and CPU configuration
+    g_config            : t_wr_node_config := c_default_node_config;
+-- When true, the CPUs can run with 2x the system clock. User design must
+--    supply the clk_cpu_i signal which is in phase with the clk_i signal.
+    g_double_core_clock : boolean          := false;
+-- When true, the Remote Message Queue is implemented.
+    g_with_rmq          : boolean          := true);
 
   port (
-    clk_i   : in std_logic;
+    clk_i     : in std_logic;
     -- optional, 2x faster CPU core clock
     clk_cpu_i : in std_logic := '0';
-    rst_n_i : in std_logic;
+    rst_n_i   : in std_logic;
 
     sp_master_o : out t_wishbone_master_out;
     sp_master_i : in  t_wishbone_master_in := cc_dummy_master_in;
@@ -89,15 +94,15 @@ architecture rtl of wr_node_core is
 
   component wrn_cpu_cb
     generic (
-      g_cpu_id    : integer;
-      g_iram_size : integer;
+      g_cpu_id            : integer;
+      g_iram_size         : integer;
       g_double_core_clock : boolean);
     port (
       clk_sys_i   : in  std_logic;
       rst_n_i     : in  std_logic;
       clk_ref_i   : in  std_logic;
       rst_n_ref_i : in  std_logic;
-      clk_cpu_i : in std_logic;
+      clk_cpu_i   : in  std_logic;
       tm_i        : in  t_wrn_timing_if;
       sh_master_i : in  t_wishbone_master_in;
       sh_master_o : out t_wishbone_master_out;
@@ -186,28 +191,54 @@ architecture rtl of wr_node_core is
       master_o : out t_wishbone_master_out);
   end component wb_remapper;
 
-  constant c_smem_remap_mask_in  : t_wishbone_address_array(0 downto 0) := (0 => x"00018000");
-  constant c_smem_remap_mask_out : t_wishbone_address_array(0 downto 0) := (0 => x"00007fff");
+  constant c_smem_remap_mask_in : t_wishbone_address_array(4 downto 0) := (
+    0 => x"0001c000",
+    1 => x"0001c000",
+    2 => x"0001c000",
+    3 => x"0001c000",
+    4 => x"00010000"
+    );
+  constant c_smem_remap_mask_out : t_wishbone_address_array(4 downto 0) := (
+    0 => x"00003fff",
+    1 => x"00003fff",
+    2 => x"00003fff",
+    3 => x"00003fff",
+    4 => x"0000ffff"
+    );
 
-  constant c_smem_remap_base_in  : t_wishbone_address_array(0 downto 0) := (0 => x"00018000");
-  constant c_smem_remap_base_out : t_wishbone_address_array(0 downto 0) := (0 => x"00200000");
+  constant c_smem_remap_base_in : t_wishbone_address_array(4 downto 0) := (
+    0 => x"00000000",
+    1 => x"00004000",
+    2 => x"00008000",
+    3 => x"0000c000",
+    4 => x"00010000"
+    );
+
+  -- remapping to squeeze the host address space to 128 kB
+  constant c_smem_remap_base_out : t_wishbone_address_array(4 downto 0) := (
+    0 => x"00000000",                   -- 0x0000-0x3fff -> HMQ GCR
+    1 => x"00004000",                   -- 0x4000-0x7fff -> HMQ IN
+    2 => x"00008000",                   -- 0x8000-0xbfff -> HMQ OUT
+    3 => x"00010000",                   -- 0xc000-0xffff -> CPU CSR
+    4 => x"00200000"                    -- 0x10000-0x1ffff -> SMEM
+    );
 
 
   constant c_hac_wishbone_masters : integer := 3;
   constant c_hac_master_hmq       : integer := 0;
-  constant c_hac_master_cpu_csr   : integer := 1;
-  constant c_hac_master_si        : integer := 2;
+  constant c_hac_master_cpu_csr       : integer := 1;
+  constant c_hac_master_si      : integer := 2;
 
   constant c_hac_address : t_wishbone_address_array(c_hac_wishbone_masters-1 downto 0) := (
-    c_hac_master_hmq     => x"00000000",  -- Host MQ
-    c_hac_master_cpu_csr => x"00010000",  -- CPU CSR
-    c_hac_master_si      => x"00200000"   -- shared interconnect
+    c_hac_master_hmq  => x"00000000",   -- Host MQ
+    c_hac_master_cpu_csr  => x"00010000",    -- CPU CSR
+    c_hac_master_si => x"00200000"    -- SMEM
     );
 
   constant c_hac_mask : t_wishbone_address_array(c_hac_wishbone_masters-1 downto 0) := (
-    c_hac_master_hmq     => x"00210000",  -- Host MQ
-    c_hac_master_cpu_csr => x"00210000",  -- CPU CSR
-    c_hac_master_si      => x"00200000"   -- shared interconnect
+    c_hac_master_hmq  => x"003f0000",   -- Host MQ
+    c_hac_master_cpu_csr => x"003f0000",    -- CPU CSR
+    c_hac_master_si => x"00300000"    -- SMEM
     );
 
   signal hac_master_out : t_wishbone_master_out_array(c_hac_wishbone_masters-1 downto 0);
@@ -224,19 +255,18 @@ architecture rtl of wr_node_core is
   constant c_si_slave_ebs  : integer := 1;
   constant c_si_slave_cpu0 : integer := 2;
   
-
   constant c_si_address : t_wishbone_address_array(c_si_wishbone_masters-1 downto 0) := (
     c_si_master_hmq  => x"00010000",    -- Host MQ
     c_si_master_rmq  => x"00020000",    -- Remote MQ
-    c_si_master_smem => x"00000000",    -- Shared Memory
+    c_si_master_smem => x"00200000",    -- Shared Memory
     c_si_master_sp   => x"00100000"
     );
 
   constant c_si_mask : t_wishbone_address_array(c_si_wishbone_masters-1 downto 0) := (
-    c_si_master_hmq  => x"001f0000",    -- Host MQ
-    c_si_master_rmq  => x"001f0000",    -- Remote MQ
-    c_si_master_smem => x"001f0000",    -- Shared Memory
-    c_si_master_sp   => x"00100000"
+    c_si_master_hmq  => x"003f0000",    -- Host MQ
+    c_si_master_rmq  => x"003f0000",    -- Remote MQ
+    c_si_master_smem => x"00300000",    -- Shared Memory
+    c_si_master_sp   => x"00300000"
     );
 
   signal si_slave_in  : t_wishbone_slave_in_array(c_si_wishbone_slaves-1 downto 0);
@@ -300,7 +330,7 @@ begin  -- rtl
 
   U_Remap_SMEM : wb_remapper
     generic map (
-      g_num_ranges => 1,
+      g_num_ranges => 5,
       g_base_in    => c_smem_remap_base_in,
       g_base_out   => c_smem_remap_base_out,
       g_mask_in    => c_smem_remap_mask_in,
@@ -345,8 +375,20 @@ begin  -- rtl
   sp_master_o                   <= si_master_out(c_si_master_sp);
   si_master_in (c_si_master_sp) <= sp_master_i;
 
+-- hack: replace SMEM high address bits with the SMEM_OP register value. This way,
+-- the entire 64 kB SMEM window can be visible to the host with direct addressing,
+-- and only the type of atomic operation has to be chosen indirectly (by
+-- writing to SMEM_OP).
 
-  si_slave_in(c_si_slave_hac)    <= hac_master_out(c_hac_master_si);
+  si_slave_in(c_si_slave_hac).cyc               <= hac_master_out(c_hac_master_si).cyc;
+  si_slave_in(c_si_slave_hac).stb               <= hac_master_out(c_hac_master_si).stb;
+  si_slave_in(c_si_slave_hac).we                <= hac_master_out(c_hac_master_si).we;
+  si_slave_in(c_si_slave_hac).sel               <= hac_master_out(c_hac_master_si).sel;
+  si_slave_in(c_si_slave_hac).dat               <= hac_master_out(c_hac_master_si).dat;
+  si_slave_in(c_si_slave_hac).adr(15 downto 0)  <= hac_master_out(c_hac_master_si).adr(15 downto 0);
+  si_slave_in(c_si_slave_hac).adr(19 downto 16) <= '0' & cpu_csr_fromwb.smem_op_o;
+  si_slave_in(c_si_slave_hac).adr(31 downto 20) <= x"002";
+
   hac_master_in(c_hac_master_si) <= si_slave_out(c_si_slave_hac);
 
   si_slave_in(c_si_slave_ebs) <= cc_dummy_slave_in;
@@ -385,15 +427,15 @@ begin  -- rtl
 
     U_CPU_Block : wrn_cpu_cb
       generic map (
-        g_cpu_id    => i,
-        g_iram_size => g_config.cpu_memsizes(i),
+        g_cpu_id            => i,
+        g_iram_size         => g_config.cpu_memsizes(i),
         g_double_core_clock => g_double_core_clock)
       port map (
         clk_sys_i   => clk_i,
         rst_n_i     => rst_n_i,
         clk_ref_i   => clk_ref_i,
         rst_n_ref_i => rst_n_ref,
-        clk_cpu_i => clk_cpu_i,
+        clk_cpu_i   => clk_cpu_i,
         tm_i        => tm_i,
         sh_master_i => si_slave_out(c_si_slave_cpu0 + i),
         sh_master_o => si_slave_in(c_si_slave_cpu0 + i),
@@ -426,24 +468,39 @@ begin  -- rtl
       host_irq_o   => host_irq_o,
       hmq_status_o => hmq_status);
 
-  U_Remote_MQ : wrn_mqueue_remote
-    generic map (
-      g_config => g_config.rmq_config)
-    port map (
-      clk_i        => clk_i,
-      rst_n_i      => rst_n_i,
-      si_slave_i   => si_master_out(c_si_master_rmq),
-      si_slave_o   => si_master_in(c_si_master_rmq),
-      ebm_master_o => ebm_master_o,
-      ebm_master_i => ebm_master_i,
-      ebs_slave_o  => ebs_slave_o,
-      ebs_slave_i  => ebs_slave_i,
-      rmq_status_o => rmq_status);
+  gen_with_rmq : if g_with_rmq generate
+    
+    U_Remote_MQ : wrn_mqueue_remote
+      generic map (
+        g_config => g_config.rmq_config)
+      port map (
+        clk_i        => clk_i,
+        rst_n_i      => rst_n_i,
+        si_slave_i   => si_master_out(c_si_master_rmq),
+        si_slave_o   => si_master_in(c_si_master_rmq),
+        ebm_master_o => ebm_master_o,
+        ebm_master_i => ebm_master_i,
+        ebs_slave_o  => ebs_slave_o,
+        ebs_slave_i  => ebs_slave_i,
+        rmq_status_o => rmq_status);
 
-  
+  end generate gen_with_rmq;
+
+  gen_without_rmq : if not g_with_rmq generate
+    
+    rmq_status                    <= (others => '0');
+    ebm_master_o                  <= cc_dummy_master_out;
+    ebs_slave_o                   <= cc_dummy_slave_out;
+    si_master_in(c_si_master_rmq) <= cc_dummy_slave_out;
+
+  end generate gen_without_rmq;
+
+
+
+
   U_Shared_Mem : wrn_shared_mem
     generic map (
-      g_size => 2048)
+      g_size => g_config.shared_mem_size / 4)
     port map (
       clk_i   => clk_i,
       rst_n_i => rst_n_i,
@@ -484,7 +541,7 @@ begin  -- rtl
   end process;
 
   cpu_csr_towb.dbg_poll_ready_i(g_config.cpu_count-1 downto 0) <= cpu_dbg_drdy;
-  
+
   gpio_o <= f_reduce_or(cpu_gpio_out);
 end rtl;
 
