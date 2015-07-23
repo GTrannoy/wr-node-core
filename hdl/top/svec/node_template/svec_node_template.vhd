@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-05-27
+-- Last update: 2015-07-22
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -70,11 +70,16 @@ entity svec_node_template is
 -- VIC interrupt vector address of the mezzanine in slot 1
     g_fmc1_vic_vector : t_wishbone_address;
 
+-- Enables/disable White Rabbit support
+    g_with_white_rabbit : boolean := true;
+    
 -- Reduces some timeouts to speed up simulations.
     g_simulation     : boolean := false;
+    
 -- Enable/disable instantiation of the gigabit transceiver core.
 -- Speeds up the simulations a lot.
     g_with_wr_phy    : boolean := false;
+
 -- When true, the CPUs in the WR node run at 125 MHz (twice the
 -- 62.5 MHz system clock). May not meet the timing for heavily
 -- congested designs.
@@ -211,6 +216,14 @@ entity svec_node_template is
     fmc1_host_irq_i : in  std_logic;
 
     -------------------------------------------------------------------------
+    -- Misc WRNode signals
+    -------------------------------------------------------------------------
+
+    -- Shared Peripheral port
+    sp_master_o : out t_wishbone_master_out;
+    sp_master_i: in t_wishbone_master_in := cc_dummy_master_in;
+    
+    -------------------------------------------------------------------------
     -- WR Core timing interface.
     -------------------------------------------------------------------------
 
@@ -288,7 +301,16 @@ architecture rtl of svec_node_template is
   signal phy_rst          : std_logic;
   signal phy_loopen       : std_logic;
 
-
+  
+  impure function f_pick_wr_core_sdb return t_sdb_record is
+  begin
+    if g_with_white_rabbit then
+      return f_sdb_embed_bridge ( c_WRCORE_BRIDGE_SDB, x"00040000" );
+    else
+      return f_sdb_embed_device ( cc_dummy_sdb_device );
+    end if;
+  end function;
+  
   constant c_NUM_WB_MASTERS : integer := 5;
   constant c_NUM_WB_SLAVES  : integer := 1;
 
@@ -309,14 +331,13 @@ architecture rtl of svec_node_template is
       c_SLAVE_FMC0    => g_fmc0_sdb,
       c_SLAVE_FMC1    => g_fmc1_sdb,
       c_SLAVE_VIC     => f_sdb_embed_device(c_xwb_vic_sdb, x"00002000"),
-      c_SLAVE_WR_CORE => f_sdb_embed_bridge(c_WRCORE_BRIDGE_SDB, x"00040000"),
+      c_SLAVE_WR_CORE => f_pick_wr_core_sdb,
       c_SLAVE_WR_NODE => f_sdb_embed_device(c_WR_NODE_SDB, x"00020000")
 --      c_DESC_SYNTHESIS => f_sdb_embed_synthesis(c_sdb_synthesis_info),
 --      c_DESC_REPO_URL  => f_sdb_embed_repo_url(c_sdb_repo_url)
       );
 
   constant c_SDB_ADDRESS : t_wishbone_address := x"00000000";
-
   constant c_VIC_VECTOR_TABLE : t_wishbone_address_array(0 to 3) :=
     (0 => g_fmc0_vic_vector,
      1 => g_fmc1_vic_vector,
@@ -602,6 +623,8 @@ begin
   VME_ADDR_DIR_o <= VME_ADDR_DIR_int;
   VME_DATA_DIR_o <= VME_DATA_DIR_int;
 
+  gen_with_wr : if( g_with_white_rabbit ) generate
+  
   -- Tristates for SFP EEPROM
   sfp_mod_def1_b <= '0' when sfp_scl_out = '0' else 'Z';
   sfp_mod_def2_b <= '0' when sfp_sda_out = '0' else 'Z';
@@ -694,7 +717,7 @@ begin
       pps_p_o     => pps,
       pps_led_o   => pps_led
       );
-
+  
   U_DAC_Helper : spec_serial_dac
     generic map (
       g_num_data_bits  => 16,
@@ -730,6 +753,15 @@ begin
       xdone_o       => open);
 
 
+  end generate gen_with_wr;
+  
+  gen_without_wr: if ( not g_with_white_rabbit ) generate
+    cnx_master_in(c_SLAVE_WR_CORE).ack <= '1';
+    cnx_master_in(c_SLAVE_WR_CORE).stall <= '0';
+    cnx_master_in(c_SLAVE_WR_CORE).err <= '0';
+    cnx_master_in(c_SLAVE_WR_CORE).rty <= '0';
+  end generate gen_without_wr;
+  
 
   U_Intercon : xwb_sdb_crossbar
     generic map (
@@ -764,6 +796,9 @@ begin
       irqs_i(3)    => wrn_debug_msg_irq,
       irq_master_o => vic_master_irq);
 
+
+  gen_wr_node_with_white_rabbit : if g_with_white_rabbit generate
+  
   U_WR_Node : wr_node_core_with_etherbone
     generic map (
       g_config => g_wr_node_config,
@@ -793,9 +828,13 @@ begin
       debug_msg_irq_o => wrn_debug_msg_irq
       );
 
+  end generate gen_wr_node_with_white_rabbit;
 
+  gen_wr_node_without_white_rabbit:  if not g_with_white_rabbit generate
+
+  end generate gen_wr_node_without_white_rabbit;
   
-  gen_with_phy : if(g_with_wr_phy) generate
+  gen_with_phy : if(g_with_wr_phy and g_with_white_rabbit ) generate
 
     U_GTP : wr_gtp_phy_spartan6
       generic map (
@@ -840,7 +879,7 @@ begin
 
   end generate gen_with_phy;
 
-  U_LED_Controller : bicolor_led_ctrl
+  U_LED_Controller : gc_bicolor_led_ctrl
     generic map(
       g_NB_COLUMN    => 4,
       g_NB_LINE      => 2,
