@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-06-19
+-- Last update: 2015-07-23
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -316,7 +316,7 @@ begin  -- rtl
             if(rq_done = '1') then
 
               rq_adr <= std_logic_vector(to_unsigned(c_PAC_LEN, 32));
-              rq_dat_wr <= x"00000080";
+              rq_dat_wr <= x"00000200";
               rq_wr  <= '1';
 
               eb_state <= EB_SEND_CLAIM;
@@ -417,82 +417,7 @@ begin  -- rtl
 
   p_slot_output_address : process(eb_state, ebm_i, slot_addr)
   begin
-
-    if(eb_state = EB_SET_TARGET_BASE) then
     slot_out.adr <= std_logic_vector(slot_addr + 4);
-    else
-      slot_out.adr <= std_logic_vector(slot_addr + 4);
-      end if;
-
-              end process;
-              
-  --  case eb_state is
-  --    when EB_WAIT_SLOT =>
-  --      slot_out.adr <= std_logic_vector(to_unsigned(8, 10));
-
-  --    when EB_SET_TARGET_IP =>
-  --      if(rq_done = '1') then
-  --      else
-  --        slot_out.adr <= std_logic_vector(slot_addr);
-  --      end if;
-        
-  --    when EB_SET_TARGET_PORT =>
-  --      if(rq_done = '1') then
-  --        slot_out.adr <= std_logic_vector(slot_addr + 4);
-  --      else
-  --        slot_out.adr <= std_logic_vector(slot_addr);
-  --      end if;
-        
-  --    when EB_SET_TARGET_BASE =>
-  --      if(rq_done = '1') then
-  --        slot_out.adr <= std_logic_vector(slot_addr + 4);
-  --      else
-  --        slot_out.adr <= std_logic_vector(slot_addr);
-  --      end if;
-
-  --    when EB_SET_MAX_OPS =>
-  --      if(rq_done = '1') then
-  --        slot_out.adr <= std_logic_vector(slot_addr + 4);
-  --      else
-  --        slot_out.adr <= std_logic_vector(slot_addr);
-  --      end if;
-        
-  --    when EB_WRITE_DATA =>
-  --      if(rq_done = '1') then
-  --        slot_out.adr <= std_logic_vector(slot_addr + 4);
-  --      else
-  --        slot_out.adr <= std_logic_vector(slot_addr);
-  --      end if;
-
-  --    when EB_SET_XFER_SIZE =>
-  --      if(rq_done = '1') then
-  --        slot_out.adr <= std_logic_vector(slot_addr + 4);
-  --      else
-  --        slot_out.adr <= std_logic_vector(slot_addr);
-  --      end if;
-
-        
-  --    when EB_SEND_CLAIM =>
-  --      if(rq_done = '1') then
-  --        slot_out.adr <= std_logic_vector(slot_addr + 4);
-  --      else
-  --        slot_out.adr <= std_logic_vector(slot_addr);
-  --      end if;
-
-
-  --    when EB_DUMMY_WAIT =>
-  --      if(rq_done = '1') then
-  --        slot_out.adr <= std_logic_vector(slot_addr + 4);
-  --      else
-  --        slot_out.adr <= std_logic_vector(slot_addr);
-  --      end if;
-        
-        
-  --    when others =>
-  --      slot_out.adr <= (others => '0');
-  --  end case;
-  --end process;
-
-
-
+  end process;
+  
 end rtl;
