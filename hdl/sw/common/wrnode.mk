@@ -8,7 +8,7 @@ OBJCOPY =	$(CROSS_COMPILE)objcopy
 SIZE =		$(CROSS_COMPILE)size
 
 CFLAGS = -DWRNODE_RT -g -O3 -I. -I../common -I../../include -I../include/ -mmultiply-enabled -mbarrel-shift-enabled
-OBJS += ../common/wrn-crt0.o  ../common/rt-common.o ../common/printf.o ../common/vsprintf-xint.o
+OBJS += ../common/wrn-crt0.o  ../common/rt-common.o  ../common/printf.o ../common/vsprintf-xint.o
 LDSCRIPT = ../common/wrnode.ld
 
 $(OUTPUT): $(LDSCRIPT) $(OBJS)

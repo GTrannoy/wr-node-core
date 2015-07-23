@@ -24,6 +24,14 @@ main()
     {
         pp_printf("Hello, world %d\n\r", n++);
 
+	uint32_t *msg = mq_map_out_buffer(0, 0);
+
+        mq_claim(0, 0);
+
+	msg[0] = n;
+
+        mq_send(0, 0, 1);
+
 
     }
 

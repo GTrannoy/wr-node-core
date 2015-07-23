@@ -150,8 +150,11 @@ module main;
 
       #150us;
       
+      
       cpu_csr = new ( acc, 'h0xc30000 );
       cpu_csr.init();
+      cpu_csr.reset_core(0, 1);
+      cpu_csr.load_firmware(0, "../../sw/rmq-test/rmq-test.ram");
       cpu_csr.reset_core(0, 0);
 
       #150us;

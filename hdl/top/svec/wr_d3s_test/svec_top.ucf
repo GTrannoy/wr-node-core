@@ -571,10 +571,10 @@ NET "fmc0_synth_clk_n_i" LOC = "G15";
 NET "fmc0_synth_clk_n_i" IOSTANDARD = "LVDS_25";
 NET "fmc0_synth_clk_p_i" LOC = "H15";
 NET "fmc0_synth_clk_p_i" IOSTANDARD = "LVDS_25";
-#NET "fmc0_rf_clk_n_i" LOC = "D16";
-#NET "fmc0_rf_clk_n_i" IOSTANDARD = "LVDS_25";
-#NET "fmc0_rf_clk_p_i" LOC = "E16";
-#NET "fmc0_rf_clk_p_i" IOSTANDARD = "LVDS_25";
+NET "fmc0_rf_clk_n_i" LOC = "D16";
+NET "fmc0_rf_clk_n_i" IOSTANDARD = "LVDS_25";
+NET "fmc0_rf_clk_p_i" LOC = "E16";
+NET "fmc0_rf_clk_p_i" IOSTANDARD = "LVDS_25";
 NET "fmc0_onewire_b" LOC = "E15";
 NET "fmc0_onewire_b" IOSTANDARD = "LVCMOS25";
 NET "fmc0_trig_p_i" LOC = "J14";
@@ -582,7 +582,7 @@ NET "fmc0_trig_p_i" IOSTANDARD = "LVDS_25";
 NET "fmc0_trig_n_i" LOC = "H14";
 NET "fmc0_trig_n_i" IOSTANDARD = "LVDS_25";
 # <ucfgen_end>
-#NET "fmc0_synth_clk_p_i" CLOCK_DEDICATED_ROUTE = FALSE;
+NET "fmc0_synth_clk_p_i" CLOCK_DEDICATED_ROUTE = FALSE;
 #Created by Constraints Editor (xc6slx150t-fgg900-3) - 2015/06/19
 #NET "fmc0_rf_clk_p_i" TNM_NET = fmc0_rf_clk_p_i;
 #NET "fmc0_rf_clk_n_i" TNM_NET = fmc0_rf_clk_n_i;

@@ -33,10 +33,6 @@ module main;
 
    IVHDWishboneMaster Host ( clk_sys, rst_n );
 
-
-   t_wishbone_master_out host_wb_out;
-   t_wishbone_master_in host_wb_in;
-
    wr_node_core # (
 		   .g_double_core_clock(1'b0)
 		   )DUT (
@@ -47,8 +43,6 @@ module main;
                      .host_slave_o (Host.master.in)
     );
 
-   
-  
    initial begin
       NodeCPUControl cpu_csr;
       MQueueHost hmq;
@@ -62,34 +56,34 @@ module main;
       host_acc = Host.get_accessor();
       
       
-      cpu_csr = new ( Host.get_accessor(), 'h10000 );
+      cpu_csr = new ( Host.get_accessor(), 'hc000 );
       hmq = new ( Host.get_accessor(), 0 );
 
-      
       cpu_csr.init();
 
       cpu_csr.load_firmware (0, "../../sw/debug-test/debug-test.ram");
       cpu_csr.reset_core(0, 0);
+/* -----\/----- EXCLUDED -----\/-----
       cpu_csr.load_firmware (1, "../../sw/debug-test/debug-test.ram");
       cpu_csr.reset_core(1, 0);
+ -----/\----- EXCLUDED -----/\----- */
 
-//      cpu_csr.debug_int_enable(0, 1);
- //     cpu_csr.debug_int_enable(1, 1);
 
       $display("CPU0 started\n");
       
+/* -----\/----- EXCLUDED -----\/-----
       forever begin
 	 cpu_csr.update();
 
 	 @(posedge clk_sys);
 	 
       end
+ -----/\----- EXCLUDED -----/\----- */
            
-      
 
+/* -----\/----- EXCLUDED -----\/-----
       host_acc.read('h08, rv);
       $display("GCR_IRQ_MASK %x", rv);
-      
       host_acc.read('h04, rv);
      
       $display("GCR_STATUS %x", rv);
@@ -100,29 +94,36 @@ module main;
       
       $display("GCR_STATUS %x", rv);
       
-/* -----\/----- EXCLUDED -----\/-----
       forever begin
-
-	 host_acc.read('h08, rv);
-	 $display("GCR_IRQ_MASK %x", rv);
- 
-
          hmq.update();
          #1us;
       end
  -----/\----- EXCLUDED -----/\----- */
 
-      host_acc.write('h20000, 1234);
-      host_acc.write('h20004, 5678);
 
-      host_acc.read('h20000, rv);
-      $display("smem-read: %d", rv);
-      host_acc.read('h20004, rv);
+      cpu_csr.set_smem_op(`SMEM_OP_DIRECT);
+
+      host_acc.write('h10000, 'hcafebabe);
+      host_acc.write('h10004, 'hdeadbeef);
+
       
-      $display("smem-read: %d", rv);
+      host_acc.read('h10000, rv);
+      $display("smem-read: %x", rv);
+      host_acc.read('h10004, rv);
+      $display("smem-read: %x", rv);
       
          
-     
+      cpu_csr.set_smem_op(`SMEM_OP_ADD);
+      $display("Atomic add...\n");
+      
+      host_acc.write('h10000, 'h1);
+      host_acc.write('h10004, 'h2);
+
+      host_acc.read('h10000, rv);
+      $display("smem-read: %x", rv);
+      host_acc.read('h10004, rv);
+      $display("smem-read: %x", rv);
+      
       
       
 /* -----\/----- EXCLUDED -----\/-----

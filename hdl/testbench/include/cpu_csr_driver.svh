@@ -2,7 +2,11 @@
 
 typedef class NodeCPUDbgQueue;
    
-
+`define SMEM_OP_DIRECT 0
+`define SMEM_OP_ADD 1
+`define SMEM_OP_SUB 2
+   
+   
 class NodeCPUControl;
    protected CBusAccessor bus;
    protected uint32_t base;
@@ -143,7 +147,13 @@ class NodeCPUControl;
       
 
    endtask // update
+
+   task set_smem_op(int op);
+      writel(`ADDR_WRN_CPU_CSR_SMEM_OP, op);
+      
+   endtask // set_smem_op
    
+  
    
    
 endclass 

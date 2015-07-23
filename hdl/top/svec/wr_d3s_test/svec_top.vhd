@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-06-19
+-- Last update: 2015-07-16
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -180,8 +180,8 @@ entity svec_top is
     fmc0_synth_clk_n_i : in std_logic;
     fmc0_synth_clk_p_i : in std_logic;
 
-    --fmc0_rf_clk_n_i : in std_logic;
-    --fmc0_rf_clk_p_i : in std_logic;
+    fmc0_rf_clk_n_i : in std_logic;
+    fmc0_rf_clk_p_i : in std_logic;
 
     -- Delay generator
     fmc0_delay_d_o     : out std_logic_vector(9 downto 0);
@@ -284,7 +284,8 @@ architecture rtl of svec_top is
       wr_dac_din_o         : out   std_logic;
       wr_dac_sync_n_o      : out   std_logic;
       slave_i              : in    t_wishbone_slave_in;
-      slave_o              : out   t_wishbone_slave_out);
+      slave_o              : out   t_wishbone_slave_out;
+      debug_o : out std_logic_vector(3 downto 0));
   end component wr_d3s_core;
   
  constant c_D3S_SDB_DEVICE : t_sdb_device := (
@@ -385,6 +386,8 @@ architecture rtl of svec_top is
   signal CONTROL : std_logic_vector(35 downto 0);
   signal TRIG    : std_logic_vector(127 downto 0);
   signal fmc0_clk_wr : std_logic;
+
+  signal debug : std_logic_vector(3 downto 0);
 begin
 
   --chipscope_icon_1: chipscope_icon
@@ -441,10 +444,10 @@ begin
       fp_gpio1_a2b_o      => fp_gpio1_a2b_o,
       fp_gpio2_a2b_o      => fp_gpio2_a2b_o,
       fp_gpio34_a2b_o     => fp_gpio34_a2b_o,
-      fp_gpio1_b          => fp_gpio1_b,
-      fp_gpio2_b          => fp_gpio2_b,
-      fp_gpio3_b          => fp_gpio3_b,
-      fp_gpio4_b          => fp_gpio4_b,
+      --fp_gpio1_b          => fp_gpio1_b,
+      --fp_gpio2_b          => fp_gpio2_b,
+      --fp_gpio3_b          => fp_gpio3_b,
+      --fp_gpio4_b          => fp_gpio4_b,
       VME_AS_n_i          => VME_AS_n_i,
       VME_RST_n_i         => VME_RST_n_i,
       VME_WRITE_n_i       => VME_WRITE_n_i,
@@ -556,8 +559,8 @@ begin
       wr_ref_clk_p_i       => fmc0_wr_ref_clk_p_i,
       synth_clk_n_i     => fmc0_synth_clk_n_i,
       synth_clk_p_i     => fmc0_synth_clk_p_i,
-      rf_clk_n_i     =>'0', --fmc0_rf_clk_n_i,
-      rf_clk_p_i     =>'0', --fmc0_rf_clk_p_i,
+      rf_clk_n_i     => fmc0_rf_clk_n_i,
+      rf_clk_p_i     => fmc0_rf_clk_p_i,
       
       
       pll_sys_cs_n_o       => fmc0_pll_sys_cs_n_o,
@@ -589,8 +592,14 @@ begin
       wr_dac_din_o => fmc0_wr_dac_din_o,
       wr_dac_sclk_o => fmc0_wr_dac_sclk_o,
       slave_i              => fmc_dp_wb_out(0),
-      slave_o              => fmc_dp_wb_in(0));
+      slave_o              => fmc_dp_wb_in(0),
+      debug_o => debug);
 
+  fp_gpio1_b <= debug(0);
+  fp_gpio2_b <= debug(1);
+  fp_gpio3_b <= debug(2);
+  fp_gpio4_b <= debug(3);
+  
 end rtl;
 
 

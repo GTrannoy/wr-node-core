@@ -513,7 +513,14 @@ write 0: disable sampling";
 
 			field {
 				 name = "ARM RF Counter Load";
-				 prefix = "ARM";
+				 prefix = "ARM_LOAD";
+				 type = MONOSTABLE;
+				 clock = "clk_ref_i";
+			};
+
+			field {
+				 name = "ARM RF Counter Snapshot";
+				 prefix = "ARM_SNAP";
 				 type = MONOSTABLE;
 				 clock = "clk_ref_i";
 			};
@@ -557,12 +564,25 @@ write 0: disable sampling";
 	 };
 
 	 reg {
-			name = "RF Counter Snapshot";
-			prefix = "RF_CNT_SNAPSHOT";
+			name = "RF Counter Snapshot (RF ticks)";
+			prefix = "RF_CNT_RF_SNAPSHOT";
 			field {
 				 name = "RF Counter Snapshot";
 				 type = SLV;
 				 size = 32;
+				 clock = "clk_ref_i";
+				 access_bus = READ_ONLY;
+				 access_dev = WRITE_ONLY;
+			};
+	 };
+
+	 reg {
+			name = "RF Counter TAI Resync Snapshot";
+			prefix = "RF_CNT_TAI_SNAPSHOT";
+			field {
+				 name = "TAI Snapshot";
+				 type = SLV;
+				 size = 28;
 				 clock = "clk_ref_i";
 				 access_bus = READ_ONLY;
 				 access_dev = WRITE_ONLY;
