@@ -126,15 +126,15 @@ module main;
       
       
       
-/* -----\/----- EXCLUDED -----\/-----
-      #1us;
-
       forever begin
+	 cpu_csr.update();
          hmq.update();
-         #100ns;
+         #1us;
+	 @(posedge clk_sys);
+	 
       end
- -----/\----- EXCLUDED -----/\----- */
 
+      
    end // initial begin
    
 
