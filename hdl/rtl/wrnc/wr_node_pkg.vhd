@@ -70,7 +70,7 @@ package wr_node_pkg is
     hmq_config   : t_wrn_mqueue_config;
     rmq_config   : t_wrn_mqueue_config;
     -- shared memory size, in bytes
-    shared_mem_size : integer range 256 to 65535;
+    shared_mem_size : integer range 256 to 65536;
   end record;
 
   constant c_default_node_config : t_wr_node_config :=
