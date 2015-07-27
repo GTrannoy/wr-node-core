@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-07-24
+-- Last update: 2015-07-27
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -78,7 +78,11 @@ entity spec_node_template is
     g_double_wrnode_core_clock : boolean := false;
 
 -- Configuration of the WR Node Core. Fill in according to your needs.
-    g_wr_node_config : t_wr_node_config
+    g_wr_node_config : t_wr_node_config;
+
+    -- clk_sys_o speed (& CPU speed). Currently only a discrete set of
+    -- frequencies is supported
+    g_system_clock_freq : integer := 62500000
     
     );
 
@@ -371,6 +375,15 @@ architecture rtl of spec_node_template is
     return tmp;
   end f_resize_slv;
 
+  function f_calc_sys_divider ( freq : integer ) return integer is
+  begin
+    case freq is
+      when 62500000 => return 16;
+      when 40000000 => return 25;
+      when others => report "Unsupported WRNode system clock frequency" severity failure;
+    end case;
+  end f_calc_sys_divider;
+  
   signal ebm_src_out : t_wrf_source_out;
   signal ebm_src_in  : t_wrf_source_in;
   signal ebs_snk_in  : t_wrf_sink_in;
@@ -396,6 +409,8 @@ architecture rtl of spec_node_template is
   signal wrn_debug_msg_irq : std_logic;
 
   signal dummy_wb_master : t_wishbone_master_out;
+
+
   
 begin
 
@@ -436,7 +451,7 @@ begin
       DIVCLK_DIVIDE      => 1,
       CLKFBOUT_MULT      => 8,
       CLKFBOUT_PHASE     => 0.000,
-      CLKOUT0_DIVIDE     => 16,         -- 62.5 MHz
+      CLKOUT0_DIVIDE     => f_calc_sys_divider(g_system_clock_freq),         -- 62.5 MHz
       CLKOUT0_PHASE      => 0.000,
       CLKOUT0_DUTY_CYCLE => 0.500,
       CLKOUT1_DIVIDE     => 8,         -- 125 MHz
@@ -891,6 +906,12 @@ begin
   fmc0_host_wb_o              <= cnx_master_out(c_SLAVE_FMC0);
   cnx_master_in(c_SLAVE_FMC0) <= fmc0_host_wb_i;
 
+  gen_leds_without_wr: if not g_with_white_rabbit  generate
+    led_red <= wrn_gpio_out(0);
+    led_green <= wrn_gpio_out(1);
+    end generate gen_leds_without_wr;
+
+  
 end rtl;
 
 

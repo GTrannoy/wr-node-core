@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-07-24
+-- Last update: 2015-07-27
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -59,7 +59,9 @@ package spec_node_pkg is
       g_with_white_rabbit        : boolean := false;
       g_with_wr_phy     : boolean := true;
       g_double_wrnode_core_clock : boolean := false;
-      g_wr_node_config  : t_wr_node_config);
+      g_wr_node_config  : t_wr_node_config;
+      g_system_clock_freq : integer := 62500000
+      );
     port (
       rst_n_sys_o          : out   std_logic;
       clk_sys_o            : out   std_logic;
