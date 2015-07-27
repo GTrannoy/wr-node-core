@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-05-27
+-- Last update: 2015-07-23
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -50,25 +50,8 @@ package svec_node_pkg is
   constant c_unused_wisbone_slave_out : t_wishbone_slave_out :=
     ('1', '0', '0', '0', '0', x"deadbeef");
 
-
-   constant c_unused_sdb_device : t_sdb_device := (
-    abi_class     => x"0000",              -- undocumented device
-    abi_ver_major => x"01",
-    abi_ver_minor => x"00",
-    wbd_endian    => c_sdb_endian_big,
-    wbd_width     => x"7",                 -- 8/16/32-bit port granularity
-    sdb_component => (
-      addr_first  => x"0000000000000000",
-      addr_last   => x"00000000000000ff",
-      product     => (
-        vendor_id => x"000000000000ce42",  -- GSI
-        device_id => x"deadbeef",
-        version   => x"00000001",
-        date      => x"20140527",
-        name      => "WB4-Unused-Device  ")));
-
-  constant c_unused_fmc0_record : t_sdb_record := f_sdb_embed_device(c_unused_sdb_device, x"00010000");
-  constant c_unused_fmc1_record : t_sdb_record := f_sdb_embed_device(c_unused_sdb_device, x"00018000");
+  constant c_unused_fmc0_record : t_sdb_record := f_sdb_embed_device(cc_dummy_sdb_device, x"00010000");
+  constant c_unused_fmc1_record : t_sdb_record := f_sdb_embed_device(cc_dummy_sdb_device, x"00018000");
   
   
   component svec_node_template is
@@ -77,6 +60,7 @@ package svec_node_pkg is
       g_fmc0_vic_vector : t_wishbone_address := x"00000000";
       g_fmc1_sdb        : t_sdb_record := c_unused_fmc1_record;
       g_fmc1_vic_vector : t_wishbone_address := x"00000000";
+      g_with_white_rabbit : boolean := true;
       g_simulation      : boolean := false;
       g_with_wr_phy     : boolean := true;
       g_double_wrnode_core_clock : boolean := false;
@@ -165,6 +149,10 @@ package svec_node_pkg is
       fmc1_dp_wb_o         : out   t_wishbone_master_out;
       fmc1_dp_wb_i         : in    t_wishbone_master_in := c_unused_wisbone_slave_out;
       fmc1_host_irq_i      : in    std_logic := '0';
+
+      sp_master_o : out t_wishbone_master_out;
+      sp_master_i: in t_wishbone_master_in := cc_dummy_master_in;
+
 
       tm_link_up_o         : out   std_logic;
       tm_dac_value_o       : out   std_logic_vector(23 downto 0);

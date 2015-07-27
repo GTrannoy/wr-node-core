@@ -301,13 +301,14 @@ architecture rtl of svec_node_template is
   signal phy_rst          : std_logic;
   signal phy_loopen       : std_logic;
 
-  
+  constant c_WRCORE_BRIDGE_SDB : t_sdb_bridge := f_xwb_bridge_manual_sdb(x"0003ffff", x"00030000");
+
   impure function f_pick_wr_core_sdb return t_sdb_record is
   begin
     if g_with_white_rabbit then
       return f_sdb_embed_bridge ( c_WRCORE_BRIDGE_SDB, x"00040000" );
     else
-      return f_sdb_embed_device ( cc_dummy_sdb_device );
+      return f_sdb_embed_device ( cc_dummy_sdb_device, x"00040000" );
     end if;
   end function;
   
@@ -324,7 +325,6 @@ architecture rtl of svec_node_template is
   constant c_DESC_SYNTHESIS : integer := 5;
   constant c_DESC_REPO_URL  : integer := 6;
 
-  constant c_WRCORE_BRIDGE_SDB : t_sdb_bridge := f_xwb_bridge_manual_sdb(x"0003ffff", x"00030000");
 
   constant c_INTERCONNECT_LAYOUT : t_sdb_record_array(c_NUM_WB_MASTERS - 1 downto 0) :=
     (

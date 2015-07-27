@@ -345,7 +345,8 @@ architecture rtl of svec_top is
       cpu_count    => 2,
       cpu_memsizes => (32768, 32768, 0, 0, 0, 0, 0, 0),
       hmq_config   => c_hmq_config,
-      rmq_config   => c_rmq_config
+      rmq_config   => c_rmq_config,
+		shared_mem_size => 8192
       );
 
   signal clk_sys : std_logic;
