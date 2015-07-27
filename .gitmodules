@@ -16,3 +16,6 @@
 [submodule "hdl/ip_cores/fmc-tdc"]
 	path = hdl/ip_cores/fmc-tdc
 	url = git://ohwr.org/fmc-projects/fmc-tdc/fmc-tdc-1ns-5cha-gw.git
+[submodule "hdl/ip_cores/gn4124-core"]
+	path = hdl/ip_cores/gn4124-core
+	url = git://ohwr.org/hdl-core-lib/gn4124-core.git
