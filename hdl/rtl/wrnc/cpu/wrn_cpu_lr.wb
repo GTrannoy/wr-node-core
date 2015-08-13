@@ -179,8 +179,10 @@ peripheral {
 	reg {
 		name = "Delay Counter Register";
 		prefix = "DELAY_CNT";
-
+		description = "Counts down at every system clock cycle and stops at 0. Used for generating delays";
 		field {
+			name = "Delay";
+			prefix = "Delay";
 			 size = 32;
 			 type = SLV;
 			 access_bus = READ_WRITE;
@@ -194,6 +196,8 @@ peripheral {
 		prefix = "APP_ID";
 
 		field {
+			name = "APP_ID";
+			prefix = "APP_ID";
 			 size = 32;
 			 type = SLV;
 			 access_bus = READ_ONLY;

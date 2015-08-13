@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-07-23
+-- Last update: 2015-07-30
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -98,7 +98,7 @@ architecture rtl of wrn_shared_mem is
 begin  -- rtl
 
   op_sel  <= slave_i.adr(18 downto 16);
-  op_addr <= f_sanitize_address( slave_i.adr(15 downto 0) );
+  op_addr <= f_sanitize_address( slave_i.adr(15 downto 2) );
 
   p_readout : process(clk_i)
   begin

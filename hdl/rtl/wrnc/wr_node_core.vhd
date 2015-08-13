@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-07-24
+-- Last update: 2015-08-13
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -55,7 +55,12 @@ entity wr_node_core is
 --    supply the clk_cpu_i signal which is in phase with the clk_i signal.
     g_double_core_clock : boolean          := false;
 -- When true, the Remote Message Queue is implemented.
-    g_with_rmq          : boolean          := true);
+    g_with_rmq          : boolean          := true;
+-- Frequency of clk_sys_i, in Hz
+    g_system_clock_freq : integer := 62500000;
+-- Enables/disables WR support
+    g_with_white_rabbit : boolean := false
+    );
 
   port (
     clk_i     : in std_logic;
@@ -92,11 +97,13 @@ end wr_node_core;
 
 architecture rtl of wr_node_core is
 
-  component wrn_cpu_cb
+  component wrn_cpu_cb is
     generic (
       g_cpu_id            : integer;
       g_iram_size         : integer;
-      g_double_core_clock : boolean);
+      g_system_clock_freq : integer;
+      g_double_core_clock : boolean;
+      g_with_white_rabbit : boolean);
     port (
       clk_sys_i   : in  std_logic;
       rst_n_i     : in  std_logic;
@@ -104,21 +111,20 @@ architecture rtl of wr_node_core is
       rst_n_ref_i : in  std_logic;
       clk_cpu_i   : in  std_logic;
       tm_i        : in  t_wrn_timing_if;
-      sh_master_i : in  t_wishbone_master_in;
+      sh_master_i : in  t_wishbone_master_in       := cc_dummy_master_in;
       sh_master_o : out t_wishbone_master_out;
-      dp_master_i : in  t_wishbone_master_in;
+      dp_master_i : in  t_wishbone_master_in       := cc_dummy_master_in;
       dp_master_o : out t_wishbone_master_out;
       cpu_csr_i   : in  t_wrn_cpu_csr_out_registers;
-      cpu_csr_o   : out t_wrn_cpu_csr_in_registers;
+      cpu_csr_o   : out t_wrn_cpu_csr_in_registers := c_wrn_cpu_csr_in_registers_init_value;
       rmq_ready_i : in  std_logic_vector(15 downto 0);
       hmq_ready_i : in  std_logic_vector(15 downto 0);
-      gpio_o      : out std_logic_vector(31 downto 0);
       gpio_i      : in  std_logic_vector(31 downto 0);
+      gpio_o      : out std_logic_vector(31 downto 0);
       dbg_drdy_o  : out std_logic;
       dbg_dack_i  : in  std_logic;
-      dbg_data_o  : out std_logic_vector(7 downto 0)
-      );
-  end component;
+      dbg_data_o  : out std_logic_vector(7 downto 0));
+  end component wrn_cpu_cb;
 
   component wrn_cpu_csr_wb_slave is
     port (
@@ -429,7 +435,9 @@ begin  -- rtl
       generic map (
         g_cpu_id            => i,
         g_iram_size         => g_config.cpu_memsizes(i),
-        g_double_core_clock => g_double_core_clock)
+        g_double_core_clock => g_double_core_clock,
+        g_with_white_rabbit => g_with_white_rabbit,
+        g_system_clock_freq => g_system_clock_freq)
       port map (
         clk_sys_i   => clk_i,
         rst_n_i     => rst_n_i,

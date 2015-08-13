@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-04-23
+-- Last update: 2015-08-13
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -52,13 +52,15 @@ use work.wr_node_pkg.all;
 entity wrn_cpu_cb is
   
   generic (
-    g_cpu_id    : integer;
-    g_iram_size : integer;
-    g_double_core_clock : boolean
+    g_cpu_id            : integer;
+    g_iram_size         : integer;
+    g_system_clock_freq : integer;
+    g_double_core_clock : boolean;
+    g_with_white_rabbit : boolean
     );
 
   port (
-   
+
     clk_sys_i : in std_logic;
     rst_n_i   : in std_logic;
 
@@ -66,7 +68,7 @@ entity wrn_cpu_cb is
     rst_n_ref_i : in std_logic;
 
     clk_cpu_i : in std_logic;
-    
+
     tm_i : in t_wrn_timing_if;
 
     sh_master_i : in  t_wishbone_master_in := cc_dummy_master_in;
@@ -84,10 +86,10 @@ entity wrn_cpu_cb is
     gpio_i : in  std_logic_vector(31 downto 0);
     gpio_o : out std_logic_vector(31 downto 0);
 
-    dbg_drdy_o: out std_logic;
-    dbg_dack_i: in std_logic;
-    dbg_data_o: out std_logic_vector(7 downto 0)
-    
+    dbg_drdy_o : out std_logic;
+    dbg_dack_i : in  std_logic;
+    dbg_data_o : out std_logic_vector(7 downto 0)
+
     );
 
 
@@ -97,30 +99,30 @@ architecture rtl of wrn_cpu_cb is
 
   component wrn_cpu_lr_wb_slave
     port (
-      rst_n_i             : in  std_logic;
-      clk_sys_i           : in  std_logic;
-      wb_adr_i            : in  std_logic_vector(2 downto 0);
-      wb_dat_i            : in  std_logic_vector(31 downto 0);
-      wb_dat_o            : out std_logic_vector(31 downto 0);
-      wb_cyc_i            : in  std_logic;
-      wb_sel_i            : in  std_logic_vector(3 downto 0);
-      wb_stb_i            : in  std_logic;
-      wb_we_i             : in  std_logic;
-      wb_ack_o            : out std_logic;
-      wb_stall_o          : out std_logic;
+      rst_n_i          : in  std_logic;
+      clk_sys_i        : in  std_logic;
+      wb_adr_i         : in  std_logic_vector(2 downto 0);
+      wb_dat_i         : in  std_logic_vector(31 downto 0);
+      wb_dat_o         : out std_logic_vector(31 downto 0);
+      wb_cyc_i         : in  std_logic;
+      wb_sel_i         : in  std_logic_vector(3 downto 0);
+      wb_stb_i         : in  std_logic;
+      wb_we_i          : in  std_logic;
+      wb_ack_o         : out std_logic;
+      wb_stall_o       : out std_logic;
       tai_sec_rd_ack_o : out std_logic;
-      regs_i              : in  t_wrn_cpu_lr_in_registers;
-      regs_o              : out t_wrn_cpu_lr_out_registers);
+      regs_i           : in  t_wrn_cpu_lr_in_registers;
+      regs_o           : out t_wrn_cpu_lr_out_registers);
   end component;
 
   component wrn_lm32_wrapper
     generic (
-      g_iram_size : integer;
-      g_cpu_id    : integer;
+      g_iram_size         : integer;
+      g_cpu_id            : integer;
       g_double_core_clock : boolean);
     port (
       clk_sys_i : in  std_logic;
-      clk_cpu_i : in std_logic;
+      clk_cpu_i : in  std_logic;
       rst_n_i   : in  std_logic;
       irq_i     : in  std_logic_vector(31 downto 0) := x"00000000";
       dwb_o     : out t_wishbone_master_out;
@@ -151,13 +153,14 @@ architecture rtl of wrn_cpu_cb is
     );
 
   signal tai_sec_rd_ack : std_logic;
-  signal local_regs_in     : t_wrn_cpu_lr_in_registers;
-  signal local_regs_out    : t_wrn_cpu_lr_out_registers;
+  signal local_regs_in  : t_wrn_cpu_lr_in_registers;
+  signal local_regs_out : t_wrn_cpu_lr_out_registers;
 
   signal cpu_dwb_out : t_wishbone_master_out;
   signal cpu_dwb_in  : t_wishbone_master_in;
 
-  signal tai_sys                        : std_logic_vector(31 downto 0);
+  signal tai_sys                                  : std_logic_vector(31 downto 0);
+  signal delay_cnt : std_logic_vector(31 downto 0);
   signal cycles_sys, cycles_sys_d0, cycles_sys_d1 : std_logic_vector(27 downto 0);
 
   signal tai_ref    : std_logic_vector(31 downto 0);
@@ -169,78 +172,136 @@ architecture rtl of wrn_cpu_cb is
 
 begin  -- rtl
 
+  gen_with_wr_1 : if g_with_white_rabbit generate
+    U_Sync1 : gc_pulse_synchronizer
+      port map (
+        clk_in_i  => clk_ref_i,
+        clk_out_i => clk_sys_i,
+        rst_n_i   => rst_n_i,
+        d_ready_o => tm_ready_ref,
+        d_p_i     => tm_p_ref,
+        q_p_o     => tm_p_sys);
 
-  U_Sync1 : gc_pulse_synchronizer
-    port map (
-      clk_in_i  => clk_ref_i,
-      clk_out_i => clk_sys_i,
-      rst_n_i   => rst_n_i,
-      d_ready_o => tm_ready_ref,
-      d_p_i     => tm_p_ref,
-      q_p_o     => tm_p_sys);
+    U_Sync2 : gc_sync_ffs
+      port map (
+        clk_i    => clk_sys_i,
+        rst_n_i  => rst_n_i,
+        data_i   => tm_i.link_up,
+        synced_o => local_regs_in.stat_wr_link_i);
 
-  U_Sync2 : gc_sync_ffs
-    port map (
-      clk_i  => clk_sys_i,
-      rst_n_i   => rst_n_i,
-      data_i => tm_i.link_up,
-      synced_o => local_regs_in.stat_wr_link_i);
+    U_Sync3 : gc_sync_ffs
+      port map (
+        clk_i    => clk_sys_i,
+        rst_n_i  => rst_n_i,
+        data_i   => tm_i.time_valid,
+        synced_o => local_regs_in.stat_wr_time_ok_i);
 
-  U_Sync3 : gc_sync_ffs
-    port map (
-      clk_i  => clk_sys_i,
-      rst_n_i   => rst_n_i,
-      data_i => tm_i.time_valid,
-      synced_o => local_regs_in.stat_wr_time_ok_i);
+    U_Sync4 : gc_sync_register
+      generic map (
+        g_width => 8)
+      port map (
+        clk_i     => clk_sys_i,
+        rst_n_a_i => rst_n_i,
+        d_i       => tm_i.aux_locked,
+        q_o       => local_regs_in.stat_wr_aux_clock_ok_i);
 
-  U_Sync4 : gc_sync_register
-    generic map (
-      g_width => 8)
-    port map (
-      clk_i  => clk_sys_i,
-      rst_n_a_i   => rst_n_i,
-      d_i => tm_i.aux_locked,
-      q_o => local_regs_in.stat_wr_aux_clock_ok_i);
+    process(clk_ref_i)
+    begin
+      if rising_edge(clk_ref_i) then
+        if rst_n_ref_i = '0' then
+          tm_p_ref <= '0';
+        else
+          tm_p_ref <= not tm_p_ref and tm_ready_ref;
 
-  process(clk_ref_i)
-  begin
-    if rising_edge(clk_ref_i) then
-      if rst_n_ref_i = '0' then
-        tm_p_ref    <= '0';
-      else
-        tm_p_ref    <= not tm_p_ref and tm_ready_ref;
-
-        if(tm_p_ref = '1') then
-          tai_ref    <= tm_i.tai (31 downto 0);
-          cycles_ref <= tm_i.cycles;
+          if(tm_p_ref = '1') then
+            tai_ref    <= tm_i.tai (31 downto 0);
+            cycles_ref <= tm_i.cycles;
+          end if;
         end if;
       end if;
-    end if;
-  end process;
+    end process;
 
-  process(clk_sys_i)
-  begin
-    if rising_edge(clk_sys_i) then
-      if(tm_p_sys = '1') then
-        cycles_sys <= cycles_ref;
-        tai_sys <= tai_ref;
+    process(clk_sys_i)
+    begin
+      if rising_edge(clk_sys_i) then
+        if(tm_p_sys = '1') then
+          cycles_sys <= cycles_ref;
+          tai_sys    <= tai_ref;
+        end if;
+        cycles_sys_d0 <= cycles_sys;
       end if;
-      cycles_sys_d0 <= cycles_sys;
-    end if;
-  end process;
+    end process;
 
-  -- ugly hack!
-  process(clk_sys_i)
-  begin
+    -- ugly hack!
+    process(clk_sys_i)
+    begin
+      if rising_edge(clk_sys_i) then
+        if(tai_sec_rd_ack = '1') then
+          local_regs_in.tai_cycles_i <= cycles_sys_d0;
+        end if;
+      end if;
+    end process;
+
+    local_regs_in.tai_sec_i <= tai_sys;
+
+  end generate gen_with_wr_1;
+
+  gen_without_wr_1 : if not g_with_white_rabbit generate
+
+    process(clk_sys_i)
+    begin
+      if rising_edge(clk_sys_i) then
+        if rst_n_i = '0' then
+          cycles_sys <= (others => '0');
+          tai_sys    <= (others => '0');
+        else
+          if(unsigned(cycles_sys) = g_system_clock_freq - 1) then
+            cycles_sys <= (others => '0');
+            tai_sys    <= std_logic_vector(unsigned(tai_sys) + 1));
+          else
+            cycles_sys <= cycles_sys + 1;
+          end if;
+          cycles_sys_d0 <= cycles_sys;
+        end if;
+      end if;
+    end process;
+
+    process(clk_sys_i)
+    begin
+      if rising_edge(clk_sys_i) then
+        if(tai_sec_rd_ack = '1') then
+          local_regs_in.tai_cycles_i <= cycles_sys_d0;
+        end if;
+      end if;
+    end process;
+
+    local_regs_in.tai_sec_i <= tai_sys;
+    local_regs_in.stat_wr_link_i <= '0';
+    local_regs_in.stat_wr_time_ok_i <= '0';
+    local_regs_in.stat_wr_aux_clock_ok_i <= '0';
+
+    
+  end generate gen_without_wr_1;
+
+  p_delay_counter : process(clk_sys_i)
     if rising_edge(clk_sys_i) then
-      if(tai_sec_rd_ack = '1') then
-        local_regs_in.tai_cycles_i <= cycles_sys_d0;
+      if rst_n_i = '0' then
+        delay_cnt <= (others => '0');
+      else
+        if (local_regs_out.delay_cnt_load_o = '1') then
+          delay_cnt <= local_regs_out.delay_cnt_o;
+        elsif (unsigned(delay_cnt) /= 0) then
+          delay_cnt <= std_logic_vector(unsigned(delay_cnt) - 1);
+        end if;
+
+        local_regs_in.delay_cnt_i <= delay_cnt;
+        
       end if;
     end if;
   end process;
 
-  local_regs_in.tai_sec_i    <= tai_sys;
-
+  
+  
   p_gpio : process(clk_sys_i)
   begin
     if rising_edge(clk_sys_i) then
@@ -248,7 +309,7 @@ begin  -- rtl
         gpio_o <= (others => '0');
       else
         for i in 0 to 31 loop
-        local_regs_in.gpio_in_i(i) <= gpio_i(i);
+          local_regs_in.gpio_in_i(i) <= gpio_i(i);
 
           if local_regs_out.gpio_set_wr_o = '1' and local_regs_out.gpio_set_o(i) = '1' then
             gpio_o(i) <= '1';
@@ -264,8 +325,8 @@ begin  -- rtl
 
   U_TheCoreCPU : wrn_lm32_wrapper
     generic map (
-      g_iram_size => g_iram_size,
-      g_cpu_id    => g_cpu_id,
+      g_iram_size         => g_iram_size,
+      g_cpu_id            => g_cpu_id,
       g_double_core_clock => g_double_core_clock)
     port map (
       clk_sys_i => clk_sys_i,
@@ -280,20 +341,20 @@ begin  -- rtl
 
   U_Local_Registrers : wrn_cpu_lr_wb_slave
     port map (
-      rst_n_i             => rst_n_i,
-      clk_sys_i           => clk_sys_i,
-      wb_adr_i            => cnx_master_out(c_slave_lr).adr(4 downto 2),
-      wb_dat_i            => cnx_master_out(c_slave_lr).dat,
-      wb_dat_o            => cnx_master_in(c_slave_lr).dat,
-      wb_cyc_i            => cnx_master_out(c_slave_lr).cyc,
-      wb_sel_i            => cnx_master_out(c_slave_lr).sel,
-      wb_stb_i            => cnx_master_out(c_slave_lr).stb,
-      wb_we_i             => cnx_master_out(c_slave_lr).we,
-      wb_ack_o            => cnx_master_in(c_slave_lr).ack,
-      wb_stall_o          => cnx_master_in(c_slave_lr).stall,
+      rst_n_i          => rst_n_i,
+      clk_sys_i        => clk_sys_i,
+      wb_adr_i         => cnx_master_out(c_slave_lr).adr(4 downto 2),
+      wb_dat_i         => cnx_master_out(c_slave_lr).dat,
+      wb_dat_o         => cnx_master_in(c_slave_lr).dat,
+      wb_cyc_i         => cnx_master_out(c_slave_lr).cyc,
+      wb_sel_i         => cnx_master_out(c_slave_lr).sel,
+      wb_stb_i         => cnx_master_out(c_slave_lr).stb,
+      wb_we_i          => cnx_master_out(c_slave_lr).we,
+      wb_ack_o         => cnx_master_in(c_slave_lr).ack,
+      wb_stall_o       => cnx_master_in(c_slave_lr).stall,
       tai_sec_rd_ack_o => tai_sec_rd_ack,
-      regs_i              => local_regs_in,
-      regs_o              => local_regs_out);
+      regs_i           => local_regs_in,
+      regs_o           => local_regs_out);
 
   cnx_master_in(c_slave_lr).err <= '0';
   cnx_master_in(c_slave_lr).rty <= '0';
@@ -324,24 +385,24 @@ begin  -- rtl
   cnx_master_in(c_slave_si) <= sh_master_i;
 
   dbg_fifo_wr <= not dbg_fifo_full and local_regs_out.dbg_chr_wr_o;
-  
+
   U_Debug_Message_FIFO : generic_sync_fifo
     generic map (
-      g_data_width             => 8,
-      g_size                   => c_wrn_debug_message_fifo_size,
-      g_show_ahead             => true)
+      g_data_width => 8,
+      g_size       => c_wrn_debug_message_fifo_size,
+      g_show_ahead => true)
     port map (
-      rst_n_i        => rst_n_i,
-      clk_i          => clk_sys_i,
-      d_i            => local_regs_out.dbg_chr_o,
-      we_i           => dbg_fifo_wr,
-      q_o            => dbg_data_o,
-      rd_i           => dbg_dack_i,
-      empty_o        => dbg_fifo_empty,
-      full_o         => dbg_fifo_full);
-  
-  dbg_drdy_o <= not dbg_fifo_empty;
-  local_regs_in.stat_core_id_i <= std_logic_vector(to_unsigned(g_cpu_id, 4)); 
+      rst_n_i => rst_n_i,
+      clk_i   => clk_sys_i,
+      d_i     => local_regs_out.dbg_chr_o,
+      we_i    => dbg_fifo_wr,
+      q_o     => dbg_data_o,
+      rd_i    => dbg_dack_i,
+      empty_o => dbg_fifo_empty,
+      full_o  => dbg_fifo_full);
+
+  dbg_drdy_o                   <= not dbg_fifo_empty;
+  local_regs_in.stat_core_id_i <= std_logic_vector(to_unsigned(g_cpu_id, 4));
 
   
 end rtl;

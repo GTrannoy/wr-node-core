@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-07-24
+-- Last update: 2015-08-13
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -88,11 +88,14 @@ package wr_node_pkg is
   function f_dummy_master_in_array(size : integer)
     return t_wishbone_master_in_array;
 
+  
   component wr_node_core is
     generic (
       g_config            : t_wr_node_config;
       g_double_core_clock : boolean := false;
-      g_with_rmq          : boolean := true);
+      g_with_rmq          : boolean := true;
+      g_system_clock_freq : integer := 62500000;
+      g_with_white_rabbit : boolean := false);
     port (
       clk_i           : in  std_logic;
       clk_cpu_i       : in  std_logic                                             := '0';
