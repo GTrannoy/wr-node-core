@@ -766,5 +766,5 @@ TIMESPEC TS_crossdomain_14 = FROM "tdc_clk_125m" TO "clk_125m_pllref" 20ns DATAP
 #TIMESPEC TS_crossdomain_10 = FROM "U_Node_Template/clk_sys" TO "U_Node_Template/clk_dmtd" 4ns DATAPATHONLY;
 NET "*/gc_sync_register_in[*]" MAXDELAY=4ns;
 #Created by Constraints Editor (xc6slx150t-fgg900-3) - 2015/04/23
-TIMESPEC TS_multi_cpu1 = FROM "clk_sys" TO "U_Node_Template_pllout_clk_cpu_0" TS_U_Node_Template_pllout_clk_cpu_0 * 2;
-TIMESPEC TS_multi_cpu2 = FROM "U_Node_Template_pllout_clk_cpu_0" TO "clk_sys" TS_U_Node_Template_pllout_clk_cpu_0 * 2;
+#TIMESPEC TS_multi_cpu1 = FROM "clk_sys" TO "U_Node_Template_pllout_clk_cpu_0" TS_U_Node_Template_pllout_clk_cpu_0 * 2;
+#TIMESPEC TS_multi_cpu2 = FROM "U_Node_Template_pllout_clk_cpu_0" TO "clk_sys" TS_U_Node_Template_pllout_clk_cpu_0 * 2;

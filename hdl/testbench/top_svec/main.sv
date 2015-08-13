@@ -151,11 +151,15 @@ module main;
       #150us;
       
       
-      cpu_csr = new ( acc, 'h0xc30000 );
+      cpu_csr = new ( acc, 'h0xc2c000 );
       cpu_csr.init();
       cpu_csr.reset_core(0, 1);
-      cpu_csr.load_firmware(0, "../../sw/rmq-test/rmq-test.ram");
+      cpu_csr.load_firmware(0, "../../sw/debug-test/debug-test.ram");
       cpu_csr.reset_core(0, 0);
+
+      cpu_csr.reset_core(1, 1);
+      cpu_csr.load_firmware(1, "../../sw/debug-test/debug-test.ram");
+      cpu_csr.reset_core(1, 0);
 
       #150us;
 
@@ -201,12 +205,10 @@ module main;
    
       
       
-/* -----\/----- EXCLUDED -----\/-----
       forever begin
-         hmq.update();
+         cpu_csr.update();
          #1us;
       end
- -----/\----- EXCLUDED -----/\----- */
       
    end
  

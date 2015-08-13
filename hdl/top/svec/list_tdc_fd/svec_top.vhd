@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-04-29
+-- Last update: 2015-07-30
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -316,7 +316,8 @@ architecture rtl of svec_top is
       cpu_count    => 2,
       cpu_memsizes => (32768, 32768, 0, 0, 0, 0, 0, 0),
       hmq_config   => c_hmq_config,
-      rmq_config   => c_rmq_config
+      rmq_config   => c_rmq_config,
+      shared_mem_size => 8192
       );
 
   signal clk_sys : std_logic;
@@ -397,7 +398,8 @@ begin
       g_fmc1_vic_vector          => c_fd_vector,
       g_simulation               => g_simulation,
       g_with_wr_phy              => true,
-      g_double_wrnode_core_clock => true,
+      g_double_wrnode_core_clock => false,
+      g_with_white_rabbit        => true,      
       g_wr_node_config           => c_node_config)
     port map (
       rst_n_a_i           => rst_n_a_i,
