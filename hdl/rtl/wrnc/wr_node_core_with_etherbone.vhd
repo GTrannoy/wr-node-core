@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-06-20
+-- Last update: 2015-08-26
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -201,7 +201,9 @@ begin
   U_WRNode_Core : wr_node_core
     generic map (
       g_config => g_config,
-      g_double_core_clock => g_double_core_clock)
+      g_double_core_clock => g_double_core_clock,
+      g_with_white_rabbit =>true,
+      g_with_rmq =>true)
     port map (
       clk_i        => clk_i,
       clk_cpu_i => clk_cpu_i,

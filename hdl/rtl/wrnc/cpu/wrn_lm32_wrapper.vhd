@@ -167,8 +167,6 @@ architecture wrapper of wrn_lm32_wrapper is
   signal host_rdata                         : std_logic_vector(31 downto 0);
   signal host_write                         : std_logic;
 
-  signal rst : std_logic;
-
   signal d_adr : std_logic_vector(31 downto 0);
 
   signal core_sel_match : std_logic;

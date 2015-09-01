@@ -101,7 +101,7 @@ architecture rtl of wrn_cpu_cb is
     port (
       rst_n_i          : in  std_logic;
       clk_sys_i        : in  std_logic;
-      wb_adr_i         : in  std_logic_vector(2 downto 0);
+      wb_adr_i         : in  std_logic_vector(3 downto 0);
       wb_dat_i         : in  std_logic_vector(31 downto 0);
       wb_dat_o         : out std_logic_vector(31 downto 0);
       wb_cyc_i         : in  std_logic;
@@ -257,9 +257,9 @@ begin  -- rtl
         else
           if(unsigned(cycles_sys) = g_system_clock_freq - 1) then
             cycles_sys <= (others => '0');
-            tai_sys    <= std_logic_vector(unsigned(tai_sys) + 1));
+            tai_sys    <= std_logic_vector(unsigned(tai_sys) + 1);
           else
-            cycles_sys <= cycles_sys + 1;
+            cycles_sys <= std_logic_vector(unsigned(cycles_sys) + 1);
           end if;
           cycles_sys_d0 <= cycles_sys;
         end if;
@@ -278,12 +278,13 @@ begin  -- rtl
     local_regs_in.tai_sec_i <= tai_sys;
     local_regs_in.stat_wr_link_i <= '0';
     local_regs_in.stat_wr_time_ok_i <= '0';
-    local_regs_in.stat_wr_aux_clock_ok_i <= '0';
+    local_regs_in.stat_wr_aux_clock_ok_i <= x"00";
 
     
   end generate gen_without_wr_1;
 
   p_delay_counter : process(clk_sys_i)
+  begin
     if rising_edge(clk_sys_i) then
       if rst_n_i = '0' then
         delay_cnt <= (others => '0');
@@ -343,7 +344,7 @@ begin  -- rtl
     port map (
       rst_n_i          => rst_n_i,
       clk_sys_i        => clk_sys_i,
-      wb_adr_i         => cnx_master_out(c_slave_lr).adr(4 downto 2),
+      wb_adr_i         => cnx_master_out(c_slave_lr).adr(5 downto 2),
       wb_dat_i         => cnx_master_out(c_slave_lr).dat,
       wb_dat_o         => cnx_master_in(c_slave_lr).dat,
       wb_cyc_i         => cnx_master_out(c_slave_lr).cyc,

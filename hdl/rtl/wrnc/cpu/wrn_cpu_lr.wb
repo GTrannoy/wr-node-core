@@ -182,7 +182,6 @@ peripheral {
 		description = "Counts down at every system clock cycle and stops at 0. Used for generating delays";
 		field {
 			name = "Delay";
-			prefix = "Delay";
 			 size = 32;
 			 type = SLV;
 			 access_bus = READ_WRITE;
@@ -197,7 +196,7 @@ peripheral {
 
 		field {
 			name = "APP_ID";
-			prefix = "APP_ID";
+--			prefix = "APP_ID";
 			 size = 32;
 			 type = SLV;
 			 access_bus = READ_ONLY;

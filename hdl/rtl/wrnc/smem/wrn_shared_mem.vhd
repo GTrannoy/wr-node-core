@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-07-30
+-- Last update: 2015-08-21
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -65,10 +65,9 @@ architecture rtl of wrn_shared_mem is
   constant c_RANGE_SET    : std_logic_vector(2 downto 0) := "011";
   constant c_RANGE_CLEAR  : std_logic_vector(2 downto 0) := "100";
   constant c_RANGE_FLIP   : std_logic_vector(2 downto 0) := "101";
+  constant c_RANGE_TEST_AND_SET   : std_logic_vector(2 downto 0) := "110";
 
-  constant c_SMEM_SIZE : integer := 2048;
-
-  type t_smem_array is array (0 to c_SMEM_SIZE-1) of std_logic_vector(31 downto 0);
+  type t_smem_array is array (0 to g_size-1) of std_logic_vector(31 downto 0);
   type t_state is (FETCH_IDLE, WRITEBACK);
 
   function f_is_synthesis return boolean is
@@ -90,7 +89,16 @@ architecture rtl of wrn_shared_mem is
   end f_sanitize_address;
 
 
-  signal mem                : t_smem_array;
+  function f_clear_smem return t_smem_array is
+    variable tmp: t_smem_array;
+    begin
+      for i in 0 to g_size-1 loop
+        tmp(i) := (others =>'0');
+        end loop;
+        return tmp;
+      end f_clear_smem;
+  
+  signal mem                : t_smem_array := f_clear_smem;
   signal op_addr            : integer;
   signal op_sel             : std_logic_vector(2 downto 0);
   signal fetch_data, result : std_logic_vector(31 downto 0);
@@ -117,13 +125,14 @@ begin  -- rtl
   p_op : process(fetch_data, op_sel, slave_i)
   begin
     case op_sel is
-      when c_RANGE_FLIP   => result <= fetch_data xor slave_i.dat;
-      when c_RANGE_SET    => result <= fetch_data or slave_i.dat;
-      when c_RANGE_CLEAR  => result <= fetch_data and not slave_i.dat;
-      when c_RANGE_ADD    => result <= std_logic_vector(unsigned(fetch_data) + unsigned(slave_i.dat));
-      when c_RANGE_SUB    => result <= std_logic_vector(unsigned(fetch_data) - unsigned(slave_i.dat));
-      when c_RANGE_DIRECT => result <= slave_i.dat;
-      when others         => result <= slave_i.dat;
+      when c_RANGE_FLIP         => result <= fetch_data xor slave_i.dat;
+      when c_RANGE_SET          => result <= fetch_data or slave_i.dat;
+      when c_RANGE_CLEAR        => result <= fetch_data and not slave_i.dat;
+      when c_RANGE_ADD          => result <= std_logic_vector(unsigned(fetch_data) + unsigned(slave_i.dat));
+      when c_RANGE_SUB          => result <= std_logic_vector(unsigned(fetch_data) - unsigned(slave_i.dat));
+      when c_RANGE_TEST_AND_SET => result <= x"00000001";
+      when c_RANGE_DIRECT       => result <= slave_i.dat;
+      when others               => result <= slave_i.dat;
     end case;
   end process;
 
@@ -140,6 +149,8 @@ begin  -- rtl
             if(slave_i.cyc = '1' and slave_i.stb = '1') then
               if(slave_i.we = '1' and op_sel /= c_RANGE_DIRECT) then
                 state <= WRITEBACK;
+              elsif (slave_i.we = '0' and op_sel = c_RANGE_TEST_AND_SET) then
+                state <= WRITEBACK;
               else
                 slave_o.ack <= '1';
               end if;
@@ -155,7 +166,10 @@ begin  -- rtl
 
   p_stall : process(slave_i, op_sel, state)
   begin
-    if(slave_i.cyc = '1' and slave_i.stb = '1' and slave_i.we = '1' and op_sel /= c_RANGE_DIRECT and state = FETCH_IDLE) then
+    if(slave_i.cyc = '1' and slave_i.stb = '1' and
+       ((slave_i.we = '1' and op_sel /= c_RANGE_DIRECT) or
+        (slave_i.we = '0' and op_sel = c_RANGE_TEST_AND_SET))
+       and state = FETCH_IDLE) then
       slave_o.stall <= '1';
     else
       slave_o.stall <= '0';
