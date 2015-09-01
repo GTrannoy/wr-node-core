@@ -777,9 +777,7 @@ begin
   U_WR_Node : wr_node_core_with_etherbone
     generic map (
       g_config => g_wr_node_config,
-      g_double_core_clock => g_double_wrnode_core_clock,
-      g_with_white_rabbit => true,
-      g_with_rmq => true)
+      g_double_core_clock => g_double_wrnode_core_clock)
     port map (
       clk_i          => clk_sys,
       clk_cpu_i => clk_cpu,
