@@ -124,7 +124,7 @@ peripheral {
       prefix = "CORE_MEMSIZE";
 			field {
 				 name = "Memory size for the selected core.";
-				 size = 16;
+				 size = 32;
 				 type = SLV;
 				 access_bus = READ_ONLY;
 				 access_dev = WRITE_ONLY;

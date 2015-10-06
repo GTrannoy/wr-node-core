@@ -427,7 +427,7 @@ begin  -- rtl
 
   cpu_csr_towb.app_id_i       <= g_config.app_id;
   cpu_csr_towb.core_count_i   <= std_logic_vector(to_unsigned(g_config.cpu_count, 4));
-  cpu_csr_towb.core_memsize_i <= std_logic_vector(to_unsigned(g_config.cpu_memsizes(cpu_index), 16));
+  cpu_csr_towb.core_memsize_i <= std_logic_vector(to_unsigned(g_config.cpu_memsizes(cpu_index), 32));
 
   gen_cpus : for i in 0 to g_config.cpu_count-1 generate
 
