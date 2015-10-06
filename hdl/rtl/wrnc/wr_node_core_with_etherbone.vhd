@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-08-26
+-- Last update: 2015-09-25
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -50,8 +50,9 @@ use work.etherbone_pkg.all;
 entity wr_node_core_with_etherbone is
   
   generic (
-    g_config : t_wr_node_config := c_default_node_config;
-    g_double_core_clock : boolean := false);
+    g_config            : t_wr_node_config := c_default_node_config;
+    g_double_core_clock : boolean          := false;
+    g_cpu_arch          : string           := "LM32");
 
   port (
     clk_i       : in std_logic;
@@ -66,10 +67,10 @@ entity wr_node_core_with_etherbone is
     dp_master_i : in  t_wishbone_master_in_array(0 to g_config.cpu_count-1) := f_dummy_master_in_array(g_config.cpu_count);
 
     wr_src_o : out t_wrf_source_out;
-    wr_src_i : in     t_wrf_source_in;
+    wr_src_i : in  t_wrf_source_in;
 
     wr_snk_o : out t_wrf_sink_out;
-    wr_snk_i : in     t_wrf_sink_in;
+    wr_snk_i : in  t_wrf_sink_in;
 
     eb_config_i : in  t_wishbone_slave_in;
     eb_config_o : out t_wishbone_slave_out;
@@ -114,8 +115,8 @@ architecture rtl of wr_node_core_with_etherbone is
 
   signal wrn_ebs_out, ebm_mux_out, wrn_ebm_out : t_wishbone_master_out;
   signal wrn_ebs_in, ebm_mux_in, wrn_ebm_in    : t_wishbone_master_in;
-  signal wr_ebs_src_out : t_wrf_source_out;
-  signal wr_ebs_src_in  : t_wrf_source_in;
+  signal wr_ebs_src_out                        : t_wrf_source_out;
+  signal wr_ebs_src_in                         : t_wrf_source_in;
 
   signal rst_net_n : std_logic;
 begin
@@ -200,29 +201,30 @@ begin
 
   U_WRNode_Core : wr_node_core
     generic map (
-      g_config => g_config,
+      g_config            => g_config,
       g_double_core_clock => g_double_core_clock,
-      g_with_white_rabbit =>true,
-      g_with_rmq =>true)
+      g_with_white_rabbit => true,
+      g_with_rmq          => true,
+      g_cpu_arch => g_cpu_arch)
     port map (
-      clk_i        => clk_i,
-      clk_cpu_i => clk_cpu_i,
-      rst_n_i      => rst_n_i,
-      dp_master_o  => dp_master_o,
-      dp_master_i  => dp_master_i,
-      sp_master_o  => sp_master_o,
-      sp_master_i  => sp_master_i,
-      ebm_master_o => wrn_ebm_out,
-      ebm_master_i => wrn_ebm_in,
-      ebs_slave_o  => wrn_ebs_in,
-      ebs_slave_i  => wrn_ebs_out,
-      host_slave_i => host_slave_i,
-      host_slave_o => host_slave_o,
-      host_irq_o   => host_irq_o,
-      clk_ref_i    => clk_ref_i,
-      tm_i         => tm_i,
-      gpio_i       => gpio_i,
-      gpio_o       => gpio_o,
+      clk_i           => clk_i,
+      clk_cpu_i       => clk_cpu_i,
+      rst_n_i         => rst_n_i,
+      dp_master_o     => dp_master_o,
+      dp_master_i     => dp_master_i,
+      sp_master_o     => sp_master_o,
+      sp_master_i     => sp_master_i,
+      ebm_master_o    => wrn_ebm_out,
+      ebm_master_i    => wrn_ebm_in,
+      ebs_slave_o     => wrn_ebs_in,
+      ebs_slave_i     => wrn_ebs_out,
+      host_slave_i    => host_slave_i,
+      host_slave_o    => host_slave_o,
+      host_irq_o      => host_irq_o,
+      clk_ref_i       => clk_ref_i,
+      tm_i            => tm_i,
+      gpio_i          => gpio_i,
+      gpio_o          => gpio_o,
       debug_msg_irq_o => debug_msg_irq_o);
 
 end rtl;

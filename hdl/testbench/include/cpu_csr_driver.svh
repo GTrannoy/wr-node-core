@@ -65,9 +65,17 @@ class NodeCPUControl;
       
    endtask // init
 
+   task reset_set(int mask);
+      writel(`ADDR_WRN_CPU_CSR_RESET, mask);
+   endtask // reset_set
+   
+
    task reset_core(int core, int reset);
       uint32_t rstr;
+      $display("Reset: read\n");
+      
       readl(`ADDR_WRN_CPU_CSR_RESET, rstr);
+      $display("Reset: v %x\n", rstr);
 
       if(reset)
         rstr |= (1<<core);
@@ -110,7 +118,11 @@ class NodeCPUControl;
            if(cmd == "write")
              begin
                 writel(`ADDR_WRN_CPU_CSR_UADDR, addr);
+		#500ns;
+		
                 writel(`ADDR_WRN_CPU_CSR_UDATA, data);
+		#500ns;
+		
 		q.push_back(data);
 		n++;
 		

@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-08-13
+-- Last update: 2015-09-25
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -77,7 +77,7 @@ package wr_node_pkg is
     (
       app_id       => x"115790de",
       cpu_count    => 2,
-      cpu_memsizes => (32768, 32768, 0, 0, 0, 0, 0, 0),
+      cpu_memsizes => (65536, 65536, 0, 0, 0, 0, 0, 0),
       hmq_config   => c_wrn_default_mqueue_config,
       rmq_config   => c_wrn_default_mqueue_config,
       shared_mem_size => 8192
@@ -95,7 +95,8 @@ package wr_node_pkg is
       g_double_core_clock : boolean := false;
       g_with_rmq          : boolean := true;
       g_system_clock_freq : integer := 62500000;
-      g_with_white_rabbit : boolean := false);
+      g_with_white_rabbit : boolean := false;
+      g_cpu_arch : string := "LM32");
     port (
       clk_i           : in  std_logic;
       clk_cpu_i       : in  std_logic                                             := '0';
@@ -122,7 +123,9 @@ package wr_node_pkg is
   component wr_node_core_with_etherbone is
     generic (
       g_config            : t_wr_node_config;
-      g_double_core_clock : boolean := false);
+      g_double_core_clock : boolean := false;
+      g_cpu_arch : string := "LM32"
+      );
     port (
       clk_i           : in  std_logic;
       clk_cpu_i       : in  std_logic                                             := '0';

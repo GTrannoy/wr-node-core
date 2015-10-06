@@ -1,3 +1,4 @@
+CPU=lm32
 OBJS = debug-test.o
 OUTPUT = debug-test
 

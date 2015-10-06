@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-08-26
+-- Last update: 2015-09-09
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -193,13 +193,16 @@ entity spec_node_template is
       fmc0_host_wb_o  : out t_wishbone_master_out;
       fmc0_host_wb_i  : in  t_wishbone_master_in;
       -- DP0 port of WR Node CPU 0
-      fmc0_dp_wb_o    : out t_wishbone_master_out;
-      fmc0_dp_wb_i    : in  t_wishbone_master_in;
+      cpu0_dp_wb_o    : out t_wishbone_master_out;
+      cpu0_dp_wb_i    : in  t_wishbone_master_in;
       -- host interrupt line
       fmc0_host_irq_i : in  std_logic;
 
+      cpu1_dp_wb_o    : out t_wishbone_master_out;
+      cpu1_dp_wb_i    : in  t_wishbone_master_in;
+
     -- Shared Peripheral port
-	  sp_master_o : out t_wishbone_master_out;
+      sp_master_o : out t_wishbone_master_out;
       sp_master_i: in t_wishbone_master_in := cc_dummy_master_in;
     
       -------------------------------------------------------------------------
@@ -784,10 +787,10 @@ begin
       clk_ref_i      => clk_125m_pllref,
       rst_n_i        => local_reset_n,
       rst_net_n_i    => rst_net_n,
-      dp_master_o(0) => fmc0_dp_wb_o,
-      dp_master_o(1) => dummy_wb_master,
-      dp_master_i(0) => fmc0_dp_wb_i,
-      dp_master_i(1) => cc_dummy_master_in,
+      dp_master_o(0) => cpu0_dp_wb_o,
+      dp_master_o(1) => cpu1_dp_wb_o,
+      dp_master_i(0) => cpu0_dp_wb_i,
+      dp_master_i(1) => cpu1_dp_wb_i,
       wr_src_o       => ebm_src_out,
       wr_src_i       => ebm_src_in,
       wr_snk_o       => ebs_snk_out,
@@ -819,10 +822,10 @@ begin
         clk_cpu_i       => clk_cpu,
         rst_n_i         => local_reset_n,
 
-        dp_master_o(0) => fmc0_dp_wb_o,
-        dp_master_o(1) => dummy_wb_master,
-        dp_master_i(0) => fmc0_dp_wb_i,
-        dp_master_i(1) => cc_dummy_master_in,
+        dp_master_o(0) => cpu0_dp_wb_o,
+        dp_master_o(1) => cpu1_dp_wb_o,
+        dp_master_i(0) => cpu0_dp_wb_i,
+        dp_master_i(1) => cpu1_dp_wb_i,
 
         host_slave_i   => cnx_master_out(c_SLAVE_WR_NODE),
         host_slave_o   => cnx_master_in(c_SLAVE_WR_NODE),

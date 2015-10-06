@@ -31,6 +31,15 @@ write 0: disable sampling";
 				 access_bus = READ_WRITE;
          access_dev = READ_ONLY;
 			};
+
+			field {
+				 name = "Enable RF Counter";
+				 prefix = "RF_CNT_ENABLE";
+				 type = BIT;
+				 clock = "clk_dds_i";
+				 access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+			};
 	 };
 
 	 reg {
@@ -519,14 +528,6 @@ write 0: disable sampling";
 			};
 
 			field {
-				 name = "ARM RF Counter Snapshot";
-				 prefix = "ARM_SNAP";
-				 type = MONOSTABLE;
-				 clock = "clk_ref_i";
-			};
-
-		
-			field {
 				 name = "DONE";
 				 prefix = "DONE";
 				 type = BIT;
@@ -577,10 +578,23 @@ write 0: disable sampling";
 	 };
 
 	 reg {
-			name = "RF Counter TAI Resync Snapshot";
-			prefix = "RF_CNT_TAI_SNAPSHOT";
+			name = "RF Counter Raw Value (RF ticks)";
+			prefix = "RF_CNT_RAW";
 			field {
-				 name = "TAI Snapshot";
+				 name = "RF Counter Raw value";
+				 type = SLV;
+				 size = 32;
+				 clock = "clk_dds_i";
+				 access_bus = READ_ONLY;
+				 access_dev = WRITE_ONLY;
+			};
+	 };
+
+	 reg {
+			name = "RF Counter TAI Resync Snapshot";
+			prefix = "RF_CNT_CYCLES_SNAPSHOT";
+			field {
+				 name = "TAI Cycles Snapshot";
 				 type = SLV;
 				 size = 28;
 				 clock = "clk_ref_i";
@@ -593,10 +607,10 @@ write 0: disable sampling";
 			name = "Trigger In Snapshot";
 			prefix = "TRIG_IN_SNAPSHOT";
 			field {
-				 name = "Trigger In Snapshot (TAI cycles)";
+				 name = "Trigger In Snapshot (RF cycles)";
 				 type = SLV;
 				 size = 32;
-				 clock = "clk_ref_i";
+				 clock = "clk_dds_i";
 				 access_bus = READ_ONLY;
 				 access_dev = WRITE_ONLY;
 			};
@@ -623,5 +637,57 @@ write 0: disable sampling";
 			};			
 	 };
 
+	 reg {
+			name = "Pulse Out Cycles";
+			prefix = "PULSE_OUT_CYCLES";
+			field {
+				 name = "Pulse at (RF cycles)";
+				 type = SLV;
+				 size = 32;
+				 clock = "clk_dds_i";
+				 access_bus = READ_WRITE;
+				 access_dev = READ_ONLY;
+			};
+	 };
 
+	 reg {
+			name = "Pulse Out Control";
+			prefix = "PULSE_OUT_CSR";
+
+			field {
+				 name = "Arm (Snapshot)";
+				 type = MONOSTABLE;
+				 prefix = "ARM";
+				 clock = "clk_dds_i";
+			};
+
+			field {
+				 name = "DONE";
+				 prefix = "DONE";
+				 type = BIT;
+				 clock = "clk_dds_i";
+				 access_bus = READ_ONLY;
+         access_dev = WRITE_ONLY;
+			};			
+
+			field {
+				 name = "Coarse Adjust";
+				 prefix = "ADJ_COARSE";
+				 type = SLV;
+				 clock = "clk_dds_i";
+				 size = 3;
+				 access_bus = READ_WRITE;
+				 access_dev = READ_ONLY;
+			};
+
+			field {
+				 name = "Fine Adjust";
+				 prefix = "ADJ_FINE";
+				 type = SLV;
+				 clock = "clk_dds_i";
+				 size = 10;
+				 access_bus = READ_WRITE;
+				 access_dev = READ_ONLY;
+			};
+	 };
 };

@@ -96,57 +96,57 @@ module main;
 		 .g_simulation(1),
 		 .g_sim_pps_period(125000000) )
    DUT1 (
-                    .clk_sys_i   (clk_sys),
-		    .clk_ref_i   (clk_wr),
-		    .wr_ref_clk_p_i(clk_wr),
-		    .wr_ref_clk_n_i(~clk_wr),
+         .clk_sys_i   (clk_sys),
+	 .clk_ref_i   (clk_wr),
+	 .wr_ref_clk_p_i(clk_wr),
+	 .wr_ref_clk_n_i(~clk_wr),
 
-		    .tm_link_up_i(1'b1),
-		    .tm_time_valid_i(1'b1),
-		    .tm_tai_i(tm_tai),
-		    .tm_cycles_i(tm_cycles),
+	 .tm_link_up_i(1'b1),
+	 .tm_time_valid_i(1'b1),
+	 .tm_tai_i(tm_tai),
+	 .tm_cycles_i(tm_cycles),
 
-	.synth_clk_p_i(dac_clock_out),
-	.synth_clk_n_i(~dac_clock_out),
+	 .synth_clk_p_i(dac_clock_out),
+	 .synth_clk_n_i(~dac_clock_out),
 
-	.trig_p_i(trig_p),
-	.trig_n_i(~trig_p),
-	
-	.dac_p_o(dac_data),
-			 
-		    .rst_n_i (rst_n),
-                    .slave_i (Host1.master.out),
-                    .slave_o (Host1.master.in)
+	 .trig_p_i(trig_p),
+	 .trig_n_i(~trig_p),
+      
+	 .dac_p_o(dac_data),
+      
+	 .rst_n_i (rst_n),
+         .slave_i (Host1.master.out),
+         .slave_o (Host1.master.in)
 
-    );
+	 );
 
-      wr_d3s_core #(
+   wr_d3s_core #(
 		 .g_simulation(1),
 		 .g_sim_pps_period(125000000) )
    DUT2 (
-                    .clk_sys_i   (clk_sys),
-		    .clk_ref_i   (clk_wr),
-		    .wr_ref_clk_p_i(clk_wr),
-		    .wr_ref_clk_n_i(~clk_wr),
+         .clk_sys_i   (clk_sys),
+	 .clk_ref_i   (clk_wr),
+	 .wr_ref_clk_p_i(clk_wr),
+	 .wr_ref_clk_n_i(~clk_wr),
 
-		    .tm_link_up_i(1'b1),
-		    .tm_time_valid_i(1'b1),
-		    .tm_tai_i(tm_tai),
-		    .tm_cycles_i(tm_cycles),
+	 .tm_link_up_i(1'b1),
+	 .tm_time_valid_i(1'b1),
+	 .tm_tai_i(tm_tai),
+	 .tm_cycles_i(tm_cycles),
 
-	.synth_clk_p_i(dac_clock_out2),
-	.synth_clk_n_i(~dac_clock_out2),
+	 .synth_clk_p_i(dac_clock_out2),
+	 .synth_clk_n_i(~dac_clock_out2),
 
-	.trig_p_i(trig_p),
-	.trig_n_i(~trig_p),
-	
-	.dac_p_o(dac_data2),
-			 
-		    .rst_n_i (rst_n),
-                    .slave_i (Host2.master.out),
-                    .slave_o (Host2.master.in)
+	 .trig_p_i(trig_p),
+	 .trig_n_i(~trig_p),
+      
+	 .dac_p_o(dac_data2),
+      
+	 .rst_n_i (rst_n),
+         .slave_i (Host2.master.out),
+         .slave_o (Host2.master.in)
 
-    );
+	 );
 
    
 
@@ -202,7 +202,73 @@ module main;
       host_acc.write(`ADDR_DDS_CR, ((sampling_div-1) << 1) | 1); // set prescaler, enable sampling
       host_acc.write(`ADDR_DDS_FREQ_HI, base_tune >> 32);
       host_acc.write(`ADDR_DDS_FREQ_LO, base_tune & 'hffffffff);
+      host_acc.write(`ADDR_DDS_GAIN, 1<<12);
+      host_acc.write(`ADDR_DDS_ACC_LOAD_HI, 'h0);
+      host_acc.write(`ADDR_DDS_ACC_LOAD_LO, 'h0);
+      host_acc.write(`ADDR_DDS_TUNE_VAL, 0 | `DDS_TUNE_VAL_LOAD_ACC); 
+      host_acc.write(`ADDR_DDS_TUNE_VAL, 0 | `DDS_TUNE_VAL_LOAD_ACC); 
+
+      host_acc.write(`ADDR_DDS_RF_CNT_PERIOD, 100000);
+      host_acc.write(`ADDR_DDS_RF_RST_PHASE,( 220 <<  `DDS_RF_RST_PHASE_LO_OFFSET ) | (30 << `DDS_RF_RST_PHASE_HI_OFFSET));
+
       host_acc2.write(`ADDR_DDS_RSTR, 0); // unreset the core
+      host_acc2.write(`ADDR_DDS_CR, ((sampling_div-1) << 1) | 1); // set prescaler, enable sampling
+      host_acc2.write(`ADDR_DDS_FREQ_HI, base_tune >> 32);
+      host_acc2.write(`ADDR_DDS_FREQ_LO, base_tune & 'hffffffff);
+      host_acc2.write(`ADDR_DDS_GAIN, 1<<12);
+      host_acc2.write(`ADDR_DDS_ACC_LOAD_HI, 'h0);
+      host_acc2.write(`ADDR_DDS_ACC_LOAD_LO, 'h0);
+      host_acc2.write(`ADDR_DDS_TUNE_VAL, 0 | `DDS_TUNE_VAL_LOAD_ACC); 
+      host_acc2.write(`ADDR_DDS_TUNE_VAL, 0 | `DDS_TUNE_VAL_LOAD_ACC); 
+
+      host_acc2.write(`ADDR_DDS_RF_CNT_PERIOD, 100000);
+      host_acc2.write(`ADDR_DDS_RF_RST_PHASE,( 220 <<  `DDS_RF_RST_PHASE_LO_OFFSET ) | (30 << `DDS_RF_RST_PHASE_HI_OFFSET));
+
+      #10us;
+      
+
+      host_acc.write(`ADDR_DDS_CR, ((sampling_div-1) << 1) | `DDS_CR_SAMP_EN | `DDS_CR_RF_CNT_ENABLE); // enable RF counter
+      host_acc2.write(`ADDR_DDS_CR, ((sampling_div-1) << 1) | `DDS_CR_SAMP_EN | `DDS_CR_RF_CNT_ENABLE); // enable RF counter
+
+      
+//      forever begin
+      begin
+	 automatic uint64_t snap_rf, snap_cycles, correction;
+	 
+	 wait_sample(host_acc);
+
+	 host_acc.read(`ADDR_DDS_RF_CNT_RF_SNAPSHOT, snap_rf );
+	 host_acc.read(`ADDR_DDS_RF_CNT_CYCLES_SNAPSHOT, snap_cycles );
+
+
+	 $display("CounterSnap: %d RF cycles, %d TAI cycles\n", snap_rf, snap_cycles );
+
+	 snap_cycles += slave_delay * ticks_per_sample;
+
+	 correction = slave_delay * ticks_per_sample * base_tune / (1<<43);
+
+	 $display("currection %d\n", correction);
+	 
+	 snap_rf += correction;
+	 
+	 
+
+
+	 host_acc2.write( `ADDR_DDS_RF_CNT_SYNC_VALUE, snap_rf );
+	 host_acc2.write( `ADDR_DDS_RF_CNT_TRIGGER,  snap_cycles | `DDS_RF_CNT_TRIGGER_ARM_LOAD );
+
+ 
+	 
+	 
+      end
+      
+
+      
+      
+
+/* -----\/----- EXCLUDED -----\/-----
+
+       host_acc2.write(`ADDR_DDS_RSTR, 0); // unreset the core
       host_acc2.write(`ADDR_DDS_CR, ((sampling_div-1) << 1) | 1); // set prescaler, enable sampling
 
       host_acc.write(`ADDR_DDS_FREQ_MEAS_GATE, 1000);
@@ -248,7 +314,10 @@ module main;
       $display("PhaseCorr %x [%.0f deg]", phase_correction, phase_corr_deg );
       host_acc.read(`ADDR_DDS_SAMPLE_IDX, rv);
       $display("Correction applied for sample %d\n", rv);
+ -----/\----- EXCLUDED -----/\----- */
 
+
+      
       
       
       /*

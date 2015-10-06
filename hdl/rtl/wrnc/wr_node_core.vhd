@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-08-13
+-- Last update: 2015-09-25
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -59,7 +59,9 @@ entity wr_node_core is
 -- Frequency of clk_sys_i, in Hz
     g_system_clock_freq : integer := 62500000;
 -- Enables/disables WR support
-    g_with_white_rabbit : boolean := false
+    g_with_white_rabbit : boolean := false;
+-- Choice of the CPU core used: LM32 or URV
+    g_cpu_arch : string := "LM32"
     );
 
   port (
@@ -103,7 +105,8 @@ architecture rtl of wr_node_core is
       g_iram_size         : integer;
       g_system_clock_freq : integer;
       g_double_core_clock : boolean;
-      g_with_white_rabbit : boolean);
+      g_with_white_rabbit : boolean;
+      g_cpu_arch : string);
     port (
       clk_sys_i   : in  std_logic;
       rst_n_i     : in  std_logic;
@@ -427,7 +430,7 @@ begin  -- rtl
 
   cpu_csr_towb.app_id_i       <= g_config.app_id;
   cpu_csr_towb.core_count_i   <= std_logic_vector(to_unsigned(g_config.cpu_count, 4));
-  cpu_csr_towb.core_memsize_i <= std_logic_vector(to_unsigned(g_config.cpu_memsizes(cpu_index), 16));
+  cpu_csr_towb.core_memsize_i <= std_logic_vector(to_unsigned(g_config.cpu_memsizes(cpu_index), 32));
 
   gen_cpus : for i in 0 to g_config.cpu_count-1 generate
 
@@ -437,7 +440,8 @@ begin  -- rtl
         g_iram_size         => g_config.cpu_memsizes(i),
         g_double_core_clock => g_double_core_clock,
         g_with_white_rabbit => g_with_white_rabbit,
-        g_system_clock_freq => g_system_clock_freq)
+        g_system_clock_freq => g_system_clock_freq,
+        g_cpu_arch => g_cpu_arch)
       port map (
         clk_sys_i   => clk_i,
         rst_n_i     => rst_n_i,

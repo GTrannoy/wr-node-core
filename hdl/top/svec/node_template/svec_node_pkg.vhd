@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-07-23
+-- Last update: 2015-09-25
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -65,7 +65,8 @@ package svec_node_pkg is
       g_with_wr_phy     : boolean := true;
       g_double_wrnode_core_clock : boolean := false;
       g_wr_node_config  : t_wr_node_config;
-      g_use_external_fp_leds : boolean := false);
+      g_use_external_fp_leds : boolean := false;
+      g_cpu_arch : string := "LM32");
     port (
  -- power-up reset from the SVEC system FPGA
       rst_n_a_i            : in    std_logic;

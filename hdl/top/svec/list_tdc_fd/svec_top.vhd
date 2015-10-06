@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-07-30
+-- Last update: 2015-09-25
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -280,16 +280,16 @@ architecture rtl of svec_top is
     (
       out_slot_count  => 4,
       out_slot_config => (
-        0             => (width => 128, entries => 8),  -- control CPU 0 (to host)
-        1             => (width => 128, entries => 8),  -- control CPU 1 (to host)
+        0             => (width => 64, entries => 8),  -- control CPU 0 (to host)
+        1             => (width => 64, entries => 8),  -- control CPU 1 (to host)
         2             => (width => 16, entries => 128),  -- log CPU 0
         3             => (width => 16, entries => 128),  -- log CPU 1
         others        => (0, 0)),
 
       in_slot_count  => 2,
       in_slot_config => (
-        0            => (width => 32, entries => 8),  -- control CPU 0 (from host)
-        1            => (width => 32, entries => 8),  -- control CPU 1 (from host)
+        0            => (width => 64, entries => 8),  -- control CPU 0 (from host)
+        1            => (width => 64, entries => 8),  -- control CPU 1 (from host)
         others       => (0, 0)
         )
       );
@@ -314,7 +314,7 @@ architecture rtl of svec_top is
     (
       app_id       => x"115790de",
       cpu_count    => 2,
-      cpu_memsizes => (32768, 32768, 0, 0, 0, 0, 0, 0),
+      cpu_memsizes => (65536, 65536, 0, 0, 0, 0, 0, 0),
       hmq_config   => c_hmq_config,
       rmq_config   => c_rmq_config,
       shared_mem_size => 8192
@@ -400,7 +400,8 @@ begin
       g_with_wr_phy              => true,
       g_double_wrnode_core_clock => false,
       g_with_white_rabbit        => true,      
-      g_wr_node_config           => c_node_config)
+      g_wr_node_config           => c_node_config,
+      g_cpu_arch => "URV")
     port map (
       rst_n_a_i           => rst_n_a_i,
       rst_n_sys_o         => rst_n,

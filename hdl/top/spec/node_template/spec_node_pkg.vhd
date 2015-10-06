@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-07-27
+-- Last update: 2015-09-09
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -130,9 +130,13 @@ package spec_node_pkg is
       fmc0_clk_aux_i       : in    std_logic := '0';
       fmc0_host_wb_o       : out   t_wishbone_master_out;
       fmc0_host_wb_i       : in    t_wishbone_master_in := cc_dummy_master_in;
-      fmc0_dp_wb_o         : out   t_wishbone_master_out;
-      fmc0_dp_wb_i         : in    t_wishbone_master_in := cc_dummy_master_in;
-      fmc0_host_irq_i      : in    std_logic;
+
+      cpu0_dp_wb_o         : out   t_wishbone_master_out;
+      cpu0_dp_wb_i         : in    t_wishbone_master_in := cc_dummy_master_in;
+      cpu1_dp_wb_o         : out   t_wishbone_master_out;
+      cpu1_dp_wb_i         : in    t_wishbone_master_in := cc_dummy_master_in;
+
+      fmc0_host_irq_i      : in    std_logic := '0';
       sp_master_o          : out   t_wishbone_master_out;
       sp_master_i          : in    t_wishbone_master_in         := cc_dummy_master_in;
       tm_link_up_o         : out   std_logic;

@@ -33,15 +33,19 @@ module main;
 
    IVHDWishboneMaster Host ( clk_sys, rst_n );
 
-   wr_node_core # (
-		   .g_double_core_clock(1'b0)
-		   )DUT (
-                     .clk_i   (clk_sys),
-		     .clk_cpu_i(clk_cpu),
-		     .rst_n_i (rst_n),
-                     .host_slave_i (Host.master.out),
-                     .host_slave_o (Host.master.in)
-    );
+   wr_node_core 
+     #(
+       .g_double_core_clock(1'b0),
+       .g_cpu_arch("LM32")
+       )
+   DUT
+     (
+      .clk_i   (clk_sys),
+      .clk_cpu_i(clk_cpu),
+      .rst_n_i (rst_n),
+      .host_slave_o (Host.master.in),
+      .host_slave_i (Host.master.out)
+      );
 
    initial begin
       NodeCPUControl cpu_csr;
@@ -103,6 +107,7 @@ module main;
 
       cpu_csr.set_smem_op(`SMEM_OP_DIRECT);
 
+/* -----\/----- EXCLUDED -----\/-----
       host_acc.write('h10000, 'hcafebabe);
       host_acc.write('h10004, 'hdeadbeef);
 
@@ -123,11 +128,12 @@ module main;
       $display("smem-read: %x", rv);
       host_acc.read('h10004, rv);
       $display("smem-read: %x", rv);
+ -----/\----- EXCLUDED -----/\----- */
       
       
       
       forever begin
-	 cpu_csr.update();
+	 //cpu_csr.update();
          hmq.update();
          #1us;
 	 @(posedge clk_sys);
