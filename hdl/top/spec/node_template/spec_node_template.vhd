@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-08-26
+-- Last update: 2015-10-14
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -380,6 +380,7 @@ architecture rtl of spec_node_template is
     case freq is
       when 62500000 => return 16;
       when 40000000 => return 25;
+      when 100000000 => return 10;
       when others => report "Unsupported WRNode system clock frequency" severity failure;
     end case;
   end f_calc_sys_divider;

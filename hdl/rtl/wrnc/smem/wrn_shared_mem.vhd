@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-08-21
+-- Last update: 2015-10-14
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -46,7 +46,7 @@ use work.wishbone_pkg.all;
 entity wrn_shared_mem is
   
   generic (
-    g_size : integer := 8192);
+    g_size : integer := 16384);
 
   port(
     clk_i   : in std_logic;
@@ -68,7 +68,7 @@ architecture rtl of wrn_shared_mem is
   constant c_RANGE_TEST_AND_SET   : std_logic_vector(2 downto 0) := "110";
 
   type t_smem_array is array (0 to g_size-1) of std_logic_vector(31 downto 0);
-  type t_state is (FETCH_IDLE, WRITEBACK);
+  type t_state is (FETCH_IDLE, UPDATE, WRITEBACK);
 
   function f_is_synthesis return boolean is
   begin
@@ -122,18 +122,20 @@ begin  -- rtl
   end process;
 
 
-  p_op : process(fetch_data, op_sel, slave_i)
+  p_op : process(clk_i)
   begin
-    case op_sel is
-      when c_RANGE_FLIP         => result <= fetch_data xor slave_i.dat;
-      when c_RANGE_SET          => result <= fetch_data or slave_i.dat;
-      when c_RANGE_CLEAR        => result <= fetch_data and not slave_i.dat;
-      when c_RANGE_ADD          => result <= std_logic_vector(unsigned(fetch_data) + unsigned(slave_i.dat));
-      when c_RANGE_SUB          => result <= std_logic_vector(unsigned(fetch_data) - unsigned(slave_i.dat));
-      when c_RANGE_TEST_AND_SET => result <= x"00000001";
-      when c_RANGE_DIRECT       => result <= slave_i.dat;
-      when others               => result <= slave_i.dat;
-    end case;
+    if rising_edge(clk_i) then
+      case op_sel is
+        when c_RANGE_FLIP         => result <= fetch_data xor slave_i.dat;
+        when c_RANGE_SET          => result <= fetch_data or slave_i.dat;
+        when c_RANGE_CLEAR        => result <= fetch_data and not slave_i.dat;
+        when c_RANGE_ADD          => result <= std_logic_vector(unsigned(fetch_data) + unsigned(slave_i.dat));
+        when c_RANGE_SUB          => result <= std_logic_vector(unsigned(fetch_data) - unsigned(slave_i.dat));
+        when c_RANGE_TEST_AND_SET => result <= x"00000001";
+        when c_RANGE_DIRECT       => result <= slave_i.dat;
+        when others               => result <= slave_i.dat;
+      end case;
+    end if;
   end process;
 
   p_fsm : process(clk_i)
@@ -143,19 +145,25 @@ begin  -- rtl
         state       <= FETCH_IDLE;
         slave_o.ack <= '0';
       else
+        
         case state is
           when FETCH_IDLE =>
             slave_o.ack <= '0';
             if(slave_i.cyc = '1' and slave_i.stb = '1') then
-              if(slave_i.we = '1' and op_sel /= c_RANGE_DIRECT) then
-                state <= WRITEBACK;
+              if(slave_i.we = '1') then
+                state <= UPDATE;
               elsif (slave_i.we = '0' and op_sel = c_RANGE_TEST_AND_SET) then
-                state <= WRITEBACK;
+                state <= UPDATE;
               else
                 slave_o.ack <= '1';
               end if;
               
             end if;
+
+          when UPDATE =>
+
+            state <= WRITEBACK;
+            
           when WRITEBACK =>
             state       <= FETCH_IDLE;
             slave_o.ack <= '1';
@@ -167,9 +175,9 @@ begin  -- rtl
   p_stall : process(slave_i, op_sel, state)
   begin
     if(slave_i.cyc = '1' and slave_i.stb = '1' and
-       ((slave_i.we = '1' and op_sel /= c_RANGE_DIRECT) or
+       ((slave_i.we = '1') or
         (slave_i.we = '0' and op_sel = c_RANGE_TEST_AND_SET))
-       and state = FETCH_IDLE) then
+       and (state = FETCH_IDLE or state = UPDATE)) then
       slave_o.stall <= '1';
     else
       slave_o.stall <= '0';
