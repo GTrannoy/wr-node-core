@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-09-09
+-- Last update: 2015-11-18
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -493,11 +493,14 @@ begin
       uart_txd_o           => uart_txd_o,
 
       fmc0_clk_aux_i       => fmc0_clk_wr,
-      cpu0_dp_wb_o         => fmc_dp_wb_out(0),
-      cpu0_dp_wb_i         => fmc_dp_wb_in(0),
-      cpu1_dp_wb_o         => fmc_dp_wb_out(1),
-      cpu1_dp_wb_i         => fmc_dp_wb_in(1),
+      fmc0_host_irq_i => '0',
       tm_link_up_o         => tm_link_up,
+
+      dp_master_o(0)         => fmc_dp_wb_out(0),
+      dp_master_o(1)         => fmc_dp_wb_out(1),
+      dp_master_i(0)         => fmc_dp_wb_in(0),
+      dp_master_i(1)         => fmc_dp_wb_in(1),
+
       tm_dac_value_o       => tm_dac_value,
       tm_dac_wr_o          => tm_dac_wr,
       tm_clk_aux_lock_en_i => tm_clk_aux_lock_en,
