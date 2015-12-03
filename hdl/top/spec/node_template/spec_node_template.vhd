@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-11-18
+-- Last update: 2015-11-25
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -381,6 +381,7 @@ architecture rtl of spec_node_template is
     case freq is
       when 62500000 => return 16;
       when 40000000 => return 25;
+      when 100000000 => return 10;
       when others => report "Unsupported WRNode system clock frequency" severity failure;
     end case;
   end f_calc_sys_divider;
@@ -633,10 +634,13 @@ begin
       g_phys_uart                 => true,
       g_virtual_uart              => true,
       g_with_external_clock_input => false,
+      g_ep_rxbuf_size => 1024,
       g_aux_clks                  => 1,
       g_interface_mode            => PIPELINED,
       g_address_granularity       => BYTE,
       g_softpll_enable_debugger   => false,
+      g_dpram_size                => 90112/4,  --16384,
+
       g_dpram_initf               => "none")
     port map (
       clk_sys_i    => clk_sys,
@@ -760,7 +764,8 @@ begin
       g_interface_mode      => PIPELINED,
       g_address_granularity => BYTE,
       g_num_interrupts      => 3,
-      g_init_vectors        => c_VIC_VECTOR_TABLE)
+      g_init_vectors        => c_VIC_VECTOR_TABLE,
+      g_retry_timeout => 10000) -- hack - 100us retry timeout to make SPEC work
     port map (
       clk_sys_i    => clk_sys,
       rst_n_i      => local_reset_n,
