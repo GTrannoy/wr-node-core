@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-04-23
+-- Last update: 2015-11-17
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -192,7 +192,7 @@ architecture wrapper of wrn_lm32_wrapper is
   signal clk_div2, clk_div2_d0, wb_io_sync : std_logic;
   signal wb_dat_d0, wb_io_sync_ext         : std_logic_vector(31 downto 0);
   signal wb_ack_d0, wb_cyc_d0              : std_logic;
-  
+  signal iram_bwe: std_logic_vector(3 downto 0);
 begin
 
 
@@ -370,36 +370,41 @@ begin
         D_ERR_I => cpu_dwb_in.err,
         D_RTY_I => cpu_dwb_in.rty);
 
+    
     cpu_dwb_in      <= cpu_dwb_in_sys;
     cpu_dwb_out_sys <= cpu_dwb_out;
 
+    gen_iram_blocks : for i in 0 to 3 generate
+    
     iram : generic_dpram
       generic map (
-        g_data_width               => 32,
+        g_data_width               => 8,
         g_size                     => g_iram_size / 4,
-        g_with_byte_enable         => true,
+        g_with_byte_enable         => false,
         g_dual_clock               => false,
-        g_addr_conflict_resolution => "read_first",
-        g_init_file                => f_pick_init_file)
+        g_addr_conflict_resolution => "dont_care")
       port map (
         rst_n_i => rst_n_i,
         clka_i  => clk_sys_i,
 
-
         wea_i => iram_i_wr,
         aa_i  => iram_i_adr,
-        da_i  => iram_i_dat_d,
-        qa_o  => iram_i_dat_q,
+        da_i  => iram_i_dat_d(8*i+7 downto 8*i),
+        qa_o  => iram_i_dat_q(8*i+7 downto 8*i),
 
         clkb_i => clk_sys_i,
-        bweb_i => iram_d_sel,
-        web_i  => iram_d_wr,
+        web_i  => iram_bwe(i),
         ab_i   => iram_d_adr(f_log2_size(g_iram_size)-1 downto 2),
-        db_i   => iram_d_dat_d,
-        qb_o   => iram_d_dat_q
+        db_i   => iram_d_dat_d(8*i+7 downto 8*i),
+        qb_o   => iram_d_dat_q(8*i+7 downto 8*i)
         );
 
+    iram_bwe(i) <= iram_d_sel(i) and iram_d_wr;
+    
+    end generate gen_iram_blocks;
 
+
+    
     iram_i_dat_d <= cpu_csr_i.udata_o;
     iram_i_wr    <= cpu_csr_i.udata_load_o and core_sel_match;
     iram_i_adr   <= cpu_csr_i.uaddr_addr_o(f_log2_size(g_iram_size)-3 downto 0) when cpu_enable = '0' else
