@@ -190,10 +190,10 @@ NET "SFP_TX_DISABLE_o" IOSTANDARD = "LVCMOS25";
 NET "SFP_LOS_i" LOC = D18;
 NET "SFP_LOS_i" IOSTANDARD = "LVCMOS25";
 
-#NET "sfp_rxp_i" LOC= D15;
-#NET "sfp_rxn_i" LOC= C15;
-#NET "sfp_txp_o" LOC= B16;
-#NET "sfp_txn_o" LOC= A16;
+NET "sfp_rxp_i" LOC= D15;
+NET "sfp_rxn_i" LOC= C15;
+NET "sfp_txp_o" LOC= B16;
+NET "sfp_txn_o" LOC= A16;
 NET "BUTTON1_I" LOC = C22;
 NET "BUTTON1_I" IOSTANDARD = "LVCMOS18";
 NET "BUTTON2_I" LOC = D21;
@@ -394,3 +394,12 @@ NET "fmc0_wr_ref_clk_n_i" TNM_NET = fmc0_wr_ref_clk_n_i;
 TIMESPEC TS_fmc0_wr_ref_clk_n_i = PERIOD "fmc0_wr_ref_clk_n_i" 8 ns HIGH 50%;
 NET "fmc0_wr_ref_clk_p_i" TNM_NET = fmc0_wr_ref_clk_p_i;
 TIMESPEC TS_fmc0_wr_ref_clk_p_i = PERIOD "fmc0_wr_ref_clk_p_i" 8 ns HIGH 50%;
+#Created by Constraints Editor (xc6slx45t-fgg484-3) - 2015/11/24
+NET "clk_20m_vcxo_i" TNM_NET = clk_20m_vcxo_i;
+TIMESPEC TS_clk_20m_vcxo_i = PERIOD "clk_20m_vcxo_i" 20 MHz HIGH 50%;
+NET "U_Node_Template/gen_with_phy.U_GTP/ch1_gtp_clkout_int<1>" TNM_NET = U_Node_Template/gen_with_phy.U_GTP/ch1_gtp_clkout_int<1>;
+TIMESPEC TS_U_Node_Template_gen_with_phy_U_GTP_ch1_gtp_clkout_int_1_ = PERIOD "U_Node_Template/gen_with_phy.U_GTP/ch1_gtp_clkout_int<1>" 8 ns HIGH 50%;
+NET "clk_125m_gtp_n_i" TNM_NET = clk_125m_gtp_n_i;
+TIMESPEC TS_clk_125m_gtp_n_i = PERIOD "clk_125m_gtp_n_i" 8 ns HIGH 50%;
+NET "clk_125m_gtp_p_i" TNM_NET = clk_125m_gtp_p_i;
+TIMESPEC TS_clk_125m_gtp_p_i = PERIOD "clk_125m_gtp_p_i" 8 ns HIGH 50%;

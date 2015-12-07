@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-11-18
+-- Last update: 2015-11-24
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -301,12 +301,10 @@ architecture rtl of spec_top is
   
   constant c_hmq_config : t_wrn_mqueue_config :=
     (
-      out_slot_count  => 4,
+      out_slot_count  => 2,
       out_slot_config => (
-        0             => (width => 128, entries => 8),  -- control CPU 0 (to host)
-        1             => (width => 128, entries => 8),  -- control CPU 1 (to host)
-        2             => (width => 16, entries => 128),  -- log CPU 0
-        3             => (width => 16, entries => 128),  -- log CPU 1
+        0             => (width => 32, entries => 8),  -- control CPU 0 (to host)
+        1             => (width => 32, entries => 8),  -- control CPU 1 (to host)
         others        => (0, 0)),
 
       in_slot_count  => 2,
@@ -322,14 +320,14 @@ architecture rtl of spec_top is
     (
       out_slot_count  => 2,
       out_slot_config => (
-        0             => (width => 128, entries => 16),  -- RF stream (CPU0)
-        1             => (width => 128, entries => 16),  -- Events (CPU1)
+        0             => (width => 32, entries => 16),  -- RF stream (CPU0)
+        1             => (width => 32, entries => 16),  -- Events (CPU1)
         others        => (0, 0)),
 
       in_slot_count  => 2,
       in_slot_config => (
-        0            => (width => 128, entries => 16),  -- RF stream (CPU0)
-        1            => (width => 128, entries => 16),  -- Events (CPU1)
+        0            => (width => 32, entries => 16),  -- RF stream (CPU0)
+        1            => (width => 32, entries => 16),  -- Events (CPU1)
         others => (0, 0)
         )
       );
@@ -342,7 +340,7 @@ architecture rtl of spec_top is
       cpu_memsizes => (32768, 32768, 0, 0, 0, 0, 0, 0),
       hmq_config   => c_hmq_config,
       rmq_config   => c_rmq_config,
-		shared_mem_size => 8192
+		shared_mem_size => 1024
       );
 
   signal clk_sys : std_logic;
@@ -432,8 +430,10 @@ begin
       g_fmc0_sdb                 => c_d3s0_sdb_record,
       g_fmc0_vic_vector          => c_d3s_vector,
       g_simulation               => g_simulation,
+      g_with_white_rabbit => true,
       g_with_wr_phy              => true,
       g_double_wrnode_core_clock => false,
+      g_system_clock_freq => 62500000,
       g_wr_node_config           => c_node_config)
     port map (
       rst_n_sys_o          => rst_n,
