@@ -44,7 +44,7 @@ architecture rtl of ad7980_if is
       spi_miso_i : in  std_logic);
   end component;
 
-  signal count  : unsigned(7 downto 0);
+  signal count  : unsigned(10 downto 0);
   signal do_acq : std_logic;
 
   type t_state is (WAIT_TRIG, START_CNV, READBACK);
@@ -62,7 +62,7 @@ begin  -- rtl
       clk_sys_i  => clk_i,
       rst_n_i    => rst_n_i,
       start_i    => do_acq,
-      cpol_i     => '0',
+      cpol_i     => '1',
       data_i     => x"0000",
       data_o     => d_o,
       drdy_o     => d_rdy,
@@ -91,7 +91,7 @@ begin  -- rtl
             end if;
           when START_CNV =>
             count<= count +1;
-            if(count = 200) then
+            if(count = 400) then
               adc_cnv_o <= '0';
               do_acq    <= '1';
               state     <= READBACK;
