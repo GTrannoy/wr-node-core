@@ -62,7 +62,7 @@ begin  -- rtl
       clk_sys_i  => clk_i,
       rst_n_i    => rst_n_i,
       start_i    => do_acq,
-      cpol_i     => '1',
+      cpol_i     => '0',
       data_i     => x"0000",
       data_o     => d_o,
       drdy_o     => d_rdy,

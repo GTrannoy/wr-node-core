@@ -690,4 +690,42 @@ write 0: disable sampling";
 				 access_dev = READ_ONLY;
 			};
 	 };
+
+reg {
+      name = "DDS Phase Adjust HI";
+      prefix = "PHASE_HI";
+      field {
+         name = "Phase MSB";
+				 prefix = "PHASE_HI";
+				 description = "Value added to the DDS accumulator containing the phase adjustment. High 11 bits.";
+         size = 11;
+         type = SLV;
+         clock = "clk_ref_i";
+         access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+      };
+
+			field {
+				 name = "Update phase";
+				 prefix = "UPDATE";
+				 description = "write 1: updates the DDS phase with the values of PHASE_LO/PHASE_HI";
+				 type = MONOSTABLE;
+         clock = "clk_ref_i";
+			};
+   };
+
+   reg {
+      name = "DDS Phase Adjust LO";
+      prefix = "PHASE_LO";
+      field {
+         name = "LO";
+				 description = "Value added to the DDS accumulator containing the phase adjustment. Lower 32 bits.";
+         size = 32;
+         type = SLV;
+         clock = "clk_ref_i";
+         access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+         
+      };
+   };
 };

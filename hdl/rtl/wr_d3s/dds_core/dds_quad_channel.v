@@ -5,6 +5,7 @@ module dds_quad_channel
  clk_i,  
  rst_n_i,
  acc_i,
+ phase_adj_i,
  acc_o,
  dreq_i,
  tune_i,
@@ -34,6 +35,7 @@ module dds_quad_channel
    input             acc_load_i;
    input             tune_load_i;
    input [g_acc_frac_bits + g_lut_size_log2  : 0] acc_i;
+   input [g_acc_frac_bits + g_lut_size_log2  : 0] phase_adj_i;
    output reg [g_acc_frac_bits + g_lut_size_log2  : 0] acc_o;
    input [g_acc_frac_bits + g_lut_size_log2  : 0] tune_i;
    input                                          dreq_i;
@@ -60,15 +62,16 @@ module dds_quad_channel
              acc <= acc_i;
            else if(dreq_i) begin
              acc <= acc + tune;
-           
-              acc_d0 <= acc;
-              acc_o <= acc;
-              
-              acc_f[0] <= acc_d0;
-              acc_f[1] <= acc_d0 + (tune >> 2);
-              acc_f[2] <= acc_d0 + (tune >> 1);
-              acc_f[3] <= acc_d0 + (tune >> 2) + (tune >> 1);
            end
+
+	   acc_d0 <= acc + phase_adj_i;
+           acc_o <= acc + phase_adj_i;
+
+           acc_f[0] <= acc_d0;
+           acc_f[1] <= acc_d0 + (tune >> 2);
+           acc_f[2] <= acc_d0 + (tune >> 1);
+           acc_f[3] <= acc_d0 + (tune >> 2) + (tune >> 1);
+	   
            
         end // else: !if(!rst_n_i)
      end // always@ (posedge clk_i)
