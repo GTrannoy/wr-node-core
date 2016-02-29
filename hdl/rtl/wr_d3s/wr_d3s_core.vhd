@@ -338,6 +338,7 @@ architecture behavioral of wr_d3s_core is
   signal trig_armed, trig_p : std_logic;
   signal dds_tmp            : std_logic;
   signal pulse_armed        : std_logic;
+  signal wr_snapshot : std_logic_vector(27 downto 0);
   
 begin  -- behavioral
 
@@ -842,6 +843,7 @@ begin  -- behavioral
 
           when WAIT_SAFE_PHASE =>
             if(cnt_phase_safe = '1') then
+              wr_snapshot <= std_logic_vector(wr_cycles);
               regs_in.rf_cnt_cycles_snapshot_i <= std_logic_vector(wr_cycles);
 -- asynchronous, but safe (due to phase check)
               regs_in.rf_cnt_rf_snapshot_i     <= std_logic_vector(rf_counter);
@@ -968,25 +970,31 @@ begin  -- behavioral
   regs_in.tcr_wr_time_valid_i <= tm_time_valid_i;
 
 
-  --chipscope_ila_1 : chipscope_ila
-  --  port map (
-  --    CONTROL => CONTROL,
-  --    CLK     => clk_wr_ref,
-  --    TRIG0   => TRIG0,
-  --    TRIG1   => TRIG1,
-  --    TRIG2   => TRIG2,
-  --    TRIG3   => TRIG3);
+  chipscope_ila_1 : chipscope_ila
+    port map (
+      CONTROL => CONTROL,
+      CLK     => clk_wr_ref,
+      TRIG0   => TRIG0,
+      TRIG1   => TRIG1,
+      TRIG2   => TRIG2,
+      TRIG3   => TRIG3);
 
-  --chipscope_icon_1 : chipscope_icon
-  --  port map (
-  --    CONTROL0 => CONTROL);
+  chipscope_icon_1 : chipscope_icon
+    port map (
+      CONTROL0 => CONTROL);
 
-
-  trig0(27 downto 0) <= std_logic_vector(wr_cycles);
-  trig1(5 downto 0)  <= wr_pps_prepulse;
-  trig1(6)           <= sample_p;
-  trig1(7)           <= presc_tick;
-  trig2(23 downto 0) <= std_logic_vector(sample_idx);
+  trig0 <= std_logic_vector(rf_counter);
+  trig1(0) <= cnt_phase_safe;
+  trig2(27 downto 0) <= wr_snapshot;
+  trig3(27 downto 0) <= tm_cycles_i;
+  trig1(6 downto 1) <= wr_pps_prepulse;
+  
+  
+  --trig0(27 downto 0) <= std_logic_vector(wr_cycles);
+  --trig1(5 downto 0)  <= wr_pps_prepulse;
+  --trig1(6)           <= sample_p;
+  --trig1(7)           <= presc_tick;
+  --trig2(23 downto 0) <= std_logic_vector(sample_idx);
 
   --debug_o(0) <= cnt_phase_safe;
   --debug_o(1) <= rf_counter_load_ref;
@@ -1032,7 +1040,7 @@ begin  -- behavioral
 
 
   --debug_o(1)           <= dds_tmp;
-  regs_in.rf_cnt_raw_i <= std_logic_vector(rf_counter);
+--  regs_in.rf_cnt_raw_i <= std_logic_vector(rf_counter);
 
   delay_d_o   <= (others => '0');
   delay_len_o <= '0';

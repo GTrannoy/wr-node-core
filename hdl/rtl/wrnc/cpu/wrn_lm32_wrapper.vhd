@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-11-17
+-- Last update: 2016-02-03
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -192,7 +192,32 @@ architecture wrapper of wrn_lm32_wrapper is
   signal clk_div2, clk_div2_d0, wb_io_sync : std_logic;
   signal wb_dat_d0, wb_io_sync_ext         : std_logic_vector(31 downto 0);
   signal wb_ack_d0, wb_cyc_d0              : std_logic;
-  signal iram_bwe: std_logic_vector(3 downto 0);
+  signal iram_bwe                          : std_logic_vector(3 downto 0);
+
+  signal dwb_out : t_wishbone_master_out;
+  
+  component chipscope_ila
+    port (
+      CONTROL : inout std_logic_vector(35 downto 0);
+      CLK     : in    std_logic;
+      TRIG0   : in    std_logic_vector(31 downto 0);
+      TRIG1   : in    std_logic_vector(31 downto 0);
+      TRIG2   : in    std_logic_vector(31 downto 0);
+      TRIG3   : in    std_logic_vector(31 downto 0));
+  end component;
+
+  component chipscope_icon
+    port (
+      CONTROL0 : inout std_logic_vector (35 downto 0));
+  end component;
+
+  signal CONTROL : std_logic_vector(35 downto 0);
+  signal CLK     : std_logic;
+  signal TRIG0   : std_logic_vector(31 downto 0);
+  signal TRIG1   : std_logic_vector(31 downto 0);
+  signal TRIG2   : std_logic_vector(31 downto 0);
+  signal TRIG3   : std_logic_vector(31 downto 0);
+  
 begin
 
 
@@ -370,45 +395,77 @@ begin
         D_ERR_I => cpu_dwb_in.err,
         D_RTY_I => cpu_dwb_in.rty);
 
-    
+
+    --chipscope_ila_1 : chipscope_ila
+    --  port map (
+    --    CONTROL => CONTROL,
+    --    CLK     => clk_sys_i,
+    --    TRIG0   => TRIG0,
+    --    TRIG1   => TRIG1,
+    --    TRIG2   => TRIG2,
+    --    TRIG3   => TRIG3);
+
+    --chipscope_icon_1 : chipscope_icon
+    --  port map (
+    --    CONTROL0 => CONTROL);
+
+    trig0(0)  <= cpu_reset;
+    trig0(1)  <= iram_i_en_cpu;
+    trig0(2)  <= cpu_dwb_out.cyc;
+    trig0(3)  <= cpu_dwb_out.stb;
+    trig0(4)  <= cpu_dwb_out.we;
+    trig0(5)  <= cpu_dwb_in.ack;
+    trig0(6)  <= cpu_dwb_in.err;
+    trig0(7)  <= cpu_dwb_in.rty;
+    trig0(8)  <= cpu_dwb_in.stall;
+    trig0(9)  <= dwb_i.ack;
+    trig0(10) <= dwb_i.err;
+    trig0(11) <= dwb_i.rty;
+    trig0(12) <= dwb_i.stall;
+    trig3     <= cpu_dwb_out.adr;
+    trig1     <= iram_i_adr_cpu;
+    trig2     <= iram_d_adr;
+
+
+
     cpu_dwb_in      <= cpu_dwb_in_sys;
     cpu_dwb_out_sys <= cpu_dwb_out;
 
     gen_iram_blocks : for i in 0 to 3 generate
-    
-    iram : generic_dpram
-      generic map (
-        g_data_width               => 8,
-        g_size                     => g_iram_size / 4,
-        g_with_byte_enable         => false,
-        g_dual_clock               => false,
-        g_addr_conflict_resolution => "dont_care")
-      port map (
-        rst_n_i => rst_n_i,
-        clka_i  => clk_sys_i,
+      
+      iram : generic_dpram
+        generic map (
+          g_data_width               => 8,
+          g_size                     => g_iram_size / 4,
+          g_with_byte_enable         => false,
+          g_dual_clock               => false,
+          g_addr_conflict_resolution => "dont_care")
+        port map (
+          rst_n_i => rst_n_i,
+          clka_i  => clk_sys_i,
 
-        wea_i => iram_i_wr,
-        aa_i  => iram_i_adr,
-        da_i  => iram_i_dat_d(8*i+7 downto 8*i),
-        qa_o  => iram_i_dat_q(8*i+7 downto 8*i),
+          wea_i => iram_i_wr,
+          aa_i  => iram_i_adr,
+          da_i  => iram_i_dat_d(8*i+7 downto 8*i),
+          qa_o  => iram_i_dat_q(8*i+7 downto 8*i),
 
-        clkb_i => clk_sys_i,
-        web_i  => iram_bwe(i),
-        ab_i   => iram_d_adr(f_log2_size(g_iram_size)-1 downto 2),
-        db_i   => iram_d_dat_d(8*i+7 downto 8*i),
-        qb_o   => iram_d_dat_q(8*i+7 downto 8*i)
-        );
+          clkb_i => clk_sys_i,
+          web_i  => iram_bwe(i),
+          ab_i   => iram_d_adr(f_log2_size(g_iram_size)-1 downto 2),
+          db_i   => iram_d_dat_d(8*i+7 downto 8*i),
+          qb_o   => iram_d_dat_q(8*i+7 downto 8*i)
+          );
 
-    iram_bwe(i) <= iram_d_sel(i) and iram_d_wr;
-    
+      iram_bwe(i) <= iram_d_sel(i) and iram_d_wr;
+      
     end generate gen_iram_blocks;
 
 
-    
+
     iram_i_dat_d <= cpu_csr_i.udata_o;
     iram_i_wr    <= cpu_csr_i.udata_load_o and core_sel_match;
     iram_i_adr   <= cpu_csr_i.uaddr_addr_o(f_log2_size(g_iram_size)-3 downto 0) when cpu_enable = '0' else
-                  iram_i_adr_cpu(f_log2_size(g_iram_size)-1 downto 2);
+                    iram_i_adr_cpu(f_log2_size(g_iram_size)-1 downto 2);
 
     iram_i_en <= '1' when cpu_enable = '0' else iram_i_en_cpu;
 
@@ -433,11 +490,13 @@ begin
       slave_i   => cpu_dwb_out_sys,
       slave_o   => cpu_dwb_in_sys,
       master_i  => dwb_i,
-      master_o  => dwb_o);
+      master_o  => dwb_out);
 
+  dwb_o <= dwb_out;
+  
   core_sel_match <= '1' when unsigned(cpu_csr_i.core_sel_o) = g_cpu_id else '0';
 
-  cpu_reset   <= not rst_n_i or cpu_csr_i.reset_o(g_cpu_id);
+  cpu_reset   <= not rst_n_i or (cpu_csr_i.reset_o(g_cpu_id) and not dwb_out.cyc);
   cpu_enable  <= not cpu_reset;
   cpu_reset_n <= not cpu_reset;
 
