@@ -1,0 +1,53 @@
+-- -*- Mode: LUA; tab-width: 2 -*-
+
+peripheral {
+	 name = "D3S Acquisition buffer";
+	 prefix = "acq";
+	 hdl_entity = "d3s_acq_buffer_wb";
+
+	 reg {
+			name = "Control Reg";
+			prefix = "CR";
+
+			field {
+				 name = "Start sampling";
+				 type = MONOSTABLE;
+				 clock = "clk_acq_i";
+				 prefix = "START";
+			};
+
+			field {
+				 name = "Ready";
+				 type = BIT;
+				 clock = "clk_acq_i";
+				 prefix = "READY";
+				 access_bus = READ_ONLY;
+				 access_dev = WRITE_ONLY;
+
+			};
+	 };
+
+	 reg {
+			name = "Buffer address";
+			prefix = "ADDR";
+			field {
+				 name = "Address";
+				 size = 32;
+				 type = SLV;
+				 access_bus = READ_WRITE;
+				 access_dev = READ_ONLY;
+			};
+	 };
+
+	 reg {
+			name = "Buffer data";
+			prefix = "DATA";
+			field {
+				 name = "Data";
+				 size = 32;
+				 type = SLV;
+				 access_bus = READ_ONLY;
+				 access_dev = WRITE_ONLY;
+			};
+	 };
+};
