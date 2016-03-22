@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-07-16
+-- Last update: 2016-03-11
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -285,7 +285,8 @@ architecture rtl of svec_top is
       wr_dac_sync_n_o      : out   std_logic;
       slave_i              : in    t_wishbone_slave_in;
       slave_o              : out   t_wishbone_slave_out;
-      debug_o : out std_logic_vector(3 downto 0));
+      debug_o : out std_logic_vector(2 downto 0);  -- N. of debugging signals reduced. 
+		Trev_i        		   : in std_logic );  -- Trev input. 
   end component wr_d3s_core;
   
  constant c_D3S_SDB_DEVICE : t_sdb_device := (
@@ -325,15 +326,16 @@ architecture rtl of svec_top is
   
   constant c_rmq_config : t_wrn_mqueue_config :=
     (
-      out_slot_count  => 1,
+      out_slot_count  => 2,
       out_slot_config => (
-        0             => (width => 128, entries => 16),  -- TDC remote out
+        0             => (width => 128, entries => 16),  -- RF stream (CPU0)
+        1             => (width => 128, entries => 16),  -- Events (CPU1)
         others        => (0, 0)),
 
-      in_slot_count  => 1,
+      in_slot_count  => 2,
       in_slot_config => (
-        0            => (width => 128, entries => 16),  -- FD remote in
-
+        0            => (width => 128, entries => 16),  -- RF stream (CPU0)
+        1            => (width => 128, entries => 16),  -- Events (CPU1)
         others => (0, 0)
         )
       );
@@ -388,7 +390,19 @@ architecture rtl of svec_top is
   signal TRIG    : std_logic_vector(127 downto 0);
   signal fmc0_clk_wr : std_logic;
 
-  signal debug : std_logic_vector(3 downto 0);
+  signal debug : std_logic_vector(2 downto 0);
+  signal Trev_i: std_logic_vector;
+
+  constant c_slave_addr : t_wishbone_address_array(0 downto 0) :=
+    ( 0 =>    x"00000000" );
+  constant c_slave_mask : t_wishbone_address_array(0 downto 0) :=
+    ( 0 =>    x"00000000" );
+
+  signal fmc_wb_muxed_out : t_wishbone_master_out;
+  signal fmc_wb_muxed_in : t_wishbone_master_in;
+
+
+    
 begin
 
   --chipscope_icon_1: chipscope_icon
@@ -520,7 +534,23 @@ begin
       carrier_sda_b        => carrier_sda_b);
 
 
-
+  xwb_crossbar_1 : xwb_crossbar
+    generic map (
+      g_num_masters => 2,
+      g_num_slaves  => 1,
+      g_registered  => true,
+      g_address     => c_slave_addr,
+      g_mask        => c_slave_mask)
+    port map (
+      clk_sys_i => clk_sys,
+      rst_n_i   => rst_n,
+      slave_i(0)   => fmc_dp_wb_out(0),
+      slave_i(1)   => fmc_dp_wb_out(1),
+      slave_o(0)   => fmc_dp_wb_in(0),
+      slave_o(1)   => fmc_dp_wb_in(1),
+      master_o(0) => fmc_wb_muxed_out,
+      master_i(0) => fmc_wb_muxed_in
+      );
 
   fmc_host_wb_in(0).ack <= '0';
   fmc_host_wb_in(1).ack <= '0';
@@ -531,11 +561,7 @@ begin
   fmc_host_wb_in(0).stall <= '0';
   fmc_host_wb_in(1).stall <= '0';
 
-  fmc_dp_wb_in(1).ack <= '0';
-  fmc_dp_wb_in(1).stall <= '0';
-  fmc_dp_wb_in(1).err <= '0';
-  fmc_dp_wb_in(1).rty <= '0';
-  
+
 
   U_DDS_Core0 : wr_d3s_core
     generic map (
@@ -592,14 +618,20 @@ begin
       wr_dac_sync_n_o => fmc0_wr_dac_sync_n_o,
       wr_dac_din_o => fmc0_wr_dac_din_o,
       wr_dac_sclk_o => fmc0_wr_dac_sclk_o,
-      slave_i              => fmc_dp_wb_out(0),
-      slave_o              => fmc_dp_wb_in(0),
-      debug_o => debug);
+      slave_i              => fmc_wb_muxed_out,
+      slave_o              => fmc_wb_muxed_in,
+      debug_o => debug,
+		Trev_i					=> Trev_i);
 
-  fp_gpio1_b <= debug(0);
-  fp_gpio2_b <= debug(1);
-  fp_gpio3_b <= debug(2);
-  fp_gpio4_b <= debug(3);
+--  fp_gpio1_b <= debug(0);
+--  fp_gpio2_b <= debug(1);
+--  fp_gpio3_b <= debug(2);
+--  fp_gpio4_b <= debug(3);
+
+  Trev_i <= fp_gpio1_b;   -- now this port will be an input
+  fp_gpio2_b <= debug(0);
+  fp_gpio3_b <= debug(1);
+  fp_gpio4_b <= debug(2);
   
 end rtl;
 

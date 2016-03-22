@@ -114,12 +114,12 @@ entity wr_d3s_core is
 -- Core control
 -------------------------------------------------
 
-
-    slave_i : in  t_wishbone_slave_in;
+	 slave_i : in  t_wishbone_slave_in;
     slave_o : out t_wishbone_slave_out;
 
-    debug_o : out std_logic_vector(3 downto 0)
-    );
+    debug_o : out std_logic_vector(2 downto 0);  -- N. of debugging signals reduced. 
+	 Trev_i  : in std_logic           -- Trev input. 
+	 );  
 
 end wr_d3s_core;
 
@@ -143,6 +143,37 @@ architecture behavioral of wr_d3s_core is
       regs_i     : in  t_dds_in_registers;
       regs_o     : out t_dds_out_registers);
   end component dds_wb_slave;
+
+  -- Added TDC serializer
+  component stdc_hostif is
+	port(
+		-- system signals
+		sys_rst_i: in std_logic;
+		sys_clk_i: in std_logic;
+		
+		-- SERDES
+		serdes_clk_i: in std_logic;
+		serdes_strobe_i: in std_logic;
+		
+		-- Wishbone
+		wb_addr_i: in std_logic_vector(31 downto 0);
+		wb_data_i: in std_logic_vector(31 downto 0);
+		wb_data_o: out std_logic_vector(31 downto 0);
+		wb_cyc_i: in std_logic;
+		wb_sel_i: in std_logic_vector(3 downto 0);
+		wb_stb_i: in std_logic;
+		wb_we_i: in std_logic;
+		wb_ack_o: out std_logic;
+		irq_o: out std_logic;
+		
+		-- TDC input
+		signal_i: in std_logic;
+		
+		-- coarse counter
+		cc_rst_i: in std_logic;
+		cc_cy_o: out std_logic);
+	end component stdc_hostif;
+
 
   function resize(x : std_logic_vector; new_size : integer)
     return std_logic_vector is
@@ -222,7 +253,6 @@ architecture behavioral of wr_d3s_core is
 
   signal dac_data_par : std_logic_vector(14 * 4 - 1 downto 0);
 
-
   signal synth_tune, synth_tune_d0, synth_tune_d1, synth_tune_bias, synth_acc_in, synth_acc_out : std_logic_vector(42 downto 0);
   signal synth_tune_load, synth_acc_load                                                        : std_logic;
   signal synth_y0, synth_y1, synth_y2, synth_y3                                                 : std_logic_vector(13 downto 0);
@@ -269,6 +299,11 @@ architecture behavioral of wr_d3s_core is
 
   -- 125 MHz WR Reference (from mezzanine's PLL)
   signal clk_wr_ref, clk_wr_ref_pllin : std_logic;
+  
+  --  Signals for high speed SERDES
+  signal pllout_serdes_clk, serdes_clk : std_logic;  -- Very fast CLK for serdes (1GHz)
+  signal serdes_strobe : std_logic;						  -- SERDES strobe
+  
   -- Cleaned up VCXO PLL output
   signal clk_dds_synth                : std_logic;
   signal clk_rf_in                    : std_logic;
@@ -336,6 +371,22 @@ architecture behavioral of wr_d3s_core is
   signal dds_tmp : std_logic;
   signal pulse_armed : std_logic;
   
+  
+	signal wb_dds_i : t_wishbone_slave_in;
+   signal wb_dds_o : t_wishbone_slave_out;
+	 
+	signal wb_stdc_i : t_wishbone_slave_in;
+	signal wb_stdc_o : t_wishbone_slave_out;
+	 
+	constant c_slave_addr : t_wishbone_address_array(1 downto 0) :=
+		( 	0 =>    x"00000000",
+			1 =>    x"00001000"
+		);
+	 
+	constant c_slave_mask : t_wishbone_address_array(1 downto 0) :=
+		( 	0 =>    x"00001000",
+			1 =>    x"00001000"	 );
+	 
 begin  -- behavioral
 
   U_Buf_CLK_WR_Ref : IBUFGDS
@@ -348,7 +399,8 @@ begin  -- behavioral
       I  => wr_ref_clk_p_i,  -- Diff_p buffer input (connect directly to top-level port)
       IB => wr_ref_clk_n_i  -- Diff_n buffer input (connect directly to top-level port)
       );
-
+		
+  
   U_Buf_CLK_RF : IBUFGDS
     generic map (
       DIFF_TERM    => true,
@@ -391,22 +443,25 @@ begin  -- behavioral
       DIVCLK_DIVIDE      => 1,
       CLKFBOUT_MULT      => 8,
       CLKFBOUT_PHASE     => 0.000,
-      CLKOUT0_DIVIDE     => 2,          -- 500 MHz
+      CLKOUT0_DIVIDE     => 1,          -- 1000 MHz
       CLKOUT0_PHASE      => 0.000,
       CLKOUT0_DUTY_CYCLE => 0.500,
-      CLKOUT1_DIVIDE     => 8,          -- 125 MHz
+      CLKOUT1_DIVIDE     => 2,          -- 500 MHz
       CLKOUT1_PHASE      => 0.000,
       CLKOUT1_DUTY_CYCLE => 0.500,
-      CLKOUT2_DIVIDE     => 16,         -- 62.5 MHz
+      CLKOUT2_DIVIDE     => 8,          -- 125 MHz
       CLKOUT2_PHASE      => 0.000,
       CLKOUT2_DUTY_CYCLE => 0.500,
-      CLKIN_PERIOD       => 8.0,
+      CLKOUT3_DIVIDE     => 16,         -- 62.5 MHz
+      CLKOUT3_PHASE      => 0.000,
+      CLKOUT3_DUTY_CYCLE => 0.500,
+		CLKIN_PERIOD       => 8.0,
       REF_JITTER         => 0.016)
     port map (
       CLKFBOUT => pllout_clk_fb_pllref,
-      CLKOUT1  => pllout_clk_wr_ref,
-      CLKOUT0  => clk_dds_phy,
-      CLKOUT2  => open,
+      CLKOUT0  => pllout_serdes_clk,
+		CLKOUT1  => clk_dds_phy,
+      CLKOUT2  => pllout_clk_wr_ref,
       CLKOUT3  => open,
       CLKOUT4  => open,
       CLKOUT5  => open,
@@ -415,7 +470,17 @@ begin  -- behavioral
       CLKFBIN  => pllout_clk_fb_pllref,
       CLKIN    => clk_wr_ref_pllin);
 
-
+  cmp_serdes_clk_buf : BUFPLL
+    generic map (
+	   DIVIDE	=> 8)
+	 port map (
+      PLLIN			=> pllout_serdes_clk,
+		GCLK  		=> clk_wr_ref,
+      IOCLK 		=> serdes_clk,
+		LOCK 			=> open,
+		LOCKED 		=> clk_dds_locked, 
+		SERDESTROBE	=> serdes_strobe);
+		
   --cmp_pulse_output_pll : PLL_BASE
   --  generic map (
   --    BANDWIDTH          => "OPTIMIZED",
@@ -448,7 +513,7 @@ begin  -- behavioral
   --    CLKFBIN  => pllout_clk_fb_pllref,
   --    CLKIN    => clk_wr_ref_pllin);
 
-  
+	
   p_freq_meas_gating : process(clk_sys_i)
   begin
     if rising_edge(clk_sys_i) then
@@ -501,9 +566,8 @@ begin  -- behavioral
     port map (
       O => clk_wr_ref,
       I => pllout_clk_wr_ref);
-
   clk_wr_o <= clk_wr_ref;
-
+  
   U_Ref_Reset_SC : gc_sync_ffs
     port map (
       clk_i    => clk_wr_ref,
@@ -515,23 +579,67 @@ begin  -- behavioral
     port map (
       rst_n_i    => rst_n_i,
       clk_sys_i  => clk_sys_i,
-      wb_adr_i   => slave_i.adr(6 downto 2),
-      wb_dat_i   => slave_i.dat,
-      wb_dat_o   => slave_o.dat,
-      wb_cyc_i   => slave_i.cyc,
-      wb_sel_i   => slave_i.sel,
-      wb_stb_i   => slave_i.stb,
-      wb_we_i    => slave_i.we,
-      wb_ack_o   => slave_o.ack,
-      wb_stall_o => slave_o.stall,
+      wb_adr_i   => wb_dds_i.adr(6 downto 2),
+      wb_dat_i   => wb_dds_i.dat,
+      wb_dat_o   => wb_dds_o.dat,
+      wb_cyc_i   => wb_dds_i.cyc,
+      wb_sel_i   => wb_dds_i.sel,
+      wb_stb_i   => wb_dds_i.stb,
+      wb_we_i    => wb_dds_i.we,
+      wb_ack_o   => wb_dds_o.ack,
+      wb_stall_o => wb_dds_o.stall,
       clk_ref_i  => clk_wr_ref,
       clk_dds_i  => clk_dds_synth,
       regs_i     => regs_in,
       regs_o     => regs_out);
 
-  slave_o.err <= '0';
-  slave_o.rty <= '0';
+  wb_dds_o.err <= '0';
+  wb_dds_o.rty <= '0';
 
+  	xwb_crossbar_1 : xwb_crossbar
+    generic map (
+      g_num_masters => 1,
+      g_num_slaves  => 2,
+      g_registered  => true,
+      g_address     => c_slave_addr,
+      g_mask        => c_slave_mask)
+    port map (
+      clk_sys_i => clk_sys,
+      rst_n_i   => rst_n,
+      slave_i   => slave_i,
+      slave_o   => slave_o,
+      -- wb output (master) to the internal registers of the DDS core
+		master_o(0) => wb_dds_i,
+      master_i(0) => wb_dds_o,
+		
+		-- wb output (master) to the TDC core 
+		master_o(1) => wb_stdc_i,
+      master_i(1) => wb_stdc_o
+		);
+
+
+  cmp_stdc : stdc_hostif 
+	 port map(
+		sys_rst_i			=>	clk_sys_i,
+		sys_clk_i			=>	clk_wr_ref,
+		serdes_clk_i		=>	serdes_clk,
+		serdes_strobe_i	=>	serdes_strobe,
+		wb_addr_i			=>	wb_stdc_i.adr,
+		wb_data_i			=>	wb_stdc_i.dat,
+		wb_data_o			=>	wb_stdc_o.dat,
+		wb_cyc_i				=>	wb_stdc_i.cyc,
+		wb_sel_i				=>	wb_stdc_i.sel,
+		wb_stb_i				=>	wb_stdc_i.stb,
+		wb_we_i				=>	wb_stdc_i.we,
+		wb_ack_o				=>	wb_stdc_o.ack,
+		irq_o					=>	stdc_irq_o,
+		signal_i				=>	Trev_i,
+		cc_rst_i				=>	stdc_cc_rst_i,
+		cc_cy_o				=>	stdc_cc_cy_o);	
+  
+  wb_stdc_o.err <= '0';
+  wb_stdc_o.rty <= '0';
+  
   p_copy_wr_timing : process(clk_wr_ref)
   begin
     if rising_edge(clk_wr_ref) then
@@ -859,17 +967,17 @@ begin  -- behavioral
         rf_counter_load_dds_d0 <= rf_counter_load_dds;
         if (rf_counter_load_dds = '1' and rf_counter_load_dds_d0 = '0') then
           rf_counter_overflow_p_o <= '0';
-          debug_o(3) <= '0';
+          debug_o(2) <= '0';
           delay_pulse_o <= '0';
           rf_counter <= unsigned(regs_out.rf_cnt_sync_value_o);
         elsif (rf_counter = unsigned(regs_out.rf_cnt_period_o)) then
           rf_counter_overflow_p_o <= '1';
-          debug_o(3) <= '1';
+          debug_o(2) <= '1';
           delay_pulse_o <= '1';
           rf_counter              <= (others => '0');
         else
           rf_counter_overflow_p_o <= '0';
-          debug_o(3) <= '0';
+          debug_o(2) <= '0';
           delay_pulse_o <= '0';
           rf_counter              <= rf_counter + 1;
         end if;
