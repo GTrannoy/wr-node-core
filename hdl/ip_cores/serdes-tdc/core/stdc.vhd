@@ -27,12 +27,12 @@ entity stdc is
 		-- timestamp output
 		detect_o: out std_logic;
 		polarity_o: out std_logic;
-		timestamp_cc_o: out std_logic_vector(CC_WIDTH-1 downto 0);
-		timestamp_8th_o: out std_logic_vector(2 downto 0);
+--		timestamp_cc_o: out std_logic_vector(CC_WIDTH-1 downto 0);
+		timestamp_8th_o: out std_logic_vector(2 downto 0)
 		
 		-- coarse counter
-		cc_rst_i: in std_logic;
-		cc_cy_o: out std_logic
+--		cc_rst_i: in std_logic;
+--		cc_cy_o: out std_logic
 	);
 end entity;
 
@@ -111,7 +111,7 @@ begin
 			if sys_rst_i = '1' then
 				detect_o <= '0';
 				polarity_o <= '0';
-				timestamp_cc_o <= (timestamp_cc_o'range => '0');
+--				timestamp_cc_o <= (timestamp_cc_o'range => '0');
 				timestamp_8th_o <= (timestamp_8th_o'range => '0');
 				looking_for <= '1';
 			else
@@ -120,7 +120,7 @@ begin
 					if samples(i) = looking_for then
 						detect_o <= '1';
 						polarity_o <= looking_for;
-						timestamp_cc_o <= coarse_counter;
+--						timestamp_cc_o <= coarse_counter;
 						timestamp_8th_o <= std_logic_vector(to_unsigned(i, 3));
 						exit;
 					end if;
@@ -130,22 +130,22 @@ begin
 		end if;
 	end process;
 	
-	-- coarse counter
-	process(sys_clk_i)
-	begin
-		if rising_edge(sys_clk_i) then
-			if (sys_rst_i = '1') or (cc_rst_i = '1') then
-				coarse_counter <= (coarse_counter'range => '0');
-				cc_cy_o <= '0';
-			else
-				coarse_counter <= std_logic_vector(unsigned(coarse_counter) + 1);
-				if coarse_counter = (coarse_counter'range => '1') then
-					cc_cy_o <= '1';
-				else
-					cc_cy_o <= '0';
-				end if;
-			end if;
-		end if;
-	end process;
+--	-- coarse counter
+--	process(sys_clk_i)
+--	begin
+--		if rising_edge(sys_clk_i) then
+--			if (sys_rst_i = '1') or (cc_rst_i = '1') then
+--				coarse_counter <= (coarse_counter'range => '0');
+--				cc_cy_o <= '0';
+--			else
+--				coarse_counter <= std_logic_vector(unsigned(coarse_counter) + 1);
+--				if coarse_counter = (coarse_counter'range => '1') then
+--					cc_cy_o <= '1';
+--				else
+--					cc_cy_o <= '0';
+--				end if;
+--			end if;
+--		end if;
+--	end process;
 
 end architecture;

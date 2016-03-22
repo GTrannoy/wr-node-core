@@ -29,18 +29,21 @@ entity stdc_hostif is
 		-- TDC input
 		signal_i: in std_logic;
 		
+		-- 125Mhz tick
+		cycles_i: in std_logic_vector(28 downto 0)
+		
 		-- coarse counter
-		cc_rst_i: in std_logic;
-		cc_cy_o: out std_logic
+--		cc_rst_i: in std_logic;
+--		cc_cy_o: out std_logic
 	);
 end entity;
 
 architecture rtl of stdc_hostif is
 signal detect: std_logic;
 signal polarity: std_logic;
-signal timestamp_cc: std_logic_vector(28 downto 0);
+--signal timestamp_cc: std_logic_vector(28 downto 0);
 signal timestamp_8th: std_logic_vector(2 downto 0);
-signal cc_cy: std_logic;
+--signal cc_cy: std_logic;
 
 signal filter: std_logic_vector(1 downto 0);
 
@@ -52,7 +55,7 @@ signal fifo_empty: std_logic;
 signal fifo_re: std_logic;
 signal fifo_do: std_logic_vector(32 downto 0);
 
-signal cc_pending: std_logic;
+--signal cc_pending: std_logic;
 signal overflow_pending: std_logic;
 signal ack: std_logic;
 begin
@@ -72,13 +75,13 @@ begin
 			
 			detect_o => detect,
 			polarity_o => polarity,
-			timestamp_cc_o => timestamp_cc,
-			timestamp_8th_o => timestamp_8th,
+--			timestamp_cc_o => timestamp_cc,
+			timestamp_8th_o => timestamp_8th
 			
-			cc_rst_i => cc_rst_i,
-			cc_cy_o => cc_cy
+--			cc_rst_i => cc_rst_i,
+--			cc_cy_o => cc_cy
 		);
-	cc_cy_o <= cc_cy;
+--	cc_cy_o <= cc_cy;
 	
 	-- FIFO
 	cmp_fifo: stdc_fifo
@@ -100,7 +103,8 @@ begin
 			data_o => fifo_do
 		);
 	fifo_we <= detect and ((polarity and filter(0)) or (not polarity and filter(1)));
-	fifo_di <= polarity & timestamp_cc & timestamp_8th;
+--	fifo_di <= polarity & timestamp_cc & timestamp_8th;
+	fifo_di <= polarity & cycles_i & timestamp_8th;
 	
 	-- bus logic
 	process(sys_clk_i)
@@ -111,7 +115,7 @@ begin
 				wb_data_o <= (wb_data_o'range => '0');
 				fifo_re <= '0';
 				fifo_clear <= '1';
-				cc_pending <= '0';
+--				cc_pending <= '0';
 				overflow_pending <= '0';
 				filter <= "11";
 			else
@@ -126,7 +130,7 @@ begin
 						when "001" => wb_data_o(0) <= fifo_do(32);
 						when "010" => wb_data_o <= fifo_do(31 downto 0);
 						-- 011 is FIFO clear and is write-only
-						when "100" => wb_data_o(0) <= cc_pending;
+--						when "100" => wb_data_o(0) <= cc_pending;
 						when "101" => wb_data_o(0) <= overflow_pending;
 						when "110" => wb_data_o(1 downto 0) <= filter;
 						when others => null;
@@ -135,16 +139,16 @@ begin
 						case wb_addr_i(4 downto 2) is
 							when "000" => fifo_re <= '1';
 							when "011" => fifo_clear <= '1';
-							when "100" => cc_pending <= '0';
+--							when "100" => cc_pending <= '0';
 							when "101" => overflow_pending <= '0';
 							when "110" => filter <= wb_data_i(1 downto 0);
 							when others => null;
 						end case;
 					end if;
 				end if;
-				if cc_cy = '1' then
-					cc_pending <= '1';
-				end if;
+--				if cc_cy = '1' then
+--					cc_pending <= '1';
+--				end if;
 				if fifo_we = '1' and fifo_full = '1' then
 					overflow_pending <= '1';
 				end if;
@@ -152,6 +156,7 @@ begin
 		end if;
 	end process;
 	wb_ack_o <= ack;
-	irq_o <= not fifo_empty or cc_pending or overflow_pending;
+--	irq_o <= not fifo_empty or cc_pending or overflow_pending;
+	irq_o <= not fifo_empty or overflow_pending;
 	
 end architecture;
