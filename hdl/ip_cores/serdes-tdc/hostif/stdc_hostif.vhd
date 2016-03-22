@@ -61,9 +61,9 @@ signal ack: std_logic;
 begin
 	-- instantiate basic TDC core
 	cmp_stdc: stdc
-		generic map(
-			CC_WIDTH => 29
-		)
+--		generic map(
+--			CC_WIDTH => 29
+--		)
 		port map(
 			sys_clk_i => sys_clk_i,
 			sys_rst_i => sys_rst_i,

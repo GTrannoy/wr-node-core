@@ -22,9 +22,10 @@ component stdc_hostif is
 		irq_o: out std_logic;
 		
 		signal_i: in std_logic;
-		
-		cc_rst_i: in std_logic;
-		cc_cy_o: out std_logic
+
+		cycles_i: in std_logic_vector(28 downto 0)
+--		cc_rst_i: in std_logic;
+--		cc_cy_o: out std_logic
 	);
 end component;
 

@@ -323,7 +323,7 @@ architecture behavioral of wr_d3s_core is
 
   signal wr_tai    : unsigned(31 downto 0);
   signal wr_cycles : unsigned(27 downto 0);
-  signal wr_cycles_ext: unsigned(28 downto 0);
+  signal wr_cycles_ext: std_logic_vector(28 downto 0);
 
   -- PPS pre-delay line (5 - PPS-5 cycles, 0 = the actual PPS pulse)
   signal wr_pps_prepulse : std_logic_vector(5 downto 0);
@@ -609,8 +609,8 @@ begin  -- behavioral
       g_address     => c_slave_addr,
       g_mask        => c_slave_mask)
     port map (
-      clk_sys_i => clk_sys,
-      rst_n_i   => rst_n,
+      clk_sys_i => clk_sys_i,
+      rst_n_i   => rst_n_i,
       slave_i   => slave_i,
       slave_o   => slave_o,
       -- wb output (master) to the internal registers of the DDS core

@@ -9,9 +9,9 @@ library work;
 use work.stdc_package.all;
  
 entity stdc is
-	generic(
-		CC_WIDTH: positive
-	);
+--	generic(
+--		CC_WIDTH: positive
+--	);
 	port(
 		-- system signals
 		sys_clk_i: in std_logic;
@@ -40,7 +40,7 @@ architecture rtl of stdc is
 signal samples: std_logic_vector(7 downto 0);
 signal serdes_cascade: std_logic;
 signal looking_for: std_logic;
-signal coarse_counter: std_logic_vector(CC_WIDTH-1 downto 0);
+--signal coarse_counter: std_logic_vector(CC_WIDTH-1 downto 0);
 begin
 	-- sample input at 8x the system clock rate
 	cmp_master_serdes: ISERDES2
