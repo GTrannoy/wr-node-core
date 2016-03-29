@@ -479,12 +479,12 @@ begin  -- behavioral
     generic map (
 	   DIVIDE	=> 8)
 	 port map (
-      PLLIN			=> pllout_serdes_clk,
-		GCLK  		=> clk_wr_ref,
-      IOCLK 		=> serdes_clk,
+      PLLIN			=> pllout_serdes_clk,  --  from PLL (CLKOUT0, CLKOUT1) 
+		GCLK  		=> clk_wr_ref,			  --  from BUFG or GCLK
+      IOCLK 		=> serdes_clk,			  --  Connects to IOSERDES2(CLK0),BUFIO2FB(I),or IODELAY2 IOCLK0, IOCLK1)
 		LOCK 			=> open,
-		LOCKED 		=> clk_dds_locked, 
-		SERDESTROBE	=> serdes_strobe);
+		LOCKED 		=> clk_dds_locked,     -- LOCKED signal from PLL
+		SERDESSTROBE	=> serdes_strobe);  --  used to drive IOSERDES2(IOCE)
 		
   --cmp_pulse_output_pll : PLL_BASE
   --  generic map (
