@@ -30,7 +30,7 @@ entity stdc_hostif is
 		signal_i: in std_logic;
 		
 		-- 125Mhz tick
-		cycles_i: in std_logic_vector(28 downto 0)
+		cycles_i: in std_logic_vector(27 downto 0)
 		
 		-- coarse counter
 --		cc_rst_i: in std_logic;
@@ -50,10 +50,10 @@ signal filter: std_logic_vector(1 downto 0);
 signal fifo_clear: std_logic;
 signal fifo_full: std_logic;
 signal fifo_we: std_logic;
-signal fifo_di: std_logic_vector(32 downto 0);
+signal fifo_di: std_logic_vector(31 downto 0);
 signal fifo_empty: std_logic;
 signal fifo_re: std_logic;
-signal fifo_do: std_logic_vector(32 downto 0);
+signal fifo_do: std_logic_vector(31 downto 0);
 
 --signal cc_pending: std_logic;
 signal overflow_pending: std_logic;
@@ -87,7 +87,7 @@ begin
 	cmp_fifo: stdc_fifo
 		generic map(
 			D_DEPTH => 10,
-			D_WIDTH => 33
+			D_WIDTH => 32
 		)
 		port map(
 			sys_clk_i => sys_clk_i,
@@ -127,7 +127,7 @@ begin
 					wb_data_o <= (wb_data_o'range => '0');
 					case wb_addr_i(4 downto 2) is
 						when "000" => wb_data_o(0) <= not fifo_empty;
-						when "001" => wb_data_o(0) <= fifo_do(32);
+--						when "001" => wb_data_o(0) <= fifo_do(32);
 						when "010" => wb_data_o <= fifo_do(31 downto 0);
 						-- 011 is FIFO clear and is write-only
 --						when "100" => wb_data_o(0) <= cc_pending;

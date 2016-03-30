@@ -170,7 +170,7 @@ architecture behavioral of wr_d3s_core is
 		signal_i: in std_logic;
 		
 		-- 125Mhz tick
-		cycles_i: in std_logic_vector(28 downto 0)
+		cycles_i: in std_logic_vector(27 downto 0)
 		
 		-- coarse counter
 --		cc_rst_i: in std_logic;
@@ -323,7 +323,7 @@ architecture behavioral of wr_d3s_core is
 
   signal wr_tai    : unsigned(31 downto 0);
   signal wr_cycles : unsigned(27 downto 0);
-  signal wr_cycles_ext: std_logic_vector(28 downto 0);
+  signal wr_cycles_slv: std_logic_vector(27 downto 0);
 
   -- PPS pre-delay line (5 - PPS-5 cycles, 0 = the actual PPS pulse)
   signal wr_pps_prepulse : std_logic_vector(5 downto 0);
@@ -639,12 +639,12 @@ begin  -- behavioral
 		wb_ack_o				=>	wb_stdc_o.ack,
 		irq_o					=>	stdc_irq_o,
 		signal_i				=>	Trev_i,
-		cycles_i				=> wr_cycles_ext 
+		cycles_i				=> wr_cycles_slv 
 --		cc_rst_i				=>	stdc_cc_rst_i,
 --		cc_cy_o				=>	stdc_cc_cy_o
 		);	
   
-  wr_cycles_ext <= '0' & std_logic_vector(wr_cycles) ;
+  wr_cycles_slv <= std_logic_vector(wr_cycles) ;
   wb_stdc_o.err <= '0';
   wb_stdc_o.rty <= '0';
   
