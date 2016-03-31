@@ -126,22 +126,22 @@ begin
 					ack <= '1';
 					wb_data_o <= (wb_data_o'range => '0');
 					case wb_addr_i(4 downto 2) is
-						when "000" => wb_data_o(0) <= not fifo_empty;
---						when "001" => wb_data_o(0) <= fifo_do(32);
-						when "010" => wb_data_o <= fifo_do(31 downto 0);
-						-- 011 is FIFO clear and is write-only
---						when "100" => wb_data_o(0) <= cc_pending;
-						when "101" => wb_data_o(0) <= overflow_pending;
-						when "110" => wb_data_o(1 downto 0) <= filter;
+						when "000" => wb_data_o(0) <= not fifo_empty;   	-- 00h
+--						when "001" => wb_data_o(0) <= fifo_do(32); 			-- 04h
+						when "010" => wb_data_o <= fifo_do(31 downto 0);	-- 08h
+						-- 011 is FIFO clear and is write-only					-- 0ch 
+--						when "100" => wb_data_o(0) <= cc_pending;				-- 10h
+						when "101" => wb_data_o(0) <= overflow_pending;		-- 14h
+						when "110" => wb_data_o(1 downto 0) <= filter;		-- 18h
 						when others => null;
 					end case;
 					if wb_we_i = '1' then
 						case wb_addr_i(4 downto 2) is
-							when "000" => fifo_re <= '1';
-							when "011" => fifo_clear <= '1';
---							when "100" => cc_pending <= '0';
-							when "101" => overflow_pending <= '0';
-							when "110" => filter <= wb_data_i(1 downto 0);
+							when "000" => fifo_re <= '1';							-- 00h
+							when "011" => fifo_clear <= '1';						-- 0ch
+--							when "100" => cc_pending <= '0';						-- 10h
+							when "101" => overflow_pending <= '0';				-- 14h
+							when "110" => filter <= wb_data_i(1 downto 0);	-- 18h
 							when others => null;
 						end case;
 					end if;

@@ -5,7 +5,7 @@ package stdc_hostif_package is
 
 component stdc_hostif is
 	port(
-		sys_rst_i: in std_logic;
+		sys_rst_n_i: in std_logic;
 		sys_clk_i: in std_logic;
 		
 		serdes_clk_i: in std_logic;
@@ -24,8 +24,6 @@ component stdc_hostif is
 		signal_i: in std_logic;
 
 		cycles_i: in std_logic_vector(28 downto 0)
---		cc_rst_i: in std_logic;
---		cc_cy_o: out std_logic
 	);
 end component;
 

@@ -147,35 +147,19 @@ architecture behavioral of wr_d3s_core is
   -- Added TDC serializer
   component stdc_hostif is
 	port(
-		-- system signals
-		sys_rst_i: in std_logic;
-		sys_clk_i: in std_logic;
-		
-		-- SERDES
-		serdes_clk_i: in std_logic;
-		serdes_strobe_i: in std_logic;
-		
-		-- Wishbone
-		wb_addr_i: in std_logic_vector(31 downto 0);
-		wb_data_i: in std_logic_vector(31 downto 0);
-		wb_data_o: out std_logic_vector(31 downto 0);
-		wb_cyc_i: in std_logic;
-		wb_sel_i: in std_logic_vector(3 downto 0);
-		wb_stb_i: in std_logic;
-		wb_we_i: in std_logic;
-		wb_ack_o: out std_logic;
-		irq_o: out std_logic;
-		
-		-- TDC input
-		signal_i: in std_logic;
-		
-		-- 125Mhz tick
-		cycles_i: in std_logic_vector(27 downto 0)
-		
-		-- coarse counter
---		cc_rst_i: in std_logic;
---		cc_cy_o: out std_logic
-		);
+			sys_rst_n_i    : in     std_logic;
+			clk_sys_i      : in     std_logic;
+			wb_adr_i       : in     std_logic_vector(1 downto 0);
+			wb_dat_i       : in     std_logic_vector(31 downto 0);
+			wb_dat_o       : out    std_logic_vector(31 downto 0);
+			wb_cyc_i       : in     std_logic;
+			wb_sel_i       : in     std_logic_vector(3 downto 0);
+			wb_stb_i       : in     std_logic;
+			wb_we_i        : in     std_logic;
+			wb_ack_o       : out    std_logic;
+			wb_stall_o     : out    std_logic;
+			regs_i         : in     t_stdc_in_registers;
+			regs_o         : out    t_stdc_out_registers);
 	end component stdc_hostif;
 
 
@@ -622,10 +606,9 @@ begin  -- behavioral
       master_i(1) => wb_stdc_o
 		);
 
-
   cmp_stdc : stdc_hostif 
 	 port map(
-		sys_rst_i			=>	clk_sys_i,
+		sys_rst_n_i			=>	sys_rst_n_i,
 		sys_clk_i			=>	clk_wr_ref,
 		serdes_clk_i		=>	serdes_clk,
 		serdes_strobe_i	=>	serdes_strobe,
@@ -637,12 +620,9 @@ begin  -- behavioral
 		wb_stb_i				=>	wb_stdc_i.stb,
 		wb_we_i				=>	wb_stdc_i.we,
 		wb_ack_o				=>	wb_stdc_o.ack,
-		irq_o					=>	stdc_irq_o,
+		wb_stall_o			=>	wb_stdc_o.stall,
 		signal_i				=>	Trev_i,
-		cycles_i				=> wr_cycles_slv 
---		cc_rst_i				=>	stdc_cc_rst_i,
---		cc_cy_o				=>	stdc_cc_cy_o
-		);	
+		cycles_i				=> wr_cycles_slv );	
   
   wr_cycles_slv <= std_logic_vector(wr_cycles) ;
   wb_stdc_o.err <= '0';
