@@ -105,7 +105,7 @@ begin
 		port map(
 			rst_n_i 		=>  sys_rst_n_i,
 			clk_sys_i 	=>  sys_clk_i,
-			wb_adr_i 	=>  wb_addr_i,
+			wb_adr_i 	=>  wb_addr_i(1 downto 0),
 			wb_dat_i 	=>  wb_data_i,
 			wb_dat_o 	=>  wb_data_o,
 			wb_cyc_i 	=>  wb_cyc_i,

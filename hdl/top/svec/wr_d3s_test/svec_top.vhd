@@ -391,7 +391,7 @@ architecture rtl of svec_top is
   signal fmc0_clk_wr : std_logic;
 
   signal debug : std_logic_vector(2 downto 0);
-  signal Trev_i: std_logic_vector;
+  signal Trev: std_logic;
 
   constant c_slave_addr : t_wishbone_address_array(0 downto 0) :=
     ( 0 =>    x"00000000" );
@@ -621,14 +621,14 @@ begin
       slave_i              => fmc_wb_muxed_out,
       slave_o              => fmc_wb_muxed_in,
       debug_o => debug,
-		Trev_i					=> Trev_i);
+		Trev_i					=> Trev);
 
 --  fp_gpio1_b <= debug(0);
 --  fp_gpio2_b <= debug(1);
 --  fp_gpio3_b <= debug(2);
 --  fp_gpio4_b <= debug(3);
 
-  Trev_i <= fp_gpio1_b;   -- now this port will be an input
+  Trev <= fp_gpio1_b;   -- now this port will be an input
   fp_gpio2_b <= debug(0);
   fp_gpio3_b <= debug(1);
   fp_gpio4_b <= debug(2);

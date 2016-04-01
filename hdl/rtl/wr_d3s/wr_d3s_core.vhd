@@ -7,6 +7,9 @@ use work.dds_wbgen2_pkg.all;
 use work.gencores_pkg.all;
 use work.genram_pkg.all;
 
+use work.stdc_wbgen2_pkg.all;
+use work.stdc_hostif_package.all;
+
 library unisim;
 use unisim.vcomponents.all;
 
@@ -144,25 +147,6 @@ architecture behavioral of wr_d3s_core is
       regs_o     : out t_dds_out_registers);
   end component dds_wb_slave;
 
-  -- Added TDC serializer
-  component stdc_hostif is
-	port(
-			sys_rst_n_i    : in     std_logic;
-			clk_sys_i      : in     std_logic;
-			wb_adr_i       : in     std_logic_vector(1 downto 0);
-			wb_dat_i       : in     std_logic_vector(31 downto 0);
-			wb_dat_o       : out    std_logic_vector(31 downto 0);
-			wb_cyc_i       : in     std_logic;
-			wb_sel_i       : in     std_logic_vector(3 downto 0);
-			wb_stb_i       : in     std_logic;
-			wb_we_i        : in     std_logic;
-			wb_ack_o       : out    std_logic;
-			wb_stall_o     : out    std_logic;
-			regs_i         : in     t_stdc_in_registers;
-			regs_o         : out    t_stdc_out_registers);
-	end component stdc_hostif;
-
-
   function resize(x : std_logic_vector; new_size : integer)
     return std_logic_vector is
     variable tmp : std_logic_vector(new_size-1 downto 0);
@@ -262,7 +246,6 @@ architecture behavioral of wr_d3s_core is
     return result;
   end f_signed_multiply;
 
-
   signal tune_empty_d0 : std_logic;
 
   signal adc_data   : std_logic_vector(15 downto 0);
@@ -359,8 +342,7 @@ architecture behavioral of wr_d3s_core is
   signal trig_armed, trig_p : std_logic;
   signal dds_tmp : std_logic;
   signal pulse_armed : std_logic;
-  
-  
+	
 	signal wb_dds_i : t_wishbone_slave_in;
    signal wb_dds_o : t_wishbone_slave_out;
 	 
@@ -400,7 +382,6 @@ begin  -- behavioral
       I  => rf_clk_p_i,  -- Diff_p buffer input (connect directly to top-level port)
       IB => rf_clk_n_i  -- Diff_n buffer input (connect directly to top-level port)
       );
-
 
   U_Buf_CLK_DDS : IBUFGDS
     generic map (
@@ -593,22 +574,19 @@ begin  -- behavioral
       g_address     => c_slave_addr,
       g_mask        => c_slave_mask)
     port map (
-      clk_sys_i => clk_sys_i,
-      rst_n_i   => rst_n_i,
-      slave_i   => slave_i,
-      slave_o   => slave_o,
-      -- wb output (master) to the internal registers of the DDS core
-		master_o(0) => wb_dds_i,
-      master_i(0) => wb_dds_o,
-		
-		-- wb output (master) to the TDC core 
-		master_o(1) => wb_stdc_i,
-      master_i(1) => wb_stdc_o
+      clk_sys_i   => clk_sys_i,
+      rst_n_i     => rst_n_i,
+      slave_i(0)  => slave_i,
+      slave_o(0)  => slave_o,
+      master_o(0) => wb_dds_i, 
+      master_o(1) => wb_stdc_i,
+		master_i(0) => wb_dds_o, 
+		master_i(1) => wb_stdc_o  
 		);
-
+		
   cmp_stdc : stdc_hostif 
 	 port map(
-		sys_rst_n_i			=>	sys_rst_n_i,
+		sys_rst_n_i			=>	rst_n_i,
 		sys_clk_i			=>	clk_wr_ref,
 		serdes_clk_i		=>	serdes_clk,
 		serdes_strobe_i	=>	serdes_strobe,
@@ -1103,7 +1081,7 @@ begin  -- behavioral
       clk_i      => clk_wr_ref,
       rst_n_i    => rst_n_ref,
       pulse_i    => wr_pps_prepulse(5),
-      extended_o => debug_o(2));
+      extended_o => debug_o(1));
 
   process(clk_dds_synth)
   begin
@@ -1113,7 +1091,7 @@ begin  -- behavioral
   end process;
   
 
-  debug_o(1) <= dds_tmp;
+  --debug_o(1) <= dds_tmp;
   regs_in.rf_cnt_raw_i <= std_logic_vector(rf_counter);
 
   delay_d_o <= (others => '0');

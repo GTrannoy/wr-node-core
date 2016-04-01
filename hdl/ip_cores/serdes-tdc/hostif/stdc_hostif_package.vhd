@@ -19,11 +19,11 @@ component stdc_hostif is
 		wb_stb_i: in std_logic;
 		wb_we_i: in std_logic;
 		wb_ack_o: out std_logic;
-		irq_o: out std_logic;
+		wb_stall_o: out std_logic;
 		
 		signal_i: in std_logic;
 
-		cycles_i: in std_logic_vector(28 downto 0)
+		cycles_i: in std_logic_vector(27 downto 0)
 	);
 end component;
 

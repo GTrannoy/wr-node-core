@@ -86,10 +86,10 @@ package svec_node_pkg is
       fp_gpio1_a2b_o       : out   std_logic;
       fp_gpio2_a2b_o       : out   std_logic;
       fp_gpio34_a2b_o      : out   std_logic;
-      fp_gpio1_b           : inout   std_logic;
-      fp_gpio2_b           : inout   std_logic;
-      fp_gpio3_b           : inout   std_logic;
-      fp_gpio4_b           : inout   std_logic;
+      --fp_gpio1_b           : inout   std_logic;
+      --fp_gpio2_b           : inout   std_logic;
+      --fp_gpio3_b           : inout   std_logic;
+      --fp_gpio4_b           : inout   std_logic;
       VME_AS_n_i           : in    std_logic;
       VME_RST_n_i          : in    std_logic;
       VME_WRITE_n_i        : in    std_logic;

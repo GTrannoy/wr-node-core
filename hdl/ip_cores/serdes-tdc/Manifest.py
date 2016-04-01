@@ -1,0 +1,1 @@
+modules = { "local" : [ "core", "hostif" ] };
