@@ -1,1 +1,1 @@
-modules = { "local" : [ "core", "hostif" ] };
+modules = { "local" : [ "core"] };

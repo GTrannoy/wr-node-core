@@ -5,5 +5,6 @@ fetchto = "../../ip_cores"
 modules = {
     "local" : [	"../../../rtl", 
 		"../node_template", 
-		"../../../ip_cores/vme64x-core" ],
+		"../../../ip_cores/vme64x-core",
+		"../../../ip_cores/serdes-tdc" ],
     }

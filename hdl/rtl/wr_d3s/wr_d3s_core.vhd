@@ -120,8 +120,8 @@ entity wr_d3s_core is
 	 slave_i : in  t_wishbone_slave_in;
     slave_o : out t_wishbone_slave_out;
 
-    debug_o : out std_logic_vector(2 downto 0);  -- N. of debugging signals reduced. 
-	 Trev_i  : in std_logic           -- Trev input. 
+    debug_o : out std_logic_vector(3 downto 0)--;  
+--	 Trev_i  : in std_logic           -- Trev input. 
 	 );  
 
 end wr_d3s_core;
@@ -269,11 +269,13 @@ architecture behavioral of wr_d3s_core is
   end f_pps_period;
 
   -- 125 MHz WR Reference (from mezzanine's PLL)
-  signal clk_wr_ref, clk_wr_ref_pllin : std_logic;
+  signal clk_wr_ref, clk_wr_ref_pllin, clk_wr_ref_io2in : std_logic;
   
   --  Signals for high speed SERDES
   signal pllout_serdes_clk, serdes_clk : std_logic;  -- Very fast CLK for serdes (1GHz)
   signal serdes_strobe : std_logic;						  -- SERDES strobe
+  
+  signal Trev: std_logic;
   
   -- Cleaned up VCXO PLL output
   signal clk_dds_synth                : std_logic;
@@ -296,7 +298,7 @@ architecture behavioral of wr_d3s_core is
   signal wr_pps_prepulse : std_logic_vector(5 downto 0);
 
   signal clk_dds_locked, fpll_reset : std_logic;
-  signal trig_p_a                   : std_logic;
+--  signal trig_p_a                   : std_logic;
   signal pll_sdio_val               : std_logic;
   signal cic_out_clamp              : std_logic_vector(17 downto 0);
 
@@ -370,7 +372,18 @@ begin  -- behavioral
       I  => wr_ref_clk_p_i,  -- Diff_p buffer input (connect directly to top-level port)
       IB => wr_ref_clk_n_i  -- Diff_n buffer input (connect directly to top-level port)
       );
-		
+
+--  U_Buf_CLK_WR_Ref_IO : BUFIO2
+--     generic map (
+--       DIVIDE        => 1,--       DIVIDE_BYPASS => TRUE,
+--       I_INVERT      => FALSE		
+--       )
+--     port map (
+--      I      =>   clk_wr_ref_io2in,
+--      IOCLK  =>   open,
+--      DIVCLK =>   clk_wr_ref_pllin,
+--      SERDESSTROBE => open
+--      );
   
   U_Buf_CLK_RF : IBUFGDS
     generic map (
@@ -400,7 +413,7 @@ begin  -- behavioral
       IBUF_LOW_PWR => false  -- Low power (TRUE) vs. performance (FALSE) setting for referenced
       )
     port map (
-      O  => trig_p_a,                   -- Buffer output
+      O  => Trev, --trig_p_a,                   -- Buffer output
       I  => trig_p_i,
       IB => trig_n_i
       );
@@ -422,15 +435,15 @@ begin  -- behavioral
       CLKOUT2_DIVIDE     => 8,          -- 125 MHz
       CLKOUT2_PHASE      => 0.000,
       CLKOUT2_DUTY_CYCLE => 0.500,
-      CLKOUT3_DIVIDE     => 16,         -- 62.5 MHz
-      CLKOUT3_PHASE      => 0.000,
-      CLKOUT3_DUTY_CYCLE => 0.500,
+--      CLKOUT3_DIVIDE     => 16,         -- 62.5 MHz
+--      CLKOUT3_PHASE      => 0.000,
+--      CLKOUT3_DUTY_CYCLE => 0.500,
 		CLKIN_PERIOD       => 8.0,
       REF_JITTER         => 0.016)
     port map (
       CLKFBOUT => pllout_clk_fb_pllref,
       CLKOUT0  => pllout_serdes_clk,
-		CLKOUT1  => clk_dds_phy,
+      CLKOUT1  => clk_dds_phy,
       CLKOUT2  => pllout_clk_wr_ref,
       CLKOUT3  => open,
       CLKOUT4  => open,
@@ -439,6 +452,7 @@ begin  -- behavioral
       RST      => fpll_reset,
       CLKFBIN  => pllout_clk_fb_pllref,
       CLKIN    => clk_wr_ref_pllin);
+		
 
   cmp_serdes_clk_buf : BUFPLL
     generic map (
@@ -599,7 +613,7 @@ begin  -- behavioral
 		wb_we_i				=>	wb_stdc_i.we,
 		wb_ack_o				=>	wb_stdc_o.ack,
 		wb_stall_o			=>	wb_stdc_o.stall,
-		signal_i				=>	Trev_i,
+		signal_i				=>	Trev,
 		cycles_i				=> wr_cycles_slv );	
   
   wr_cycles_slv <= std_logic_vector(wr_cycles) ;
@@ -933,17 +947,17 @@ begin  -- behavioral
         rf_counter_load_dds_d0 <= rf_counter_load_dds;
         if (rf_counter_load_dds = '1' and rf_counter_load_dds_d0 = '0') then
           rf_counter_overflow_p_o <= '0';
-          debug_o(2) <= '0';
+          debug_o(3) <= '0';
           delay_pulse_o <= '0';
           rf_counter <= unsigned(regs_out.rf_cnt_sync_value_o);
         elsif (rf_counter = unsigned(regs_out.rf_cnt_period_o)) then
           rf_counter_overflow_p_o <= '1';
-          debug_o(2) <= '1';
+          debug_o(3) <= '1';
           delay_pulse_o <= '1';
           rf_counter              <= (others => '0');
         else
           rf_counter_overflow_p_o <= '0';
-          debug_o(2) <= '0';
+          debug_o(3) <= '0';
           delay_pulse_o <= '0';
           rf_counter              <= rf_counter + 1;
         end if;
@@ -966,12 +980,12 @@ begin  -- behavioral
     end if;
   end process;
 
-  U_Sync_Trigger : gc_sync_ffs
-    port map (
-      clk_i    => clk_dds_synth,
-      rst_n_i  => '1',
-      data_i   => trig_p_a,
-      ppulse_o => trig_p);
+--  U_Sync_Trigger : gc_sync_ffs
+--    port map (
+--      clk_i    => clk_dds_synth,
+--      rst_n_i  => '1',
+--      data_i   => trig_p_a,
+--      ppulse_o => trig_p);
 
   p_trigger_snapshot : process(clk_dds_synth)
   begin
@@ -1081,7 +1095,7 @@ begin  -- behavioral
       clk_i      => clk_wr_ref,
       rst_n_i    => rst_n_ref,
       pulse_i    => wr_pps_prepulse(5),
-      extended_o => debug_o(1));
+      extended_o => debug_o(2));
 
   process(clk_dds_synth)
   begin
@@ -1091,7 +1105,7 @@ begin  -- behavioral
   end process;
   
 
-  --debug_o(1) <= dds_tmp;
+  debug_o(1) <= dds_tmp;
   regs_in.rf_cnt_raw_i <= std_logic_vector(rf_counter);
 
   delay_d_o <= (others => '0');

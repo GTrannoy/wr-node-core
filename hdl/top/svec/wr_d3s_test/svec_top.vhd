@@ -285,8 +285,9 @@ architecture rtl of svec_top is
       wr_dac_sync_n_o      : out   std_logic;
       slave_i              : in    t_wishbone_slave_in;
       slave_o              : out   t_wishbone_slave_out;
-      debug_o : out std_logic_vector(2 downto 0);  -- N. of debugging signals reduced. 
-		Trev_i        		   : in std_logic );  -- Trev input. 
+      debug_o : out std_logic_vector(3 downto 0) --;
+--		Trev_i        		   : in std_logic        -- Trev input. 
+	   );  
   end component wr_d3s_core;
   
  constant c_D3S_SDB_DEVICE : t_sdb_device := (
@@ -390,7 +391,7 @@ architecture rtl of svec_top is
   signal TRIG    : std_logic_vector(127 downto 0);
   signal fmc0_clk_wr : std_logic;
 
-  signal debug : std_logic_vector(2 downto 0);
+  signal debug : std_logic_vector(3 downto 0);
   signal Trev: std_logic;
 
   constant c_slave_addr : t_wishbone_address_array(0 downto 0) :=
@@ -588,8 +589,7 @@ begin
       synth_clk_p_i     => fmc0_synth_clk_p_i,
       rf_clk_n_i     => fmc0_rf_clk_n_i,
       rf_clk_p_i     => fmc0_rf_clk_p_i,
-      
-      
+		
       pll_sys_cs_n_o       => fmc0_pll_sys_cs_n_o,
       pll_sys_ld_i         => fmc0_pll_sys_ld_i,
       pll_sys_reset_n_o    => fmc0_pll_sys_reset_n_o,
@@ -620,18 +620,15 @@ begin
       wr_dac_sclk_o => fmc0_wr_dac_sclk_o,
       slave_i              => fmc_wb_muxed_out,
       slave_o              => fmc_wb_muxed_in,
-      debug_o => debug,
-		Trev_i					=> Trev);
+      debug_o => debug --,
+--		Trev_i					=> Trev
+		);
 
---  fp_gpio1_b <= debug(0);
---  fp_gpio2_b <= debug(1);
---  fp_gpio3_b <= debug(2);
---  fp_gpio4_b <= debug(3);
+  fp_gpio1_b <= debug(0);
+  fp_gpio2_b <= debug(1);
+  fp_gpio3_b <= debug(2);
+  fp_gpio4_b <= debug(3);
 
-  Trev <= fp_gpio1_b;   -- now this port will be an input
-  fp_gpio2_b <= debug(0);
-  fp_gpio3_b <= debug(1);
-  fp_gpio4_b <= debug(2);
   
 end rtl;
 
