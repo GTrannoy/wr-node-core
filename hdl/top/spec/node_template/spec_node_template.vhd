@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-11-25
+-- Last update: 2016-04-14
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -96,6 +96,7 @@ entity spec_node_template is
       -- system reset & clock output (default: 62.5 MHz)
       rst_n_sys_o : out std_logic;
       clk_sys_o   : out std_logic;
+      pps_o       : out std_logic;
       
       clk_20m_vcxo_i : in std_logic;    -- 20MHz VCXO clock
 
@@ -183,6 +184,15 @@ entity spec_node_template is
       uart_rxd_i : in  std_logic := '1';
       uart_txd_o : out std_logic;
 
+      -------------------------------------------------------------------------
+      -- Flash SPI
+      -------------------------------------------------------------------------
+
+      spi_cs_n_o : out std_logic;
+      spi_sclk_o : out std_logic;
+      spi_mosi_o : out std_logic;
+      spi_miso_i : in  std_logic;
+      
       -------------------------------------------------------------------------
       -- FMC <> WRNode interface (FMC slot 1)
       -------------------------------------------------------------------------
@@ -276,22 +286,25 @@ architecture rtl of spec_node_template is
   end function;
   
 
-  constant c_NUM_WB_MASTERS : integer := 4;
-  constant c_NUM_WB_SLAVES  : integer := 1;
+  constant c_NUM_WB_MASTERS : integer := 5;
+  constant c_NUM_WB_SLAVES  : integer := 2;
 
-  constant c_MASTER_GENNUM : integer := 0;
+  constant c_MASTER_GENNUM    : integer := 0;
+  constant c_MASTER_ETHERBONE : integer := 1;
 
   constant c_SLAVE_FMC0     : integer := 0;
   constant c_SLAVE_WR_CORE  : integer := 1;
   constant c_SLAVE_WR_NODE  : integer := 2;
   constant c_SLAVE_VIC      : integer := 3;
-  constant c_DESC_SYNTHESIS : integer := 4;
-  constant c_DESC_REPO_URL  : integer := 5;
+  constant c_SLAVE_FLASH    : integer := 4;
+  constant c_DESC_SYNTHESIS : integer := 5;
+  constant c_DESC_REPO_URL  : integer := 6;
 
   constant c_INTERCONNECT_LAYOUT : t_sdb_record_array(c_NUM_WB_MASTERS - 1 downto 0) :=
     (
       c_SLAVE_FMC0    => g_fmc0_sdb,
       c_SLAVE_VIC     => f_sdb_embed_device(c_xwb_vic_sdb, x"00002000"),
+      c_SLAVE_FLASH   => f_sdb_embed_device(c_xwb_xil_multiboot_sdb, x"00002100"),
       c_SLAVE_WR_CORE => f_pick_wr_core_sdb,
       c_SLAVE_WR_NODE => f_sdb_embed_device(c_WR_NODE_SDB, x"00020000")
 --      c_DESC_SYNTHESIS => f_sdb_embed_synthesis(c_sdb_synthesis_info),
@@ -316,7 +329,9 @@ architecture rtl of spec_node_template is
 
   signal wrn_fmc0_wb_out, wrn_fmc1_wb_out, wrc_aux_master_out : t_wishbone_master_out;
   signal wrn_fmc0_wb_in, wrn_fmc1_wb_in, wrc_aux_master_in    : t_wishbone_master_in;
-
+ 
+  signal wb_to_multiboot : t_wishbone_master_out;
+  signal wb_from_multiboot : t_wishbone_master_in;
   signal tm_link_up         : std_logic;
   signal tm_tai             : std_logic_vector(39 downto 0);
   signal tm_cycles          : std_logic_vector(27 downto 0);
@@ -332,6 +347,7 @@ architecture rtl of spec_node_template is
   signal wrc_owr_en, wrc_owr_in                           : std_logic_vector(1 downto 0);
 
   signal pllout_clk_sys       : std_logic;
+  signal pllout_clk_multiboot       : std_logic;
   signal pllout_clk_cpu       : std_logic;
   signal pllout_clk_dmtd      : std_logic;
   signal pllout_clk_fb_pllref : std_logic;
@@ -341,6 +357,7 @@ architecture rtl of spec_node_template is
   signal clk_125m_pllref  : std_logic;
   signal clk_125m_gtp     : std_logic;
   signal clk_sys          : std_logic;
+  signal clk_multiboot          : std_logic;
   signal clk_cpu         : std_logic;
   signal clk_dmtd         : std_logic;
 
@@ -349,7 +366,6 @@ architecture rtl of spec_node_template is
 
 
   signal pins : std_logic_vector(31 downto 0);
-  signal pps  : std_logic;
 
   signal vic_master_irq : std_logic;
 
@@ -412,9 +428,7 @@ architecture rtl of spec_node_template is
 
   signal dummy_wb_master : t_wishbone_master_out;
 
-
-  
-begin
+begin 
 
   U_Reset_Generator : spec_reset_gen
     port map (
@@ -423,6 +437,31 @@ begin
       rst_button_n_a_i => '1',
       rst_n_o          => local_reset_n);
 
+
+  U_CC: xwb_clock_crossing port map (
+      -- Slave control port
+      slave_clk_i    => clk_sys,
+      slave_rst_n_i  => local_reset_n,
+      slave_i      => cnx_master_out(c_SLAVE_FLASH),
+      slave_o      => cnx_master_in(c_SLAVE_FLASH),
+      -- Master reader port
+      master_clk_i   => clk_multiboot,
+      master_rst_n_i => l_rst_n,
+      master_i       => wb_from_multiboot,
+      master_o       => wb_to_multiboot
+	);
+
+  U_Flash : xwb_xil_multiboot
+    port map (
+      clk_i  => clk_multiboot,
+      rst_n_i    => l_rst_n,
+      wbs_i      => wb_to_multiboot,
+      wbs_o      => wb_from_multiboot,
+      spi_cs_n_o => spi_cs_n_o,
+      spi_sclk_o => spi_sclk_o,
+      spi_mosi_o => spi_mosi_o,
+      spi_miso_i => spi_miso_i);
+  
   U_Buf_CLK_GTP : IBUFDS
     generic map (
       DIFF_TERM    => true,
@@ -459,7 +498,7 @@ begin
       CLKOUT1_DIVIDE     => 8,         -- 125 MHz
       CLKOUT1_PHASE      => 0.000,
       CLKOUT1_DUTY_CYCLE => 0.500,
-      CLKOUT2_DIVIDE     => 16,
+      CLKOUT2_DIVIDE     => 100,
       CLKOUT2_PHASE      => 0.000,
       CLKOUT2_DUTY_CYCLE => 0.500,
       CLKIN_PERIOD       => 8.0,
@@ -468,7 +507,7 @@ begin
       CLKFBOUT => pllout_clk_fb_pllref,
       CLKOUT0  => pllout_clk_sys,
       CLKOUT1  => pllout_clk_cpu,
-      CLKOUT2  => open,
+      CLKOUT2  => pllout_clk_multiboot,
       CLKOUT3  => open,
       CLKOUT4  => open,
       CLKOUT5  => open,
@@ -514,6 +553,10 @@ begin
       O => clk_sys,
       I => pllout_clk_sys);
 
+ cmp_clk_sys_multiboot : BUFG
+    port map (
+      O => clk_multiboot,
+      I => pllout_clk_multiboot);
   cmp_clk_cpu_buf : BUFG
     port map (
       O => clk_cpu,
@@ -642,6 +685,7 @@ begin
       g_dpram_size                => 90112/4,  --16384,
 
       g_dpram_initf               => "none")
+--      g_dpram_initf               => "wrc.ram")
     port map (
       clk_sys_i    => clk_sys,
       clk_dmtd_i   => clk_dmtd,
@@ -710,7 +754,7 @@ begin
       tm_cycles_o          => tm_cycles,
 
       rst_aux_n_o => rst_net_n,
-      pps_p_o     => pps,
+      pps_p_o     => pps_o,
       pps_led_o   => open
       );
 
@@ -783,15 +827,18 @@ begin
   U_WR_Node : wr_node_core_with_etherbone
     generic map (
       g_config => g_wr_node_config,
-      g_double_core_clock => g_double_wrnode_core_clock)
+      g_double_core_clock => g_double_wrnode_core_clock,
+      g_with_eb_remote => true)
     port map (
       clk_i          => clk_sys,
-      clk_cpu_i => clk_cpu,
+      clk_cpu_i      => clk_cpu,
       clk_ref_i      => clk_125m_pllref,
       rst_n_i        => local_reset_n,
       rst_net_n_i    => rst_net_n,
-      dp_master_o => dp_master_o,
-      dp_master_i => dp_master_i,
+      eb_topxbar_o   => cnx_slave_in(c_MASTER_ETHERBONE),
+      eb_topxbar_i   => cnx_slave_out(c_MASTER_ETHERBONE),
+      dp_master_o    => dp_master_o,
+      dp_master_i    => dp_master_i,
       wr_src_o       => ebm_src_out,
       wr_src_i       => ebm_src_in,
       wr_snk_o       => ebs_snk_out,

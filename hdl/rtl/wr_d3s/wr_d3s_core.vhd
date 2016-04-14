@@ -47,9 +47,10 @@ entity wr_d3s_core is
     wr_ref_clk_n_i : in std_logic;
     wr_ref_clk_p_i : in std_logic;
 
-    -- DDS synthesizer output clock
-    synth_clk_n_i : in std_logic;
-    synth_clk_p_i : in std_logic;
+    -- DDS synthesizer output clock input direct (modified cause bcc core)
+    clk_dds_synth   : in std_logic;
+--    synth_clk_n_i : in std_logic;
+--    synth_clk_p_i : in std_logic;
 
     -- RF reference input clock (master side) or cleaned-up recovered
     -- clock (slave side, from AD9510)
@@ -90,8 +91,8 @@ entity wr_d3s_core is
     delay_pulse_o : out std_logic;
 
     -- Trigger input
-    trig_p_i : in std_logic;
-    trig_n_i : in std_logic;
+--    trig_p_i : in std_logic;
+--    trig_n_i : in std_logic;
 
     -- OneWire (ID & temp sensor)
     onewire_b : inout std_logic;
@@ -273,7 +274,6 @@ architecture behavioral of wr_d3s_core is
   -- 125 MHz WR Reference (from mezzanine's PLL)
   signal clk_wr_ref, clk_wr_ref_pllin : std_logic;
   -- Cleaned up VCXO PLL output
-  signal clk_dds_synth                : std_logic;
   signal clk_rf_in                    : std_logic;
 
   signal pllout_clk_fb_pllref, pllout_clk_wr_ref : std_logic;
@@ -292,7 +292,7 @@ architecture behavioral of wr_d3s_core is
   signal wr_pps_prepulse : std_logic_vector(5 downto 0);
 
   signal clk_dds_locked, fpll_reset : std_logic;
-  signal trig_p_a                   : std_logic;
+--  signal trig_p_a                   : std_logic;
   signal pll_sdio_val               : std_logic;
   signal cic_out_clamp              : std_logic_vector(17 downto 0);
 
@@ -365,27 +365,27 @@ begin  -- behavioral
       );
 
 
-  U_Buf_CLK_DDS : IBUFGDS
-    generic map (
-      DIFF_TERM    => true,
-      IBUF_LOW_PWR => false  -- Low power (TRUE) vs. performance (FALSE) setting for referenced
-      )
-    port map (
-      O  => clk_dds_synth,              -- Buffer output
-      I  => synth_clk_p_i,  -- Diff_p buffer input (connect directly to top-level port)
-      IB => synth_clk_n_i  -- Diff_n buffer input (connect directly to top-level port)
-      );
+--  U_Buf_CLK_DDS : IBUFGDS
+--    generic map (
+--      DIFF_TERM    => true,
+--      IBUF_LOW_PWR => false  -- Low power (TRUE) vs. performance (FALSE) setting for referenced
+--      )
+--    port map (
+--      O  => clk_dds_synth,              -- Buffer output
+--      I  => synth_clk_p_i,  -- Diff_p buffer input (connect directly to top-level port)
+--      IB => synth_clk_n_i  -- Diff_n buffer input (connect directly to top-level port)
+--      );
 
-  U_Buf_TRIG : IBUFDS
-    generic map (
-      DIFF_TERM    => true,
-      IBUF_LOW_PWR => false  -- Low power (TRUE) vs. performance (FALSE) setting for referenced
-      )
-    port map (
-      O  => trig_p_a,                   -- Buffer output
-      I  => trig_p_i,
-      IB => trig_n_i
-      );
+--  U_Buf_TRIG : IBUFDS
+--    generic map (
+--      DIFF_TERM    => true,
+--      IBUF_LOW_PWR => false  -- Low power (TRUE) vs. performance (FALSE) setting for referenced
+--      )
+--    port map (
+--      O  => trig_p_a,                   -- Buffer output
+--      I  => trig_p_i,
+--      IB => trig_n_i
+--      );
 
   cmp_dds_clk_pll : PLL_BASE
     generic map (
@@ -908,12 +908,12 @@ begin  -- behavioral
     end if;
   end process;
 
-  U_Sync_Trigger : gc_sync_ffs
-    port map (
-      clk_i    => clk_dds_synth,
-      rst_n_i  => '1',
-      data_i   => trig_p_a,
-      ppulse_o => trig_p);
+--  U_Sync_Trigger : gc_sync_ffs
+--    port map (
+--      clk_i    => clk_dds_synth,
+--      rst_n_i  => '1',
+--      data_i   => trig_p_a,
+--      ppulse_o => trig_p);
 
   p_trigger_snapshot : process(clk_dds_synth)
   begin
@@ -970,24 +970,24 @@ begin  -- behavioral
   regs_in.tcr_wr_time_valid_i <= tm_time_valid_i;
 
 
-  chipscope_ila_1 : chipscope_ila
-    port map (
-      CONTROL => CONTROL,
-      CLK     => clk_wr_ref,
-      TRIG0   => TRIG0,
-      TRIG1   => TRIG1,
-      TRIG2   => TRIG2,
-      TRIG3   => TRIG3);
+--  chipscope_ila_1 : chipscope_ila
+--    port map (
+--      CONTROL => CONTROL,
+--      CLK     => clk_wr_ref,
+--      TRIG0   => TRIG0,
+--      TRIG1   => TRIG1,
+--      TRIG2   => TRIG2,
+--      TRIG3   => TRIG3);
 
-  chipscope_icon_1 : chipscope_icon
-    port map (
-      CONTROL0 => CONTROL);
+--  chipscope_icon_1 : chipscope_icon
+--    port map (
+--      CONTROL0 => CONTROL);
 
-  trig0 <= std_logic_vector(rf_counter);
-  trig1(0) <= cnt_phase_safe;
-  trig2(27 downto 0) <= wr_snapshot;
-  trig3(27 downto 0) <= tm_cycles_i;
-  trig1(6 downto 1) <= wr_pps_prepulse;
+--  trig0 <= std_logic_vector(rf_counter);
+--  trig1(0) <= cnt_phase_safe;
+--  trig2(27 downto 0) <= wr_snapshot;
+--  trig3(27 downto 0) <= tm_cycles_i;
+--  trig1(6 downto 1) <= wr_pps_prepulse;
   
   
   --trig0(27 downto 0) <= std_logic_vector(wr_cycles);

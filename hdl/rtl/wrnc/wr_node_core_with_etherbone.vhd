@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-08-26
+-- Last update: 2016-01-22
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -51,7 +51,8 @@ entity wr_node_core_with_etherbone is
   
   generic (
     g_config : t_wr_node_config := c_default_node_config;
-    g_double_core_clock : boolean := false);
+    g_double_core_clock : boolean := false;
+    g_with_eb_remote    : boolean := false);
 
   port (
     clk_i       : in std_logic;
@@ -71,6 +72,9 @@ entity wr_node_core_with_etherbone is
     wr_snk_o : out t_wrf_sink_out;
     wr_snk_i : in     t_wrf_sink_in;
 
+    eb_topxbar_o : out t_wishbone_master_out;
+    eb_topxbar_i : in  t_wishbone_master_in;
+    
     eb_config_i : in  t_wishbone_slave_in;
     eb_config_o : out t_wishbone_slave_out;
 
@@ -95,6 +99,9 @@ architecture rtl of wr_node_core_with_etherbone is
   constant c_SLAVE_EBM_CONFIG : integer := 0;
   constant c_SLAVE_EBS_CONFIG : integer := 1;
 
+  constant c_MUX_WRNODE  : integer := 0;
+  constant c_MUX_TOPXBAR : integer := 1;
+
   constant c_EB_CONFIG_ADDR : t_wishbone_address_array(1 downto 0) :=
     (c_SLAVE_EBS_CONFIG => x"00000080",
      c_SLAVE_EBM_CONFIG => x"00000000");
@@ -102,6 +109,14 @@ architecture rtl of wr_node_core_with_etherbone is
   constant c_EB_CONFIG_MASK : t_wishbone_address_array(1 downto 0) :=
     (c_SLAVE_EBS_CONFIG => x"00000080",
      c_SLAVE_EBM_CONFIG => x"00000080");
+
+  constant c_EBS_MUX_ADDR : t_wishbone_address_array(1 downto 0) :=
+    (1 => x"00100000",
+     0 => x"00000000");
+
+  constant c_EBS_MUX_MASK : t_wishbone_address_array(1 downto 0) :=
+    (1 => x"00100000",
+     0 => x"00100000");
 
   constant c_EBM_MUX_ADDR : t_wishbone_address_array(0 downto 0) :=
     (0 => x"00000000");
@@ -111,11 +126,24 @@ architecture rtl of wr_node_core_with_etherbone is
   signal eb_config_out : t_wishbone_master_out_array(1 downto 0);
   signal eb_config_in  : t_wishbone_master_in_array(1 downto 0);
 
+  signal ebs_mux_out : t_wishbone_master_out_array(1 downto 0);
+  signal ebs_mux_in  : t_wishbone_master_in_array(1 downto 0);
 
   signal wrn_ebs_out, ebm_mux_out, wrn_ebm_out : t_wishbone_master_out;
   signal wrn_ebs_in, ebm_mux_in, wrn_ebm_in    : t_wishbone_master_in;
   signal wr_ebs_src_out : t_wrf_source_out;
   signal wr_ebs_src_in  : t_wrf_source_in;
+
+  signal wrf_mux_snk_o : t_wrf_sink_out;
+  signal wrf_mux_snk_i : t_wrf_sink_in := c_dummy_snk_in;
+
+  signal mux_src_out   : t_wrf_source_out_array(1 downto 0);
+  signal mux_src_in    : t_wrf_source_in_array(1 downto 0);
+  signal mux_snk_out   : t_wrf_sink_out_array(1 downto 0);
+  signal mux_snk_in    : t_wrf_sink_in_array(1 downto 0) := (others => c_dummy_snk_in);
+  signal mux_class : t_wrf_mux_class(1 downto 0) :=
+    (1 => x"20",
+     0 => x"80");
 
   signal rst_net_n : std_logic;
 begin
@@ -148,35 +176,77 @@ begin
     port map (
       clk_sys_i => clk_i,
       rst_n_i   => rst_n_i,
-
+    
       slave_i(0) => eb_config_out(c_SLAVE_EBM_CONFIG),
       slave_i(1) => wrn_ebm_out,
-
+    
       slave_o(0) => eb_config_in(c_SLAVE_EBM_CONFIG),
       slave_o(1) => wrn_ebm_in,
-
+    
       master_i(0) => ebm_mux_in,
       master_o(0) => ebm_mux_out);
 
-  U_WRNode_Etherbone_Slave : eb_slave_core
-    generic map (
-      g_sdb_address => x"00000000c0000000")
-    port map (
-      clk_i       => clk_i,
-      nRst_i      => rst_net_n,
-      src_o       => wr_ebs_src_out,
-      src_i       => wr_ebs_src_in,
-      snk_o       => wr_snk_o,
-      snk_i       => wr_snk_i,
-      cfg_slave_o => eb_config_in(c_SLAVE_EBS_CONFIG),
-      cfg_slave_i => eb_config_out(c_SLAVE_EBS_CONFIG),
-      master_o    => wrn_ebs_out,
-      master_i    => wrn_ebs_in);
+
+  gen_ebslave_with_eb_remote : if g_with_eb_remote generate
+
+      U_EBS_Mux : xwb_crossbar
+        generic map (
+          g_num_masters => 1,
+          g_num_slaves  => 2,
+          g_registered  => false,
+          g_address     => c_EBS_MUX_ADDR,
+          g_mask        => c_EBS_MUX_MASK)
+        port map (
+          clk_sys_i => clk_i,
+          rst_n_i   => rst_n_i,
+        
+          slave_i(0) => wrn_ebs_out,
+          slave_o(0) => wrn_ebs_in,
+
+          master_i => ebs_mux_in,
+          master_o => ebs_mux_out);
+    
+      WRNode_Etherbone_Slave : eb_slave_core
+      generic map (
+        g_sdb_address => x"0000000000100000")
+      port map (
+        clk_i       => clk_i,
+        nRst_i      => rst_net_n,
+        src_o       => mux_src_out(c_MUX_TOPXBAR),
+        src_i       => mux_src_in(c_MUX_TOPXBAR),
+        snk_o       => wr_snk_o,
+        snk_i       => wr_snk_i,
+        cfg_slave_o => eb_config_in(c_SLAVE_EBS_CONFIG),
+        cfg_slave_i => eb_config_out(c_SLAVE_EBS_CONFIG),
+        master_o    => wrn_ebs_out,
+        master_i    => wrn_ebs_in);
+
+  end generate gen_ebslave_with_eb_remote;
+
+
+  gen_ebslave_without_eb_remote : if ( not g_with_eb_remote ) generate
+
+    WRNode_Etherbone_Slave : eb_slave_core
+      generic map (
+        g_sdb_address => x"00000000c0000000")
+      port map (
+        clk_i       => clk_i,
+        nRst_i      => rst_net_n,
+        src_o       => wr_ebs_src_out,
+        src_i       => wr_ebs_src_in,
+        snk_o       => wr_snk_o,
+        snk_i       => wr_snk_i,
+        cfg_slave_o => eb_config_in(c_SLAVE_EBS_CONFIG),
+        cfg_slave_i => eb_config_out(c_SLAVE_EBS_CONFIG),
+        master_o    => wrn_ebs_out,
+        master_i    => wrn_ebs_in);
+
+  end generate gen_ebslave_without_eb_remote;
 
   wr_ebs_src_in.stall <= '0';
   wr_ebs_src_in.err   <= '0';
   wr_ebs_src_in.rty   <= '0';
-
+    
   process(clk_i)
   begin
     if rising_edge(clk_i) then
@@ -184,45 +254,123 @@ begin
     end if;
   end process;
 
+  gen_wrf_mux_with_eb_remote: if g_with_eb_remote generate
 
-
-  U_WRNode_Etherbone_Master : eb_master_top
+    WRF_MUX: xwrf_mux
     generic map (
-      g_adr_bits_hi => 8,
-      g_mtu         => 1024)
+      g_muxed_ports => 2)
     port map (
-      clk_i   => clk_i,
-      rst_n_i => rst_net_n,
-      slave_i => ebm_mux_out,
-      slave_o => ebm_mux_in,
-      src_i   => wr_src_i,
-      src_o   => wr_src_o);
+      clk_sys_i	=> clk_i,
+      rst_n_i	=> rst_net_n,
+      --ENDPOINT
+      ep_src_o	=> wr_src_o,
+      ep_src_i	=> wr_src_i,
+      ep_snk_o  => wrf_mux_snk_o,
+      ep_snk_i  => wrf_mux_snk_i,
+      --Muxed ports
+      mux_src_o => mux_snk_in,
+      mux_src_i => mux_snk_out,
+      mux_snk_o => mux_src_in,
+      mux_snk_i => mux_src_out,
+      mux_class_i  => mux_class);
+    
+  end generate gen_wrf_mux_with_eb_remote;
 
-  U_WRNode_Core : wr_node_core
-    generic map (
-      g_config => g_config,
-      g_double_core_clock => g_double_core_clock,
-      g_with_white_rabbit =>true,
-      g_with_rmq =>true)
-    port map (
-      clk_i        => clk_i,
-      clk_cpu_i => clk_cpu_i,
-      rst_n_i      => rst_n_i,
-      dp_master_o  => dp_master_o,
-      dp_master_i  => dp_master_i,
-      sp_master_o  => sp_master_o,
-      sp_master_i  => sp_master_i,
-      ebm_master_o => wrn_ebm_out,
-      ebm_master_i => wrn_ebm_in,
-      ebs_slave_o  => wrn_ebs_in,
-      ebs_slave_i  => wrn_ebs_out,
-      host_slave_i => host_slave_i,
-      host_slave_o => host_slave_o,
-      host_irq_o   => host_irq_o,
-      clk_ref_i    => clk_ref_i,
-      tm_i         => tm_i,
-      gpio_i       => gpio_i,
-      gpio_o       => gpio_o,
-      debug_msg_irq_o => debug_msg_irq_o);
+  gen_ebmaster_with_eb_remote: if g_with_eb_remote generate
+  
+    U_WRNode_Etherbone_Master : eb_master_top
+      generic map (
+        g_adr_bits_hi => 8,
+        g_mtu         => 1024)
+      port map (
+        clk_i   => clk_i,
+        rst_n_i => rst_net_n,
+        slave_i => ebm_mux_out,
+        slave_o => ebm_mux_in,
+        src_i   => mux_src_in(c_MUX_WRNODE),
+        src_o   => mux_src_out(c_MUX_WRNODE));
+
+  end generate gen_ebmaster_with_eb_remote;
+  
+  gen_ebmaster_without_eb_remote: if (not g_with_eb_remote ) generate
+  
+    U_WRNode_Etherbone_Master : eb_master_top
+      generic map (
+        g_adr_bits_hi => 8,
+        g_mtu         => 1024)
+      port map (
+        clk_i   => clk_i,
+        rst_n_i => rst_net_n,
+        slave_i => ebm_mux_out,
+        slave_o => ebm_mux_in,
+        src_i   => wr_src_i,
+        src_o   => wr_src_o);
+
+  end generate gen_ebmaster_without_eb_remote;
+
+  gen_wr_node_with_eb_remote: if g_with_eb_remote generate
+
+    U_WRNode_Core : wr_node_core
+      generic map (
+        g_config => g_config,
+        g_double_core_clock => g_double_core_clock,
+        g_with_white_rabbit =>true,
+        g_with_rmq =>true)
+      port map (
+        clk_i        => clk_i,
+        clk_cpu_i => clk_cpu_i,
+        rst_n_i      => rst_n_i,
+        dp_master_o  => dp_master_o,
+        dp_master_i  => dp_master_i,
+        sp_master_o  => sp_master_o,
+        sp_master_i  => sp_master_i,
+        ebm_master_o => wrn_ebm_out,
+        ebm_master_i => wrn_ebm_in,
+        ebs_slave_o  => ebs_mux_in(c_MUX_WRNODE),
+        ebs_slave_i  => ebs_mux_out(c_MUX_WRNODE),
+        host_slave_i => host_slave_i,
+        host_slave_o => host_slave_o,
+        host_irq_o   => host_irq_o,
+        clk_ref_i    => clk_ref_i,
+        tm_i         => tm_i,
+        gpio_i       => gpio_i,
+        gpio_o       => gpio_o,
+        debug_msg_irq_o => debug_msg_irq_o);
+
+    ebs_mux_in(c_MUX_TOPXBAR) <= eb_topxbar_i;
+    eb_topxbar_o   <= ebs_mux_out(c_MUX_TOPXBAR);
+
+  end generate gen_wr_node_with_eb_remote;
+  
+  gen_wr_node_without_eb_remote: if ( not g_with_eb_remote ) generate
+
+    U_WRNode_Core : wr_node_core
+      generic map (
+        g_config => g_config,
+        g_double_core_clock => g_double_core_clock,
+        g_with_white_rabbit =>true,
+        g_with_rmq =>true)
+      port map (
+        clk_i        => clk_i,
+        clk_cpu_i => clk_cpu_i,
+        rst_n_i      => rst_n_i,
+        dp_master_o  => dp_master_o,
+        dp_master_i  => dp_master_i,
+        sp_master_o  => sp_master_o,
+        sp_master_i  => sp_master_i,
+        ebm_master_o => wrn_ebm_out,
+        ebm_master_i => wrn_ebm_in,
+        ebs_slave_o  => wrn_ebs_in,
+        ebs_slave_i  => wrn_ebs_out,
+        host_slave_i => host_slave_i,
+        host_slave_o => host_slave_o,
+        host_irq_o   => host_irq_o,
+        clk_ref_i    => clk_ref_i,
+        tm_i         => tm_i,
+        gpio_i       => gpio_i,
+        gpio_o       => gpio_o,
+        debug_msg_irq_o => debug_msg_irq_o);
+    
+  end generate gen_wr_node_without_eb_remote;
 
 end rtl;

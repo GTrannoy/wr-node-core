@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-11-18
+-- Last update: 2016-02-26
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -61,10 +61,11 @@ package spec_node_pkg is
       g_double_wrnode_core_clock : boolean := false;
       g_wr_node_config  : t_wr_node_config;
       g_system_clock_freq : integer := 62500000
-      );
+    );
     port (
       rst_n_sys_o          : out   std_logic;
       clk_sys_o            : out   std_logic;
+      pps_o                : out   std_logic;
       clk_20m_vcxo_i       : in    std_logic;
       clk_125m_pllref_p_i  : in    std_logic;
       clk_125m_pllref_n_i  : in    std_logic;
@@ -127,6 +128,10 @@ package spec_node_pkg is
       sfp_los_i            : in    std_logic                    := '0';
       uart_rxd_i           : in    std_logic                    := '1';
       uart_txd_o           : out   std_logic;
+      spi_cs_n_o           : out   std_logic;
+      spi_sclk_o           : out   std_logic;
+      spi_mosi_o           : out   std_logic;
+      spi_miso_i           : in    std_logic;
       fmc0_clk_aux_i       : in    std_logic := '0';
       fmc0_host_wb_o       : out   t_wishbone_master_out;
       fmc0_host_wb_i       : in    t_wishbone_master_in := cc_dummy_master_in;
@@ -143,7 +148,8 @@ package spec_node_pkg is
       tm_clk_aux_locked_o  : out   std_logic_vector(0 downto 0);
       tm_time_valid_o      : out   std_logic;
       tm_tai_o             : out   std_logic_vector(39 downto 0);
-      tm_cycles_o          : out   std_logic_vector(27 downto 0));
+      tm_cycles_o          : out   std_logic_vector(27 downto 0)
+    );
   end component spec_node_template;
 
  

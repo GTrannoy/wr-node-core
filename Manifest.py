@@ -1,4 +1,5 @@
+fetchto = "hdl/ip_cores"
+
 modules = { "local": [
-    "hdl/rtl/wr_d3s_core",
-    "hdl/rtl/wrnc",
+    "hdl/rtl",
     "hdl/top/spec/node_template"] }
