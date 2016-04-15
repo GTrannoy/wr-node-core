@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2016-02-26
+-- Last update: 2016-04-15
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -57,6 +57,7 @@ package spec_node_pkg is
       g_fmc0_vic_vector : t_wishbone_address := x"00000000";
       g_simulation      : boolean := false;
       g_with_white_rabbit        : boolean := false;
+      g_wr_core_dpram_initf : string := "none";
       g_with_wr_phy     : boolean := true;
       g_double_wrnode_core_clock : boolean := false;
       g_wr_node_config  : t_wr_node_config;

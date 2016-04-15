@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2016-04-14
+-- Last update: 2016-04-15
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -66,6 +66,9 @@ entity spec_node_template is
 
 -- Enables/disable White Rabbit support
     g_with_white_rabbit : boolean := true;
+
+-- Gives the WRPC LM32 firmware
+    g_wr_core_dpram_initf : string := "none";
 
 -- Reduces some timeouts to speed up simulations.
     g_simulation     : boolean := false;
@@ -684,8 +687,7 @@ begin
       g_softpll_enable_debugger   => false,
       g_dpram_size                => 90112/4,  --16384,
 
-      g_dpram_initf               => "none")
---      g_dpram_initf               => "wrc.ram")
+      g_dpram_initf               => g_wr_core_dpram_initf)
     port map (
       clk_sys_i    => clk_sys,
       clk_dmtd_i   => clk_dmtd,
