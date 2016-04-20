@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2016-04-15
+-- Last update: 2016-04-18
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -300,18 +300,14 @@ architecture rtl of spec_node_template is
   constant c_SLAVE_WR_NODE  : integer := 2;
   constant c_SLAVE_VIC      : integer := 3;
   constant c_SLAVE_FLASH    : integer := 4;
-  constant c_DESC_SYNTHESIS : integer := 5;
-  constant c_DESC_REPO_URL  : integer := 6;
 
   constant c_INTERCONNECT_LAYOUT : t_sdb_record_array(c_NUM_WB_MASTERS - 1 downto 0) :=
     (
       c_SLAVE_FMC0    => g_fmc0_sdb,
-      c_SLAVE_VIC     => f_sdb_embed_device(c_xwb_vic_sdb, x"00002000"),
-      c_SLAVE_FLASH   => f_sdb_embed_device(c_xwb_xil_multiboot_sdb, x"00002100"),
       c_SLAVE_WR_CORE => f_pick_wr_core_sdb,
-      c_SLAVE_WR_NODE => f_sdb_embed_device(c_WR_NODE_SDB, x"00020000")
---      c_DESC_SYNTHESIS => f_sdb_embed_synthesis(c_sdb_synthesis_info),
---      c_DESC_REPO_URL  => f_sdb_embed_repo_url(c_sdb_repo_url)
+      c_SLAVE_WR_NODE => f_sdb_embed_device(c_WR_NODE_SDB, x"00020000"),
+      c_SLAVE_VIC     => f_sdb_embed_device(c_xwb_vic_sdb, x"00002000"),
+      c_SLAVE_FLASH   => f_sdb_embed_device(c_xwb_xil_multiboot_sdb, x"00002100")
       );
 
   constant c_SDB_ADDRESS : t_wishbone_address := x"00000000";
