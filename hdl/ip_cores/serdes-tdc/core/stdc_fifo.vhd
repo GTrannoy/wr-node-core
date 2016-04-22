@@ -46,14 +46,16 @@ begin
 	do_write <= we_i and not full;
 	do_read <= re_i and not empty;
 
-	process(sys_clk_i)
+--	process(sys_clk_i)       -- Make the reset asynchronous
+process(clear_i, sys_clk_i)	  
 	begin
-		if rising_edge(sys_clk_i) then
+--		if rising_edge(sys_clk_i) then
 			if clear_i = '1' then
 				level <= (level'range => '0');
 				produce <= (produce'range => '0');
 				consume <= (consume'range => '0');
-			else
+--			else
+      elsif rising_edge(sys_clk_i) then
 				if do_write = '1' then
 					produce <= std_logic_vector(unsigned(produce) + 1);
 				end if;
@@ -67,7 +69,7 @@ begin
 					level <= std_logic_vector(unsigned(level) - 1);
 				end if;
 			end if;
-		end if;
+--		end if;
 	end process;
 	
 	full <= level(D_DEPTH);

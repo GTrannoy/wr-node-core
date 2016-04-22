@@ -212,9 +212,10 @@ entity svec_top is
     tempid_dq_b : inout std_logic;
 
     uart_rxd_i : in  std_logic := '1';
-    uart_txd_o : out std_logic
+    uart_txd_o : out std_logic 
 
    -- put the FMC I/Os here
+    
     );
 end svec_top;
 
@@ -298,7 +299,7 @@ architecture rtl of svec_top is
     wbd_width     => x"7",                 -- 8/16/32-bit port granularity
     sdb_component => (
       addr_first  => x"0000000000000000",
-      addr_last   => x"0000000000000fff",
+      addr_last   => x"0000000000003fff",
       product     => (
         vendor_id => x"000000000000CE42",  -- CERN
         device_id => x"dd334410",          
@@ -360,7 +361,7 @@ architecture rtl of svec_top is
   signal fmc_host_irq                   : std_logic_vector(1 downto 0);
 
   constant c_d3s0_sdb_record : t_sdb_record       := f_sdb_embed_device(c_D3S_SDB_DEVICE, x"00010000");
-  constant c_d3s1_sdb_record : t_sdb_record       := f_sdb_embed_device(c_D3S_SDB_DEVICE, x"00011000");
+  constant c_d3s1_sdb_record : t_sdb_record       := f_sdb_embed_device(c_D3S_SDB_DEVICE, x"00014000");
   constant c_d3s_vector     : t_wishbone_address := x"ffffffff";
 
   signal tm_link_up         : std_logic;
@@ -392,7 +393,7 @@ architecture rtl of svec_top is
   signal fmc0_clk_wr : std_logic;
 
   signal debug : std_logic_vector(3 downto 0);
-  signal Trev: std_logic;
+--  signal Trev: std_logic;
 
   constant c_slave_addr : t_wishbone_address_array(0 downto 0) :=
     ( 0 =>    x"00000000" );
@@ -546,20 +547,20 @@ begin
       clk_sys_i => clk_sys,
       rst_n_i   => rst_n,
       slave_i(0)   => fmc_dp_wb_out(0),
-      slave_i(1)   => fmc_dp_wb_out(1),
+      slave_i(1)   => fmc_host_wb_out(0),
       slave_o(0)   => fmc_dp_wb_in(0),
-      slave_o(1)   => fmc_dp_wb_in(1),
+      slave_o(1)   => fmc_host_wb_in(0),
       master_o(0) => fmc_wb_muxed_out,
       master_i(0) => fmc_wb_muxed_in
       );
 
-  fmc_host_wb_in(0).ack <= '0';
+--  fmc_host_wb_in(0).ack <= '0';
   fmc_host_wb_in(1).ack <= '0';
-  fmc_host_wb_in(0).err <= '0';
+--  fmc_host_wb_in(0).err <= '0';
   fmc_host_wb_in(1).err <= '0';
-  fmc_host_wb_in(0).rty <= '0';
+--  fmc_host_wb_in(0).rty <= '0';
   fmc_host_wb_in(1).rty <= '0';
-  fmc_host_wb_in(0).stall <= '0';
+--  fmc_host_wb_in(0).stall <= '0';
   fmc_host_wb_in(1).stall <= '0';
 
 

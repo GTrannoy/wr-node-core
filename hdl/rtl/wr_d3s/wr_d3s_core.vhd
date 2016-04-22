@@ -276,6 +276,8 @@ architecture behavioral of wr_d3s_core is
   signal serdes_strobe : std_logic;						  -- SERDES strobe
   
   signal Trev: std_logic;
+  signal stdc_strobe: std_logic;
+	signal stdc_data: std_logic_vector(31 downto 0);	
   
   -- Cleaned up VCXO PLL output
   signal clk_dds_synth                : std_logic;
@@ -599,9 +601,12 @@ begin  -- behavioral
 		);
 		
   cmp_stdc : stdc_hostif 
+	 generic map (
+		D_DEPTH   => 10)    -- Length of the fifo storing the event time stamps
 	 port map(
 		sys_rst_n_i			=>	rst_n_i,
-		sys_clk_i			=>	clk_wr_ref,
+		clk_sys_i			=>	clk_sys_i,  -- clk_wr_ref,
+		clk_125m_i			=> clk_wr_ref,
 		serdes_clk_i		=>	serdes_clk,
 		serdes_strobe_i	=>	serdes_strobe,
 		wb_addr_i			=>	wb_stdc_i.adr,
@@ -614,7 +619,9 @@ begin  -- behavioral
 		wb_ack_o				=>	wb_stdc_o.ack,
 		wb_stall_o			=>	wb_stdc_o.stall,
 		signal_i				=>	Trev,
-		cycles_i				=> wr_cycles_slv );	
+		cycles_i				=>  wr_cycles_slv,
+		strobe_o      => stdc_strobe  ,
+		stdc_data_o    => stdc_data  );	
   
   wr_cycles_slv <= std_logic_vector(wr_cycles) ;
   wb_stdc_o.err <= '0';

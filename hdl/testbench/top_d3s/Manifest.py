@@ -7,7 +7,7 @@ vlog_opt="+incdir+../../include/wb +incdir+../include/vme64x_bfm +incdir+../incl
 vcom_opt="-mixedsvvh l"
 
 syn_device="xc6slx150t"
-include_dirs=["../../sim", "../include", "../include/vme64x_bfm"]
+include_dirs=["../../sim", "../include", "../include/vme64x_bfm", "../../ip_cores/serdes-tdc/core"]
 
 files = [ "main.sv" ]
 

@@ -4,9 +4,13 @@ use ieee.std_logic_1164.all;
 package stdc_hostif_package is
 
 component stdc_hostif is
+	generic(
+		D_DEPTH: positive
+	);
 	port(
 		sys_rst_n_i: in std_logic;
-		sys_clk_i: in std_logic;
+		clk_sys_i: in std_logic;
+    clk_125m_i: in std_logic;
 		
 		serdes_clk_i: in std_logic;
 		serdes_strobe_i: in std_logic;
@@ -23,7 +27,11 @@ component stdc_hostif is
 		
 		signal_i: in std_logic;
 
-		cycles_i: in std_logic_vector(27 downto 0)
+		cycles_i: in std_logic_vector(27 downto 0);
+		
+		-- TDC outputs			
+		strobe_o         : out    std_logic;
+		stdc_data_o       : out    std_logic_vector(31 downto 0)
 	);
 end component;
 

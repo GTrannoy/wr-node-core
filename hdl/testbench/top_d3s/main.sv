@@ -4,22 +4,15 @@
 `include "vme64x_bfm.svh"
 `include "svec_vme_buffers.svh"
 
-
-   /*
-   initial begin
-    
-         
-         
-     */ 
-      
-         
+`include "stdc_wb_slave.vh"
    
 
 module main;
 
    reg rst_n = 0;
    reg clk_125m = 0, clk_20m = 0;
-
+   reg tdc_in = 0;
+   
    always #4ns clk_125m <= ~clk_125m;
    always #25ns clk_20m <= ~clk_20m;
    
@@ -31,31 +24,6 @@ module main;
    IVME64X VME(rst_n);
 
    `DECLARE_VME_BUFFERS(VME.slave);
-
-   reg tdc_ef1 = 1;
-   reg tdc_pulse = 0;
-   wire tdc_rd_n;
-
-
-   always@(posedge tdc_pulse) begin
-      #100ns;
-      tdc_ef1 <= 0;
-      while(tdc_rd_n != 0)
-	#1ns;
-      #10ns;
-      tdc_ef1 <= 1;
-   end
-
-   reg clk_acam = 0;
-   reg clk_62m5 = 0;
-   
-
-   always@(posedge clk_125m)
-     clk_62m5 <= ~clk_62m5;
-
-   always@(posedge clk_62m5)
-     clk_acam <= ~clk_acam;
-   
    
    svec_top #(
               .g_with_wr_phy(0),
@@ -71,14 +39,13 @@ module main;
 
 		     .clk_20m_vcxo_i(clk_20m),
 		     .rst_n_a_i(rst_n),
-
+		     
+		     .fmc0_trig_p_i(tdc_in),
+		     .fmc0_trig_n_i(~tdc_in),
+		     
 
 		     `WIRE_VME_PINS(8)
 		     );
-   
-
-   
-   
    
 
   task automatic config_vme_function(ref CBusAccessor_VME64x acc, input int func, uint64_t base, int am);
@@ -94,8 +61,7 @@ module main;
       acc.write(addr + 4, (val >> 16) & 'hff, CR_CSR|A32|D08Byte3);
       acc.write(addr + 8, (val >> 8)  & 'hff, CR_CSR|A32|D08Byte3);
       acc.write(addr + 12, (val >> 0) & 'hff, CR_CSR|A32|D08Byte3);
- 
-      
+       
    endtask // config_vme_function
    
    
@@ -115,14 +81,11 @@ module main;
       acc.set_default_modifiers(A24 | D32 | SINGLE);
    endtask // init_vme64x_core
    
-
    reg force_irq = 0;
    
    initial begin
-      CBusAccessor_VME64x acc = new(VME.master);
-      CBusAccessor acc_casted = CBusAccessor'(acc);
-      NodeCPUControl cpu_csr;
-      MQueueHost hmq;
+      automatic CBusAccessor_VME64x acc = new(VME.master);
+      automatic CBusAccessor acc_casted = CBusAccessor'(acc);
       uint64_t d;
       
       #100us;
@@ -131,67 +94,69 @@ module main;
       acc_casted.set_default_xfer_size(A24|SINGLE|D32);
 
       #150us;
+
+      // VME base address is 0xc00000
+
+      acc.read('hc00000, d); 
       
-      cpu_csr = new ( acc, 'h0xcd0000 );
-      cpu_csr.init();
-      cpu_csr.reset_core(0, 0);
-
-      #150us;
-
-/* -----\/----- EXCLUDED -----\/-----
-      acc.read('hc20000, d); 
-      $display("TDC SDB ID : %x", d);
-
-      acc.write('hc310a0, 1234);  // set UTC
-      acc.write('hc310fc, 1<<9); // load UTC
-
-      acc.write('hc32004, 'hf); // enable EIC irq
-      acc.write('hc70000, 'h1); // enable VIC
-      acc.write('hc70008, 'h1); // enable VIC irq line 0
-
-//      acc.write('hc31090, 1); // irq threshold = 1
-
-      acc.write('hc31084, 'h1f); // enable all ACAM inputs
-      acc.write('hc310fc, (1<<0)); // start acquisition
- -----/\----- EXCLUDED -----/\----- */
+      $display("SDB ID %x", d);
       
-         
-/* -----\/----- EXCLUDED -----\/-----
-      #300us;
-      forever begin
-	 tdc_pulse <= 1;
-	 #1000ns;
-	 tdc_pulse <= 0;
-	 #10ns;
+      `define BASE_STDC 'hc11000
+      
+      acc.write(`BASE_STDC + `ADDR_STDC_CTRL, 1<<3);  // Write ctrl filter to report rising edges
+      
+      while(1)
+        begin
+          acc.read(`BASE_STDC + `ADDR_STDC_STATUS, d);  //Read STDC status register
+          $display($stime, ":Status read");
+          
+          if(!d & 1) begin                               // If fifo not empty
+          
+            acc.read(`BASE_STDC + `ADDR_STDC_TDC_DATA, d);  // Read TDC_DATA
+            
+            
+            $display("Got timestamp %d", d & (32'h7FFFFFFF));
+            acc.write(`BASE_STDC + `ADDR_STDC_CTRL, (1<<3) | (1<<2)); // advance to next event
+            
+          end
       end
- -----/\----- EXCLUDED -----/\----- */
       
-     
+    end  
+    
+    initial begin
       
-     
-      
-      
-      
-    //  hmq.send(0, '{1,2,3} );
-    //  hmq.send(0, '{3,6,9} );
-
-      //eb.write(0, 'hdeadbeef);
-
-   
-      
-      
-/* -----\/----- EXCLUDED -----\/-----
-      forever begin
-         hmq.update();
-         #1us;
+      integer delay1, pulse_duration; 
+      #350us;
+      while(1) begin
+      // repeat(2) begin  
+          if ($stime>=600us) begin
+            $stop;
+          end
+          
+          // Random delays
+          //delay1 = $urandom_range(200,900); 
+          //pulse_duration = $urandom_range(8,100); 
+          //#(delay1 *1ns);
+          //tdc_in <= 1;
+          //$display("Pulse rising edge", $stime);
+          //#(pulse_duration *1ns);
+          //tdc_in <= 0;
+          
+          for (int i = 0; i<8; i++) begin
+            @(posedge clk_125m);
+            #(i *1ns);
+            tdc_in <= 1;
+            #25ns
+            tdc_in <= 0;
+          end
+          
       end
- -----/\----- EXCLUDED -----/\----- */
       
-   end
- 
-   
-
-  
+    end    
+    
+        
+//      acc.write('hc310a0, 1234);  // set UTC
+       
 endmodule // main
 
 

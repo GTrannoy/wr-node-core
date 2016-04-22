@@ -10,9 +10,9 @@ peripheral {
 			name = "FIFO status registers";
 			description = "The bits in this register describe if the fifo is empty/overflown";
 			field {
-				 name = "FIFO not empty";
-				 prefix = "NOEMPTY";
-				 description = "if 1 the fifo is not empty";
+				 name = "FIFO empty";
+				 prefix = "EMPTY";
+				 description = "if 1 the fifo is empty";
 				 type = BIT;
 				 access_bus = READ_ONLY;
          access_dev = WRITE_ONLY;

@@ -32,6 +32,7 @@ architecture rtl of stdc is
 signal samples: std_logic_vector(7 downto 0);
 signal serdes_cascade: std_logic;
 signal looking_for: std_logic;
+signal iserdes2_rst: std_logic;
 
 begin
 	-- sample input at 8x the system clock rate
@@ -62,7 +63,7 @@ begin
 			CLKDIV => sys_clk_i,
 			D => signal_i,
 			IOCE => serdes_strobe_i,
-			RST => '0',
+			RST => iserdes2_rst,
 			SHIFTIN => '0'
 		);
 	cmp_slave_serdes: ISERDES2
@@ -92,32 +93,36 @@ begin
 			CLKDIV => sys_clk_i,
 			D => '0',
 			IOCE => serdes_strobe_i,
-			RST => '0',
+			RST => iserdes2_rst, -- '0',
 			SHIFTIN => serdes_cascade
 		);
 	
+	iserdes2_rst <= not(sys_rst_n_i) ;
+	
 	-- analyse samples and generate events
-	process(sys_clk_i)
+--	process(sys_clk_i)
+process(sys_rst_n_i, sys_clk_i)
 	begin
-		if rising_edge(sys_clk_i) then
+--		if rising_edge(sys_clk_i) then    -- let's make the reset asynchronous
 			if sys_rst_n_i = '0' then
 				detect_o <= '0';
 				polarity_o <= '0';
 				timestamp_8th_o <= (timestamp_8th_o'range => '0');
 				looking_for <= '1';
-			else
+--			else 
+			elsif rising_edge(sys_clk_i) then
 				detect_o <= '0';
 				for i in 0 to 7 loop
 					if samples(i) = looking_for then
 						detect_o <= '1';
 						polarity_o <= looking_for;
-						timestamp_8th_o <= std_logic_vector(to_unsigned(i, 3));
+						timestamp_8th_o <= std_logic_vector(to_unsigned(i, 3));   
 						exit;
 					end if;
 				end loop;
 				looking_for <= not samples(7);
 			end if;
-		end if;
+--		end if;
 	end process;
 
 end architecture;
