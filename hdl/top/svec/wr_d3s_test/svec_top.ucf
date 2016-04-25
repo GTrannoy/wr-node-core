@@ -590,3 +590,5 @@ NET "fmc0_synth_clk_n_i" TNM_NET = fmc0_synth_clk_n_i;
 TIMESPEC TS_fmc0_synth_clk_n_i = PERIOD "fmc0_synth_clk_n_i" 20 ns HIGH 50%;
 NET "fmc0_synth_clk_p_i" TNM_NET = fmc0_synth_clk_p_i;
 TIMESPEC TS_fmc0_synth_clk_p_i = PERIOD "fmc0_synth_clk_p_i" 20 ns HIGH 50%;
+
+#NET "clk_20m_vcxo_i" CLOCK_DEDICATED_ROUTE = FALSE;

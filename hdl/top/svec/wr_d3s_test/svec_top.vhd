@@ -286,8 +286,7 @@ architecture rtl of svec_top is
       wr_dac_sync_n_o      : out   std_logic;
       slave_i              : in    t_wishbone_slave_in;
       slave_o              : out   t_wishbone_slave_out;
-      debug_o : out std_logic_vector(3 downto 0) --;
---		Trev_i        		   : in std_logic        -- Trev input. 
+      debug_o : out std_logic_vector(3 downto 0)
 	   );  
   end component wr_d3s_core;
   
@@ -355,7 +354,8 @@ architecture rtl of svec_top is
 
   signal clk_sys : std_logic;
   signal rst_n   : std_logic;
-
+  signal clk_62w5m : std_logic;
+  
   signal fmc_host_wb_out, fmc_dp_wb_out : t_wishbone_master_out_array(0 to 1);
   signal fmc_host_wb_in, fmc_dp_wb_in   : t_wishbone_master_in_array(0 to 1);
   signal fmc_host_irq                   : std_logic_vector(1 downto 0);
@@ -533,7 +533,8 @@ begin
       tm_tai_o             => tm_tai,
       tm_cycles_o          => tm_cycles,
       carrier_scl_b        => carrier_scl_b,
-      carrier_sda_b        => carrier_sda_b);
+      carrier_sda_b        => carrier_sda_b
+		);
 
 
   xwb_crossbar_1 : xwb_crossbar
@@ -621,8 +622,7 @@ begin
       wr_dac_sclk_o => fmc0_wr_dac_sclk_o,
       slave_i              => fmc_wb_muxed_out,
       slave_o              => fmc_wb_muxed_in,
-      debug_o => debug --,
---		Trev_i					=> Trev
+      debug_o 					=> debug
 		);
 
   fp_gpio1_b <= debug(0);

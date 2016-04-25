@@ -67,7 +67,7 @@ architecture rtl of stdc_hostif is
 
 signal detect: std_logic;
 signal polarity: std_logic;
-signal timestamp_8th: std_logic_vector(2 downto 0);
+signal timestamp_8th, timestamp_resync: std_logic_vector(2 downto 0);
 
 signal fifo_clear: std_logic;
 signal fifo_full: std_logic;
@@ -136,8 +136,10 @@ begin
 		
 	-- if enabled edge detected write in the fifo	
 	--fifo_we <= detect and ((polarity and regs_o.ctrl_filter_o(0)) or (not polarity and regs_o.ctrl_filter_o(1)));
-	fifo_di <= polarity & cycles_reg & timestamp_8th when timestamp_8th(2)='1' else
-	           polarity & std_logic_vector(unsigned(cycles_reg)-1) & timestamp_8th;
+	fifo_di <= polarity & cycles_reg & timestamp_resync when timestamp_8th(2)='1' else
+	           polarity & std_logic_vector(unsigned(cycles_reg)-1) & timestamp_resync;
+	
+	timestamp_resync <= std_logic_vector(unsigned(timestamp_8th)+3);
 		
 	-- if next =1 and fifo not empty, send to tdc_data next fifo element
 	--fifo_re <= regs_o.ctrl_next_o and /main/DUT/U_DDS_Core0/cmp_stdc/fifo_re /main/DUT/U_DDS_Core0/cmp_stdc/regs_o /main/DUT/U_DDS_Core0/cmp_stdc/fifo_empty(not fifo_empty);
@@ -174,7 +176,7 @@ begin
     elsif rising_edge(serdes_strobe_i) then
        prev_signal <= signal_i;
        if en='1' then
-          cycles_reg <= dbg_cycles_slv; 
+          cycles_reg <= cycles_i; -- dbg_cycles_slv; (dbg_cycles_slv only used for simulation)
        end if;
     end if;
   end process;
@@ -182,14 +184,14 @@ begin
 	en <= not(prev_signal) and signal_i;
 	
 	--  ********* For debugging only. Remove later!!
-  p_debugging_counter: process(sys_rst_n_i, clk_125m_i)
-  begin
-    if sys_rst_n_i = '0' then
-      dbg_cycles_slv <= (dbg_cycles_slv'range => '0');
-    elsif rising_edge(clk_125m_i) then
-      dbg_cycles_slv <= std_logic_vector(unsigned(dbg_cycles_slv)+1); --std_logic_vector(unsigned(dbg_cycles_slv) + 1);
-    end if;
-  end process;
+--  p_debugging_counter: process(sys_rst_n_i, clk_125m_i)
+--  begin
+--    if sys_rst_n_i = '0' then
+--      dbg_cycles_slv <= (dbg_cycles_slv'range => '0');
+--    elsif rising_edge(clk_125m_i) then
+--      dbg_cycles_slv <= std_logic_vector(unsigned(dbg_cycles_slv)+1); 
+--    end if;
+--  end process;
 	
 	
 end architecture;

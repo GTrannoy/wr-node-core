@@ -108,14 +108,14 @@ module main;
       while(1)
         begin
           acc.read(`BASE_STDC + `ADDR_STDC_STATUS, d);  //Read STDC status register
-          $display($stime, ":Status read");
+          //$display($stime, ":Status read");
           
           if(!d & 1) begin                               // If fifo not empty
           
             acc.read(`BASE_STDC + `ADDR_STDC_TDC_DATA, d);  // Read TDC_DATA
             
             
-            $display("Got timestamp %d", d & (32'h7FFFFFFF));
+            $display("Got timestamp. Read TDC_DATA = %h; Cycles= %h; 125Mhz_tick = %d", (d & (32'h7FFFFFFF)), (d & (32'h7FFFFFFF)) >>3, (d & (32'h7)) );
             acc.write(`BASE_STDC + `ADDR_STDC_CTRL, (1<<3) | (1<<2)); // advance to next event
             
           end
@@ -129,7 +129,7 @@ module main;
       #350us;
       while(1) begin
       // repeat(2) begin  
-          if ($stime>=600us) begin
+          if ($stime>=400us) begin
             $stop;
           end
           
@@ -142,7 +142,7 @@ module main;
           //#(pulse_duration *1ns);
           //tdc_in <= 0;
           
-          for (int i = 0; i<8; i++) begin
+          for (int i = 0; i<9; i++) begin
             @(posedge clk_125m);
             #(i *1ns);
             tdc_in <= 1;

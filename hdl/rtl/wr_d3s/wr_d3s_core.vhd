@@ -120,8 +120,7 @@ entity wr_d3s_core is
 	 slave_i : in  t_wishbone_slave_in;
     slave_o : out t_wishbone_slave_out;
 
-    debug_o : out std_logic_vector(3 downto 0)--;  
---	 Trev_i  : in std_logic           -- Trev input. 
+    debug_o : out std_logic_vector(3 downto 0)
 	 );  
 
 end wr_d3s_core;
@@ -272,12 +271,13 @@ architecture behavioral of wr_d3s_core is
   signal clk_wr_ref, clk_wr_ref_pllin, clk_wr_ref_io2in : std_logic;
   
   --  Signals for high speed SERDES
-  signal pllout_serdes_clk, serdes_clk : std_logic;  -- Very fast CLK for serdes (1GHz)
+  signal pllout_serdes_clk, serdes_clk, serdes_clk_buf : std_logic;  -- Very fast CLK for serdes (1GHz)
   signal serdes_strobe : std_logic;						  -- SERDES strobe
   
-  signal Trev: std_logic;
+  signal stdc_in, stdc_wb_clk: std_logic;
+
   signal stdc_strobe: std_logic;
-	signal stdc_data: std_logic_vector(31 downto 0);	
+  signal stdc_data: std_logic_vector(31 downto 0);	
   
   -- Cleaned up VCXO PLL output
   signal clk_dds_synth                : std_logic;
@@ -300,7 +300,7 @@ architecture behavioral of wr_d3s_core is
   signal wr_pps_prepulse : std_logic_vector(5 downto 0);
 
   signal clk_dds_locked, fpll_reset : std_logic;
---  signal trig_p_a                   : std_logic;
+  signal trig_p_a                   : std_logic;
   signal pll_sdio_val               : std_logic;
   signal cic_out_clamp              : std_logic_vector(17 downto 0);
 
@@ -347,20 +347,20 @@ architecture behavioral of wr_d3s_core is
   signal dds_tmp : std_logic;
   signal pulse_armed : std_logic;
 	
-	signal wb_dds_i : t_wishbone_slave_in;
-   signal wb_dds_o : t_wishbone_slave_out;
+  signal wb_dds_i : t_wishbone_slave_in;
+  signal wb_dds_o : t_wishbone_slave_out;
 	 
-	signal wb_stdc_i : t_wishbone_slave_in;
-	signal wb_stdc_o : t_wishbone_slave_out;
+  signal wb_stdc_i : t_wishbone_slave_in;
+  signal wb_stdc_o : t_wishbone_slave_out;
 	 
-	constant c_slave_addr : t_wishbone_address_array(1 downto 0) :=
-		( 	0 =>    x"00000000",
-			1 =>    x"00001000"
-		);
+  constant c_slave_addr : t_wishbone_address_array(1 downto 0) :=
+	( 	0 =>    x"00000000",
+		1 =>    x"00001000"
+	);
 	 
-	constant c_slave_mask : t_wishbone_address_array(1 downto 0) :=
-		( 	0 =>    x"00001000",
-			1 =>    x"00001000"	 );
+  constant c_slave_mask : t_wishbone_address_array(1 downto 0) :=
+	( 	0 =>    x"00001000",
+		1 =>    x"00001000"	 );
 	 
 begin  -- behavioral
 
@@ -377,7 +377,8 @@ begin  -- behavioral
 
 --  U_Buf_CLK_WR_Ref_IO : BUFIO2
 --     generic map (
---       DIVIDE        => 1,--       DIVIDE_BYPASS => TRUE,
+--       DIVIDE        => 1,
+--       DIVIDE_BYPASS => TRUE,
 --       I_INVERT      => FALSE		
 --       )
 --     port map (
@@ -415,7 +416,7 @@ begin  -- behavioral
       IBUF_LOW_PWR => false  -- Low power (TRUE) vs. performance (FALSE) setting for referenced
       )
     port map (
-      O  => Trev, --trig_p_a,                   -- Buffer output
+      O  => trig_p_a,                   -- Buffer output
       I  => trig_p_i,
       IB => trig_n_i
       );
@@ -447,14 +448,13 @@ begin  -- behavioral
       CLKOUT0  => pllout_serdes_clk,
       CLKOUT1  => clk_dds_phy,
       CLKOUT2  => pllout_clk_wr_ref,
-      CLKOUT3  => open,
+      CLKOUT3  => open, 
       CLKOUT4  => open,
       CLKOUT5  => open,
       LOCKED   => clk_dds_locked,
       RST      => fpll_reset,
       CLKFBIN  => pllout_clk_fb_pllref,
       CLKIN    => clk_wr_ref_pllin);
-		
 
   cmp_serdes_clk_buf : BUFPLL
     generic map (
@@ -552,6 +552,7 @@ begin  -- behavioral
     port map (
       O => clk_wr_ref,
       I => pllout_clk_wr_ref);
+
   clk_wr_o <= clk_wr_ref;
   
   U_Ref_Reset_SC : gc_sync_ffs
@@ -618,11 +619,11 @@ begin  -- behavioral
 		wb_we_i				=>	wb_stdc_i.we,
 		wb_ack_o				=>	wb_stdc_o.ack,
 		wb_stall_o			=>	wb_stdc_o.stall,
-		signal_i				=>	Trev,
+		signal_i				=>	trig_p_a,
 		cycles_i				=>  wr_cycles_slv,
-		strobe_o      => stdc_strobe  ,
-		stdc_data_o    => stdc_data  );	
-  
+		strobe_o          => stdc_strobe  ,
+		stdc_data_o       => stdc_data  );	
+
   wr_cycles_slv <= std_logic_vector(wr_cycles) ;
   wb_stdc_o.err <= '0';
   wb_stdc_o.rty <= '0';

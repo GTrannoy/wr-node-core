@@ -576,10 +576,23 @@ begin
       O => clk_dmtd,
       I => pllout_clk_dmtd);
 
-  cmp_clk_vcxo : BUFG
-    port map (
-      O => clk_20m_vcxo_buf,
-      I => clk_20m_vcxo_i);
+--  cmp_clk_vcxo : BUFG
+--    port map (
+--      O => clk_20m_vcxo_buf,
+--      I => clk_20m_vcxo_i);
+
+  cmp_clk_vcxo : BUFIO2
+     generic map (
+       DIVIDE        => 1,
+       DIVIDE_BYPASS => TRUE,
+       I_INVERT      => FALSE		
+       )
+     port map (
+      I      =>   clk_20m_vcxo_i,
+      IOCLK  =>   open,
+      DIVCLK =>   clk_20m_vcxo_buf,
+      SERDESSTROBE => open
+      );
 
   U_VME_Core : xvme64x_core
     generic map (
