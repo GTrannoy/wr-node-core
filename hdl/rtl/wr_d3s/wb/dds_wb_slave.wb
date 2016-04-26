@@ -536,6 +536,23 @@ write 0: disable sampling";
          access_dev = WRITE_ONLY;
 			};			
 
+			field {
+				 name = "ARM RF Counter Sample";
+				 prefix = "ARM_SAMPLE";
+				 type = MONOSTABLE;
+				 clock = "clk_ref_i";
+			};
+
+			field {
+				 name = "DONE_SAMPLE";
+				 prefix = "DONE_SAMPLE";
+				 type = BIT;
+				 clock = "clk_ref_i";
+				 access_bus = READ_ONLY;
+         access_dev = WRITE_ONLY;
+			};			
+
+
 	 };
 
 	 reg {

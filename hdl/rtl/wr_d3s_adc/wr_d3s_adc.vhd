@@ -17,7 +17,12 @@ entity wr_d3s_adc is
     clk_sys_i   : in std_logic;
     rst_n_sys_i : in std_logic;
 
+    clk_wr_o : out std_logic;
+
     tm_cycles_i : in std_logic_vector(27 downto 0);
+    tm_time_valid_i : in std_logic;
+    tm_clk_aux_lock_en_o : out std_logic;
+    tm_clk_aux_locked_i: in std_logic;
 
     fake_data_i : in std_logic_vector(13 downto 0) := "00000000000000";
     
@@ -46,8 +51,11 @@ entity wr_d3s_adc is
     gpio_dac_clr_n_o : out std_logic;   -- offset DACs clear (active low)
     gpio_si570_oe_o  : out std_logic;  -- Si570 (programmable oscillator) output enable
 
+    
     slave_i : in  t_wishbone_slave_in;
-    slave_o : out t_wishbone_slave_out
+    slave_o : out t_wishbone_slave_out;
+
+    debug_o : out std_logic_vector(3 downto 0)
     );
 
 end wr_d3s_adc;
@@ -162,6 +170,8 @@ architecture rtl of wr_d3s_adc is
   signal fs_clk_buf           : std_logic;
   signal sys_rst              : std_logic;
 
+  signal clk_wr_div2 : std_logic;
+  
   signal scl_out, sda_out : std_logic;
 
   constant c_CNX_MASTER_COUNT : integer := 4;
@@ -203,6 +213,12 @@ begin
       slave_o(0)   => slave_o,
       master_i  => cnx_in,
       master_o  => cnx_out);
+
+  regs_in.gpior_tm_time_valid_i <= tm_time_valid_i;
+  regs_in.gpior_tm_locked_i <= tm_clk_aux_locked_i;
+
+  tm_clk_aux_lock_en_o <= regs_out.gpior_tm_lock_en_o;
+
   
   regs_in.gpior_si57x_scl_i <= si570_scl_b;
   regs_in.gpior_si57x_sda_i <= si570_sda_b;
@@ -278,7 +294,7 @@ begin
       CLKOUT1_DIVIDE     => 8,
       CLKOUT1_PHASE      => 0.000,
       CLKOUT1_DUTY_CYCLE => 0.500,
-      CLKIN_PERIOD       => 2.5,
+      CLKIN_PERIOD       => 2.0,
       REF_JITTER         => 0.010)
     port map (
       -- Output clocks
@@ -403,8 +419,8 @@ begin
     serdes_out_fr(i)              <= serdes_out_raw(8 + i*9);  -- FR
   end generate gen_serdes_dout_reorder;
 
-  adc_data <= serdes_out_data(13 downto 0) when g_use_fake_data = false else fake_data_i;
-  adc_data2 <= serdes_out_data(16+13 downto 16);
+  adc_data <= serdes_out_data(15 downto 2) when g_use_fake_data = false else fake_data_i;
+--  adc_data2 <= serdes_out_data(16+15 downto 2);
 
   U_Sync_Reset : gc_sync_ffs
     generic map (
@@ -438,7 +454,7 @@ begin
   U_Acq: d3s_acq_buffer
     generic map (
       g_data_width => 14,
-      g_size       => 2048)
+      g_size       => 16384)
     port map (
       rst_n_sys_i => rst_n_sys_i,
       clk_sys_i   => clk_sys_i,
@@ -492,6 +508,15 @@ begin
       fifo_we_o       => regs_in.adc_wr_req_i,
       tm_cycles_i     => tm_cycles_i);
 
+  u_mon_adc_clock: process(clk_wr)
+  begin
+    if rising_edge(clk_wr) then
+      clk_wr_div2 <= not clk_wr_div2;
+      end if;
   
+    end process;
+
+  debug_o(0)<=clk_wr_div2;
+  clk_wr_o <= clk_wr;
   
 end rtl;

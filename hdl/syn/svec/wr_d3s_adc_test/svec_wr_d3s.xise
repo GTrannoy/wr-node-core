@@ -359,7 +359,7 @@
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
     </file>
     <file xil_pn:name="../../../ip_cores/wr-cores/modules/wr_dacs/spec_serial_dac.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="189"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="192"/>
     </file>
     <file xil_pn:name="../../../rtl/wr_d3s/misc/cic_1024x.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
@@ -380,16 +380,16 @@
       <association xil_pn:name="Implementation" xil_pn:seqID="22"/>
     </file>
     <file xil_pn:name="../../../ip_cores/general-cores/modules/wishbone/wb_lm32/generated/xwb_lm32.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="157"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="158"/>
     </file>
     <file xil_pn:name="../../../ip_cores/wr-cores/modules/wr_endpoint/xwr_endpoint.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="149"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="150"/>
     </file>
     <file xil_pn:name="../../../ip_cores/general-cores/modules/genrams/xilinx/generic_dpram_dualclock.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="Implementation" xil_pn:seqID="5"/>
     </file>
     <file xil_pn:name="../../../rtl/wr_d3s_adc/d3s_acq_buffer.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="184"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="186"/>
     </file>
     <file xil_pn:name="../../../ip_cores/wr-cores/modules/wrc_core/wrcore_pkg.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="Implementation" xil_pn:seqID="117"/>
@@ -404,7 +404,7 @@
       <association xil_pn:name="Implementation" xil_pn:seqID="139"/>
     </file>
     <file xil_pn:name="../../../top/svec/node_template/svec_node_pkg.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="181"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="183"/>
     </file>
     <file xil_pn:name="../../../ip_cores/general-cores/modules/wishbone/wb_dma/xwb_streamer.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
@@ -416,7 +416,7 @@
       <association xil_pn:name="Implementation" xil_pn:seqID="38"/>
     </file>
     <file xil_pn:name="../../../rtl/wr_d3s_adc/wr_d3s_adc_wb.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="182"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="184"/>
     </file>
     <file xil_pn:name="../../../ip_cores/general-cores/modules/wishbone/wb_lm32/platform/spartan6/lm32_multiplier.v" xil_pn:type="FILE_VERILOG">
       <association xil_pn:name="Implementation" xil_pn:seqID="69"/>
@@ -476,7 +476,7 @@
       <association xil_pn:name="Implementation" xil_pn:seqID="48"/>
     </file>
     <file xil_pn:name="../../../ip_cores/wr-cores/modules/wrc_core/wrc_periph.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="150"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="151"/>
     </file>
     <file xil_pn:name="../../../ip_cores/etherbone-core/hdl/eb_slave_core/eb_wbm_fifo.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="Implementation" xil_pn:seqID="98"/>
@@ -494,7 +494,7 @@
       <association xil_pn:name="Implementation" xil_pn:seqID="2"/>
     </file>
     <file xil_pn:name="../../../ip_cores/general-cores/modules/wishbone/wb_crossbar/xwb_sdb_crossbar.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="159"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="160"/>
     </file>
     <file xil_pn:name="../../../ip_cores/etherbone-core/hdl/eb_slave_core/eb_tag_fifo.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="Implementation" xil_pn:seqID="100"/>
@@ -503,7 +503,7 @@
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
     </file>
     <file xil_pn:name="../../../ip_cores/wr-cores/platform/xilinx/wr_gtp_phy/wr_gtp_phy_spartan6.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="188"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="190"/>
     </file>
     <file xil_pn:name="../../../ip_cores/wr-cores/modules/wr_dacs/spec_serial_dac_arb.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
@@ -518,10 +518,10 @@
       <association xil_pn:name="Implementation" xil_pn:seqID="24"/>
     </file>
     <file xil_pn:name="../../../rtl/wr_d3s_adc/wr_d3s_adc.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="195"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="198"/>
     </file>
     <file xil_pn:name="../../../ip_cores/vme64x-core/hdl/vme64x-core/rtl/xvme64x_core.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="191"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="194"/>
     </file>
     <file xil_pn:name="../../../ip_cores/wr-cores/modules/wr_endpoint/ep_ts_counter.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="Implementation" xil_pn:seqID="39"/>
@@ -569,7 +569,7 @@
       <association xil_pn:name="Implementation" xil_pn:seqID="14"/>
     </file>
     <file xil_pn:name="../../../ip_cores/general-cores/modules/wishbone/wb_vic/xwb_vic.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="192"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="195"/>
     </file>
     <file xil_pn:name="../../../ip_cores/general-cores/platform/xilinx/wb_xilinx_fpga_loader/wb_xilinx_fpga_loader.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
@@ -590,19 +590,19 @@
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
     </file>
     <file xil_pn:name="../../../ip_cores/vme64x-core/hdl/vme64x-core/rtl/xvme64x_core_pkg.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="175"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="177"/>
     </file>
     <file xil_pn:name="../../../ip_cores/etherbone-core/hdl/eb_slave_core/eb_stream_narrow.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="Implementation" xil_pn:seqID="131"/>
     </file>
     <file xil_pn:name="../../../ip_cores/etherbone-core/hdl/eb_master_core/eb_framer.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="163"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="164"/>
     </file>
     <file xil_pn:name="../../../ip_cores/vme64x-core/hdl/vme64x-core/rtl/VME_Access_Decode.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="Implementation" xil_pn:seqID="125"/>
     </file>
     <file xil_pn:name="../../../rtl/wr_d3s_adc/dc_block/dc_block.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="165"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="166"/>
     </file>
     <file xil_pn:name="../../../ip_cores/etherbone-core/hdl/eb_master_core/eb_commit_len_fifo.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="Implementation" xil_pn:seqID="136"/>
@@ -620,7 +620,7 @@
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
     </file>
     <file xil_pn:name="../../../rtl/wrnc/wr_node_core.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="169"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="170"/>
     </file>
     <file xil_pn:name="../../../ip_cores/general-cores/modules/wishbone/wbgen2/wbgen2_fifo_async.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
@@ -635,16 +635,16 @@
       <association xil_pn:name="Implementation" xil_pn:seqID="145"/>
     </file>
     <file xil_pn:name="../../../rtl/wr_d3s_adc/d3s_acq_buffer_wb.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="166"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="167"/>
     </file>
     <file xil_pn:name="../../../ip_cores/wr-cores/modules/wr_mini_nic/xwr_mini_nic.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="148"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="149"/>
     </file>
     <file xil_pn:name="../../../ip_cores/general-cores/modules/wishbone/wb_lm32/generated/lm32_allprofiles.v" xil_pn:type="FILE_VERILOG">
       <association xil_pn:name="Implementation" xil_pn:seqID="97"/>
     </file>
     <file xil_pn:name="../../../ip_cores/vme64x-core/hdl/vme64x-core/rtl/VME64xCore_Top.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="176"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="178"/>
     </file>
     <file xil_pn:name="../../../ip_cores/general-cores/modules/common/gc_fsm_watchdog.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
@@ -710,7 +710,7 @@
       <association xil_pn:name="Implementation" xil_pn:seqID="132"/>
     </file>
     <file xil_pn:name="../../../ip_cores/general-cores/modules/wishbone/wb_dpram/xwb_dpram.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="158"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="159"/>
     </file>
     <file xil_pn:name="../../../ip_cores/vme64x-core/hdl/vme64x-core/rtl/VME_CSR_pack.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="Implementation" xil_pn:seqID="122"/>
@@ -746,7 +746,7 @@
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
     </file>
     <file xil_pn:name="../../../ip_cores/wr-cores/modules/wr_si57x_interface/si570_if_wb.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="175"/>
     </file>
     <file xil_pn:name="../../../ip_cores/wr-cores/modules/wr_eca/eca_wb_event.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
@@ -761,7 +761,7 @@
       <association xil_pn:name="Implementation" xil_pn:seqID="137"/>
     </file>
     <file xil_pn:name="../../../ip_cores/general-cores/modules/common/gc_bicolor_led_ctrl.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="193"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="196"/>
     </file>
     <file xil_pn:name="../../../ip_cores/general-cores/modules/wishbone/wb_clock_crossing/xwb_clock_crossing.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
@@ -821,13 +821,13 @@
       <association xil_pn:name="Implementation" xil_pn:seqID="71"/>
     </file>
     <file xil_pn:name="../../../ip_cores/vme64x-core/hdl/vme64x-core/rtl/VME_IRQ_Controller.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="152"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="153"/>
     </file>
     <file xil_pn:name="../../../top/svec/wr_d3s_adc_test/svec_top.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="196"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="200"/>
     </file>
     <file xil_pn:name="../../../rtl/wr_d3s_adc/adc_serdes.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="185"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="187"/>
     </file>
     <file xil_pn:name="../../../rtl/wr_d3s_adc/dc_block/vector_fifo.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="Implementation" xil_pn:seqID="106"/>
@@ -845,19 +845,19 @@
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
     </file>
     <file xil_pn:name="../../../top/svec/node_template/svec_node_template.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="194"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="197"/>
     </file>
     <file xil_pn:name="../../../ip_cores/wr-cores/platform/xilinx/wr_gtp_phy/gtp_bitslide.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="172"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="173"/>
     </file>
     <file xil_pn:name="../../../ip_cores/wr-cores/modules/wr_endpoint/ep_clock_alignment_fifo.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="Implementation" xil_pn:seqID="52"/>
     </file>
     <file xil_pn:name="../../../ip_cores/wr-cores/platform/xilinx/wr_xilinx_pkg.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="187"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="189"/>
     </file>
     <file xil_pn:name="../../../ip_cores/wr-cores/modules/wrc_core/wr_core.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="174"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="176"/>
     </file>
     <file xil_pn:name="../../../ip_cores/general-cores/modules/wishbone/wb_irq/wb_irq_master.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
@@ -884,19 +884,19 @@
       <association xil_pn:name="Implementation" xil_pn:seqID="67"/>
     </file>
     <file xil_pn:name="../../../ip_cores/wr-cores/modules/wr_si57x_interface/xwr_si57x_interface.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="199"/>
     </file>
     <file xil_pn:name="../../../ip_cores/vme64x-core/hdl/vme64x-core/rtl/VME_CR_CSR_Space.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="153"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="154"/>
     </file>
     <file xil_pn:name="../../../ip_cores/wr-cores/modules/wrc_core/wb_reset.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
     </file>
     <file xil_pn:name="../../../ip_cores/etherbone-core/hdl/eb_slave_core/eb_ethernet_slave.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="160"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="161"/>
     </file>
     <file xil_pn:name="../../../ip_cores/wr-cores/modules/wr_si57x_interface/wr_si57x_interface.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="191"/>
     </file>
     <file xil_pn:name="../../../ip_cores/vme64x-core/hdl/vme64x-core/rtl/VME_swapper.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="Implementation" xil_pn:seqID="119"/>
@@ -1013,7 +1013,7 @@
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
     </file>
     <file xil_pn:name="../../../ip_cores/wr-cores/platform/xilinx/wr_gtp_phy/whiterabbitgtp_wrapper_tile.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="170"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="171"/>
     </file>
     <file xil_pn:name="../../../ip_cores/wr-cores/modules/timing/hpll_period_detect.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
@@ -1028,13 +1028,13 @@
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
     </file>
     <file xil_pn:name="../../../rtl/wrnc/wr_node_core_with_etherbone.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="186"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="188"/>
     </file>
     <file xil_pn:name="../../../ip_cores/general-cores/modules/wishbone/wb_vic/wb_vic.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="177"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="179"/>
     </file>
     <file xil_pn:name="../../../ip_cores/wr-cores/modules/wr_tbi_phy/disparity_gen_pkg.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="173"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="174"/>
     </file>
     <file xil_pn:name="../../../ip_cores/general-cores/modules/wishbone/wb_irq/wb_irq_slave.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
@@ -1064,10 +1064,10 @@
       <association xil_pn:name="Implementation" xil_pn:seqID="94"/>
     </file>
     <file xil_pn:name="../../../ip_cores/wr-cores/platform/xilinx/wr_gtp_phy/gtp_phase_align.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="171"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="172"/>
     </file>
     <file xil_pn:name="../../../ip_cores/etherbone-core/hdl/eb_master_core/eb_master_eth_tx.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="162"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="163"/>
     </file>
     <file xil_pn:name="../../../ip_cores/vme64x-core/hdl/vme64x-core/rtl/VME_CR_pack.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="Implementation" xil_pn:seqID="123"/>
@@ -1079,7 +1079,7 @@
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
     </file>
     <file xil_pn:name="../../../ip_cores/vme64x-core/hdl/vme64x-core/rtl/VME_bus.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="154"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="155"/>
     </file>
     <file xil_pn:name="../../../ip_cores/general-cores/modules/wishbone/wb_lm32/src/lm32_shifter.v" xil_pn:type="FILE_VERILOG">
       <association xil_pn:name="Implementation" xil_pn:seqID="63"/>
@@ -1103,7 +1103,7 @@
       <association xil_pn:name="Implementation" xil_pn:seqID="3"/>
     </file>
     <file xil_pn:name="../../../ip_cores/general-cores/modules/wishbone/wb_vic/wb_slave_vic.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="155"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="156"/>
     </file>
     <file xil_pn:name="../../../ip_cores/wr-cores/modules/wr_endpoint/ep_rx_pcs_16bit.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="Implementation" xil_pn:seqID="44"/>
@@ -1133,7 +1133,7 @@
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
     </file>
     <file xil_pn:name="../../../ip_cores/etherbone-core/hdl/eb_master_core/eb_master_wb_if.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="161"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="162"/>
     </file>
     <file xil_pn:name="../../../rtl/wrnc/cpu/wrn_private_pkg.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="Implementation" xil_pn:seqID="13"/>
@@ -1184,7 +1184,7 @@
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
     </file>
     <file xil_pn:name="../../../rtl/wr_d3s_adc/d3s_phase_encoder.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="183"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="185"/>
     </file>
     <file xil_pn:name="../../../rtl/wrnc/mqueue/wrn_mqueue_pkg.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="Implementation" xil_pn:seqID="18"/>
@@ -1205,7 +1205,7 @@
       <association xil_pn:name="Implementation" xil_pn:seqID="107"/>
     </file>
     <file xil_pn:name="../../../ip_cores/etherbone-core/hdl/eb_master_core/eb_master_top.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="180"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="182"/>
     </file>
     <file xil_pn:name="../../../ip_cores/wr-cores/modules/wr_eca/eca_sdp.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
@@ -1214,7 +1214,7 @@
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
     </file>
     <file xil_pn:name="../../../rtl/wr_d3s_adc/coregen/cordic_v4_0.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="168"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="169"/>
     </file>
     <file xil_pn:name="../../../ip_cores/general-cores/modules/genrams/inferred_async_fifo.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="Implementation" xil_pn:seqID="16"/>
@@ -1226,7 +1226,7 @@
       <association xil_pn:name="Implementation" xil_pn:seqID="78"/>
     </file>
     <file xil_pn:name="../../../ip_cores/etherbone-core/hdl/eb_slave_core/eb_slave_core.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="179"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="181"/>
     </file>
     <file xil_pn:name="../../../rtl/wr_d3s/wb/dds_wb_slave.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
@@ -1241,16 +1241,16 @@
       <association xil_pn:name="Implementation" xil_pn:seqID="40"/>
     </file>
     <file xil_pn:name="../../../ip_cores/wr-cores/modules/fabric/xwrf_mux.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="151"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="152"/>
     </file>
     <file xil_pn:name="../../../ip_cores/general-cores/modules/wishbone/wb_lm32/src/jtag_cores.v" xil_pn:type="FILE_VERILOG">
       <association xil_pn:name="Implementation" xil_pn:seqID="68"/>
     </file>
     <file xil_pn:name="../../../rtl/wr_d3s_adc/wr_d3s_adc_wbgen2_pkg.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="164"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="165"/>
     </file>
     <file xil_pn:name="../../../ip_cores/wr-cores/modules/wr_si57x_interface/si570_if_wbgen2_pkg.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="147"/>
     </file>
     <file xil_pn:name="../../../ip_cores/wr-cores/modules/wr_eca/eca_channel.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
@@ -1265,16 +1265,16 @@
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
     </file>
     <file xil_pn:name="../../../rtl/wr_d3s_adc/coregen/fir_compiler_v5_0.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="167"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="168"/>
     </file>
     <file xil_pn:name="../../../ip_cores/general-cores/modules/common/gc_dyn_glitch_filt.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
     </file>
     <file xil_pn:name="../../../ip_cores/general-cores/modules/wishbone/wb_vic/vic_prio_enc.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="156"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="157"/>
     </file>
     <file xil_pn:name="../../../ip_cores/wr-cores/modules/wr_pps_gen/xwr_pps_gen.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="147"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="148"/>
     </file>
     <file xil_pn:name="../../../ip_cores/general-cores/modules/genrams/generic/generic_sync_fifo.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="Implementation" xil_pn:seqID="28"/>
@@ -1289,7 +1289,7 @@
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
     </file>
     <file xil_pn:name="../../../ip_cores/wr-cores/modules/wrc_core/xwr_core.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="190"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="193"/>
     </file>
     <file xil_pn:name="../../../ip_cores/general-cores/modules/wishbone/wb_async_bridge/xwb_async_bridge.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
@@ -1298,7 +1298,7 @@
       <association xil_pn:name="Implementation" xil_pn:seqID="95"/>
     </file>
     <file xil_pn:name="../../../ip_cores/general-cores/modules/common/gc_moving_average.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="178"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="180"/>
     </file>
   </files>
 

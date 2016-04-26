@@ -2,7 +2,8 @@ files=["d3s_phase_encoder.vhd","adc_serdes.vhd","wr_d3s_adc.vhd", "coregen/cordi
 "d3s_acq_buffer.vhd","d3s_acq_buffer_wb.vhd", "d3s_acq_buffer_wbgen2_pkg.vhd",
 "dc_block/dc_block.vhd",
 "dc_block/MovingAvg.vhd",
-"dc_block/vector_fifo.vhd"];
+       "dc_block/vector_fifo.vhd",
+       "d3s_upsample.v"];
 
 
 

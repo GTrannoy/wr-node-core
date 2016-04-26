@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2016-02-03
+-- Last update: 2016-04-18
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -193,6 +193,11 @@ architecture rtl of svec_top is
     port (
       clk_sys_i        : in    std_logic;
       rst_n_sys_i      : in    std_logic;
+      clk_wr_o : out std_logic;
+
+      tm_time_valid_i : in std_logic;
+    tm_clk_aux_lock_en_o : out std_logic;
+    tm_clk_aux_locked_i: in std_logic;
       tm_cycles_i      : in    std_logic_vector(27 downto 0);
       spi_din_i        : in    std_logic;
       spi_dout_o       : out   std_logic;
@@ -215,8 +220,27 @@ architecture rtl of svec_top is
       gpio_dac_clr_n_o : out   std_logic;
       gpio_si570_oe_o  : out   std_logic;
       slave_i          : in    t_wishbone_slave_in;
-      slave_o          : out   t_wishbone_slave_out);
+      slave_o          : out   t_wishbone_slave_out;
+      debug_o : out std_logic_vector(3 downto 0)
+
+      );
   end component wr_d3s_adc;
+
+  component xwr_si57x_interface is
+    generic (
+      g_simulation : integer);
+    port (
+      clk_sys_i         : in  std_logic;
+      rst_n_i           : in  std_logic;
+      tm_dac_value_i    : in  std_logic_vector(23 downto 0) := x"000000";
+      tm_dac_value_wr_i : in  std_logic                     := '0';
+      scl_pad_oen_o     : out std_logic;
+      sda_pad_oen_o     : out std_logic;
+      scl_pad_i         : in  std_logic;
+      sda_pad_i         : in  std_logic;
+      slave_i           : in  t_wishbone_slave_in;
+      slave_o           : out t_wishbone_slave_out);
+  end component xwr_si57x_interface;
   
   function f_int_to_bool (x : integer) return boolean is
   begin
@@ -237,7 +261,7 @@ architecture rtl of svec_top is
     wbd_width     => x"7",                 -- 8/16/32-bit port granularity
     sdb_component => (
       addr_first  => x"0000000000000000",
-      addr_last   => x"0000000000000fff",
+      addr_last   => x"0000000000001fff",
       product     => (
         vendor_id => x"000000000000CE42",  -- CERN
         device_id => x"dd334410",
@@ -299,7 +323,7 @@ architecture rtl of svec_top is
   signal fmc_host_irq                   : std_logic_vector(1 downto 0);
 
   constant c_d3s0_sdb_record : t_sdb_record       := f_sdb_embed_device(c_D3S_ADC_SDB_DEVICE, x"00010000");
-  constant c_d3s1_sdb_record : t_sdb_record       := f_sdb_embed_device(c_D3S_ADC_SDB_DEVICE, x"00011000");
+  constant c_d3s1_sdb_record : t_sdb_record       := f_sdb_embed_device(c_D3S_ADC_SDB_DEVICE, x"00012000");
   constant c_d3s_vector      : t_wishbone_address := x"ffffffff";
 
   signal tm_link_up         : std_logic;
@@ -332,16 +356,17 @@ architecture rtl of svec_top is
 
   signal debug : std_logic_vector(3 downto 0);
 
-  constant c_slave_addr : t_wishbone_address_array(0 downto 0) :=
-    (0 => x"00000000");
-  constant c_slave_mask : t_wishbone_address_array(0 downto 0) :=
-    (0 => x"00000000");
+  constant c_slave_addr : t_wishbone_address_array(1 downto 0) :=
+    (0 => x"00000000",
+     1 => x"00001000");
+  constant c_slave_mask : t_wishbone_address_array(1 downto 0) :=
+    (0 => x"00001000",
+     1 => x"00001000");
 
-  signal fmc_wb_muxed_out : t_wishbone_master_out;
-  signal fmc_wb_muxed_in  : t_wishbone_master_in;
+  signal fmc_wb_muxed_out : t_wishbone_master_out_array(1 downto 0);
+  signal fmc_wb_muxed_in  : t_wishbone_master_in_array(1 downto 0);
 
-
-  
+  signal scl_pad_oen, sda_pad_oen : std_logic;
 begin
 
   --chipscope_icon_1: chipscope_icon
@@ -380,9 +405,9 @@ begin
       fp_led_line_oen_o   => fp_led_line_oen_o,
       fp_led_line_o       => fp_led_line_o,
       fp_led_column_o     => fp_led_column_o,
-      fp_gpio1_a2b_o      => fp_gpio1_a2b_o,
-      fp_gpio2_a2b_o      => fp_gpio2_a2b_o,
-      fp_gpio34_a2b_o     => fp_gpio34_a2b_o,
+      --fp_gpio1_a2b_o      => fp_gpio1_a2b_o,
+      --fp_gpio2_a2b_o      => fp_gpio2_a2b_o,
+      --fp_gpio34_a2b_o     => fp_gpio34_a2b_o,
       --fp_gpio1_b          => fp_gpio1_b,
       --fp_gpio2_b          => fp_gpio2_b,
       --fp_gpio3_b          => fp_gpio3_b,
@@ -461,7 +486,7 @@ begin
   xwb_crossbar_1 : xwb_crossbar
     generic map (
       g_num_masters => 2,
-      g_num_slaves  => 1,
+      g_num_slaves  => 2,
       g_registered  => true,
       g_address     => c_slave_addr,
       g_mask        => c_slave_mask)
@@ -472,8 +497,8 @@ begin
       slave_i(1)  => fmc_host_wb_out(0),
       slave_o(0)  => fmc_dp_wb_in(0),
       slave_o(1)  => fmc_host_wb_in(0),
-      master_o(0) => fmc_wb_muxed_out,
-      master_i(0) => fmc_wb_muxed_in
+      master_o => fmc_wb_muxed_out,
+      master_i => fmc_wb_muxed_in
       );
 
   fmc_host_wb_in(1).ack   <= '0';
@@ -490,7 +515,11 @@ begin
   U_D3S_ADC_Core : wr_d3s_adc
     port map (
       clk_sys_i        => clk_sys,
+      clk_wr_o => fmc0_clk_wr,
       rst_n_sys_i      => rst_n,
+      tm_time_valid_i  => tm_time_valid,
+      tm_clk_aux_lock_en_o => tm_clk_aux_lock_en(0),
+      tm_clk_aux_locked_i => tm_clk_aux_locked(0),
       tm_cycles_i      => tm_cycles,
       spi_din_i        => adc0_spi_din_i,
       spi_dout_o       => adc0_spi_dout_o,
@@ -500,8 +529,6 @@ begin
       spi_cs_dac2_n_o  => adc0_spi_cs_dac2_n_o,
       spi_cs_dac3_n_o  => adc0_spi_cs_dac3_n_o,
       spi_cs_dac4_n_o  => adc0_spi_cs_dac4_n_o,
-      si570_scl_b      => adc0_si570_scl_b,
-      si570_sda_b      => adc0_si570_sda_b,
       adc_dco_p_i      => adc0_dco_p_i,
       adc_dco_n_i      => adc0_dco_n_i,
       adc_fr_p_i       => adc0_fr_p_i,
@@ -510,12 +537,40 @@ begin
       adc_outa_n_i     => adc0_outa_n_i,
       adc_outb_p_i     => adc0_outb_p_i,
       adc_outb_n_i     => adc0_outb_n_i,
-      slave_i          => fmc_wb_muxed_out,
-      slave_o          => fmc_wb_muxed_in);
-  
+      slave_i          => fmc_wb_muxed_out(0),
+      slave_o          => fmc_wb_muxed_in(0),
+      debug_o => debug
+      );
+
+  U_Silabs_IF: xwr_si57x_interface
+    generic map (
+      g_simulation => 0)
+    port map (
+      clk_sys_i         => clk_sys,
+      rst_n_i           => rst_n,
+      tm_dac_value_i    => tm_dac_value,
+      tm_dac_value_wr_i => tm_dac_wr(0),
+      scl_pad_oen_o     => scl_pad_oen,
+      sda_pad_oen_o     => sda_pad_oen,
+      scl_pad_i         => adc0_si570_scl_b,
+      sda_pad_i         => adc0_si570_sda_b,
+      slave_i           => fmc_wb_muxed_out(1),
+      slave_o           => fmc_wb_muxed_in(1));
+
+  adc0_si570_sda_b <= '0' when sda_pad_oen = '0' else 'Z';
+  adc0_si570_scl_b <= '0' when scl_pad_oen = '0' else 'Z';
+
+
+  fp_gpio1_b <= debug(0);
+  fp_gpio2_b <= tm_dac_wr(0);
 
   adc0_gpio_dac_clr_n_o <= '1';
   adc0_gpio_si570_oe_o <= '1';
+
+  fp_gpio1_a2b_o <= '1';
+  fp_gpio2_a2b_o <= '1';
+  fp_gpio34_a2b_o <= '1';
+  
 end rtl;
 
 

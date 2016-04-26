@@ -197,7 +197,7 @@ architecture behavioral of wr_d3s_core is
       clk_i       : in  std_logic;
       rst_n_i     : in  std_logic;
       acc_i       : in  std_logic_vector(g_lut_size_log2 + g_acc_frac_bits downto 0);
-      phase_adj_i       : in  std_logic_vector(g_lut_size_log2 + g_acc_frac_bits downto 0);
+      phase_adj_i : in  std_logic_vector(g_lut_size_log2 + g_acc_frac_bits downto 0);
       acc_o       : out std_logic_vector(g_lut_size_log2 + g_acc_frac_bits downto 0);
       dreq_i      : in  std_logic;
       tune_i      : in  std_logic_vector(g_lut_size_log2 + g_acc_frac_bits downto 0);
@@ -296,6 +296,8 @@ architecture behavioral of wr_d3s_core is
   signal pll_sdio_val               : std_logic;
   signal cic_out_clamp              : std_logic_vector(17 downto 0);
 
+  signal clk_cc, clk_pll_cc : std_logic;
+
   component chipscope_ila
     port (
       CONTROL : inout std_logic_vector(35 downto 0);
@@ -331,14 +333,17 @@ architecture behavioral of wr_d3s_core is
 
   type t_rf_counter_load_fsm_state is (IDLE, ARMED, TRIGGERED);
   type t_rf_counter_snap_fsm_state is (IDLE, WAIT_SAFE_PHASE);
+  type t_rf_counter_snap_fsm_state2 is (IDLE, WAIT_SAMPLE);
 
   signal rf_counter_load_state : t_rf_counter_load_fsm_state;
   signal rf_counter_snap_state : t_rf_counter_snap_fsm_state;
+  signal rf_counter_snap_state2 : t_rf_counter_snap_fsm_state2;
 
   signal trig_armed, trig_p : std_logic;
   signal dds_tmp            : std_logic;
   signal pulse_armed        : std_logic;
-  signal wr_snapshot : std_logic_vector(27 downto 0);
+  signal wr_snapshot        : std_logic_vector(27 downto 0);
+  signal rf_snapshot_tmp    : std_logic_vector(31 downto 0);
   
 begin  -- behavioral
 
@@ -401,7 +406,7 @@ begin  -- behavioral
       CLKOUT1_DIVIDE     => 8,          -- 125 MHz
       CLKOUT1_PHASE      => 0.000,
       CLKOUT1_DUTY_CYCLE => 0.500,
-      CLKOUT2_DIVIDE     => 16,         -- 62.5 MHz
+      CLKOUT2_DIVIDE     => 6,          -- 200 MHz
       CLKOUT2_PHASE      => 0.000,
       CLKOUT2_DUTY_CYCLE => 0.500,
       CLKIN_PERIOD       => 8.0,
@@ -410,7 +415,7 @@ begin  -- behavioral
       CLKFBOUT => pllout_clk_fb_pllref,
       CLKOUT1  => pllout_clk_wr_ref,
       CLKOUT0  => clk_dds_phy,
-      CLKOUT2  => open,
+      CLKOUT2  => clk_pll_cc,
       CLKOUT3  => open,
       CLKOUT4  => open,
       CLKOUT5  => open,
@@ -505,6 +510,11 @@ begin  -- behavioral
     port map (
       O => clk_wr_ref,
       I => pllout_clk_wr_ref);
+
+  cmp_cc_buf : BUFG
+    port map (
+      O => clk_cc,
+      I => clk_pll_cc);
 
   clk_wr_o <= clk_wr_ref;
 
@@ -737,7 +747,7 @@ begin  -- behavioral
         synth_tune_bias(31 downto 0)  <= regs_out.freq_lo_o;
         synth_tune_bias(42 downto 32) <= regs_out.freq_hi_o(10 downto 0);
 
-        synth_tune    <= std_logic_vector(unsigned(synth_tune_bias) + unsigned(f_signed_multiply(cic_out_clamp, regs_out.gain_o, 0, synth_tune_bias'length)));
+        synth_tune <= std_logic_vector(unsigned(synth_tune_bias) + unsigned(f_signed_multiply(cic_out_clamp, regs_out.gain_o, 0, synth_tune_bias'length)));
 
         synth_tune_load <= sample_p;
         dac_data_par    <= synth_y3 & synth_y2 & synth_y1 & synth_y0;
@@ -786,6 +796,11 @@ begin  -- behavioral
   p_rf_trigger_reg : process(clk_wr_ref)
   begin
     if rising_edge(clk_wr_ref) then
+      if(cnt_phase_safe = '1') then
+        rf_snapshot_tmp <= std_logic_vector(rf_counter);
+      end if;
+
+
       if (regs_out.rf_cnt_trigger_cycles_load_o = '1') then
         rf_cnt_trigger_cycles <= regs_out.rf_cnt_trigger_cycles_o;
       end if;
@@ -843,11 +858,38 @@ begin  -- behavioral
 
           when WAIT_SAFE_PHASE =>
             if(cnt_phase_safe = '1') then
-              wr_snapshot <= std_logic_vector(wr_cycles);
+              wr_snapshot                      <= std_logic_vector(wr_cycles);
               regs_in.rf_cnt_cycles_snapshot_i <= std_logic_vector(wr_cycles);
 -- asynchronous, but safe (due to phase check)
               regs_in.rf_cnt_rf_snapshot_i     <= std_logic_vector(rf_counter);
               rf_counter_snap_state            <= IDLE;
+            end if;
+        end case;
+      end if;
+      
+    end if;
+  end process;
+
+  p_rf_counter_snapshot2 : process(clk_wr_ref)
+  begin
+    if rising_edge(clk_wr_ref) then
+      if rst_n_ref = '0' then
+        rf_counter_snap_state2 <= IDLE;
+      else
+
+        case (rf_counter_snap_state2) is
+          when IDLE =>
+            
+            if(regs_out.rf_cnt_trigger_arm_sample_o = '1') then
+              rf_counter_snap_state2               <= WAIT_SAMPLE;
+              regs_in.rf_cnt_trigger_done_sample_i <= '0';
+            end if;
+
+          when WAIT_SAMPLE =>
+            if(unsigned(wr_cycles) = unsigned(rf_cnt_trigger_cycles)) then
+              regs_in.rf_cnt_trigger_done_sample_i <= '1';
+              regs_in.rf_cnt_raw_i                 <= std_logic_vector(rf_counter);
+              rf_counter_snap_state2                <= IDLE;
             end if;
         end case;
       end if;
@@ -892,6 +934,17 @@ begin  -- behavioral
       end if;
     end if;
   end process;
+
+  trig0     <= std_logic_vector(rf_counter);
+  trig1(0)  <= cnt_phase_safe;
+  trig1(8)  <= rf_counter_load_ref;
+  trig1(9)  <= rf_counter_load_dds;
+  trig1(10) <= rf_counter_load_dds_d0;
+
+  trig2(27 downto 0) <= wr_snapshot;
+  trig3(31 downto 0) <= rf_snapshot_tmp;
+  trig1(6 downto 1)  <= wr_pps_prepulse;
+
 
   p_latch_dds_accu : process(clk_wr_ref)
   begin
@@ -970,26 +1023,20 @@ begin  -- behavioral
   regs_in.tcr_wr_time_valid_i <= tm_time_valid_i;
 
 
-  chipscope_ila_1 : chipscope_ila
-    port map (
-      CONTROL => CONTROL,
-      CLK     => clk_wr_ref,
-      TRIG0   => TRIG0,
-      TRIG1   => TRIG1,
-      TRIG2   => TRIG2,
-      TRIG3   => TRIG3);
+  --chipscope_ila_1 : chipscope_ila
+  --  port map (
+  --    CONTROL => CONTROL,
+  --    CLK     => clk_cc,
+  --    TRIG0   => TRIG0,
+  --    TRIG1   => TRIG1,
+  --    TRIG2   => TRIG2,
+  --    TRIG3   => TRIG3);
 
-  chipscope_icon_1 : chipscope_icon
-    port map (
-      CONTROL0 => CONTROL);
+  --chipscope_icon_1 : chipscope_icon
+  --  port map (
+  --    CONTROL0 => CONTROL);
 
-  trig0 <= std_logic_vector(rf_counter);
-  trig1(0) <= cnt_phase_safe;
-  trig2(27 downto 0) <= wr_snapshot;
-  trig3(27 downto 0) <= tm_cycles_i;
-  trig1(6 downto 1) <= wr_pps_prepulse;
-  
-  
+
   --trig0(27 downto 0) <= std_logic_vector(wr_cycles);
   --trig1(5 downto 0)  <= wr_pps_prepulse;
   --trig1(6)           <= sample_p;
@@ -1043,7 +1090,7 @@ begin  -- behavioral
 --  regs_in.rf_cnt_raw_i <= std_logic_vector(rf_counter);
 
   delay_d_o   <= (others => '0');
-  delay_len_o <= '0';
+  delay_len_o <= '1';
 
 
   p_pulse_gen : process(clk_dds_synth)

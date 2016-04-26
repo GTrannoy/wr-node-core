@@ -111,6 +111,28 @@ peripheral {
 				 access_bus = READ_ONLY;
 			};
 
+			field {
+				 prefix = "TM_LOCK_EN";
+				 name = "TM_LOCK_EN";
+				 type = BIT;
+				 access_dev = READ_ONLY;
+				 access_bus = READ_WRITE;
+			};
+			field {
+				 prefix = "TM_LOCKED";
+				 name = "TM_LOCKED";
+				 type = BIT;
+				 access_dev = WRITE_ONLY;
+				 access_bus = READ_ONLY;
+			};
+			field {
+				 prefix = "TM_TIME_VALID";
+				 name = "TM_TIME_VALID";
+				 type = BIT;
+				 access_dev = WRITE_ONLY;
+				 access_bus = READ_ONLY;
+			};
+
 			
 	 };
 
