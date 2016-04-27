@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2016-04-18
+-- Last update: 2016-04-27
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -755,6 +755,12 @@ begin
       pps_p_o     => pps_o,
       pps_led_o   => open
       );
+
+  -- FMC I2C connection
+  fmc_scl_b <= '0' when wrc_scl_out = '0' else 'Z';
+  fmc_sda_b <= '0' when wrc_sda_out = '0' else 'Z';
+  wrc_scl_in <= fmc_scl_b;
+  wrc_sda_in <= fmc_sda_b;
 
   U_DAC_ARB : spec_serial_dac_arb
     generic map (
