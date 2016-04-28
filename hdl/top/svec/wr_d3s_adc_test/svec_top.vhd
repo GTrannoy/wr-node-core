@@ -4,14 +4,15 @@
 -------------------------------------------------------------------------------
 -- File       : svec_top.vhd
 -- Author     : Tomasz Włostowski
+--				Eva Calvo
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2016-04-18
+-- Last update: 2016-04-27
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
 -- Description: 
---
+-- RF DDS distribution Node for the the Adc FmC card.
 -- fill me
 -------------------------------------------------------------------------------
 --
@@ -64,7 +65,9 @@ entity svec_top is
     clk_125m_gtp_p_i : in std_logic;    -- 125 MHz PLL reference
     clk_125m_gtp_n_i : in std_logic;
 
-    -- SVEC Front panel LEDs
+	-------------------------------------------------------------------------    
+	-- SVEC Front panel LEDs
+	-------------------------------------------------------------------------
 
     fp_led_line_oen_o : out std_logic_vector(1 downto 0);
     fp_led_line_o     : out std_logic_vector(1 downto 0);
@@ -192,14 +195,16 @@ architecture rtl of svec_top is
   component wr_d3s_adc is
     port (
       clk_sys_i        : in    std_logic;
-      rst_n_sys_i      : in    std_logic;
       clk_wr_o : out std_logic;
-
-      tm_time_valid_i : in std_logic;
-    tm_clk_aux_lock_en_o : out std_logic;
-    tm_clk_aux_locked_i: in std_logic;
+	   rst_n_sys_i      : in    std_logic;
       tm_cycles_i      : in    std_logic_vector(27 downto 0);
-      spi_din_i        : in    std_logic;
+          
+		tm_time_valid_i : in std_logic;
+		tm_clk_aux_lock_en_o : out std_logic;
+		tm_clk_aux_locked_i: in std_logic;
+
+
+		spi_din_i        : in    std_logic;
       spi_dout_o       : out   std_logic;
       spi_sck_o        : out   std_logic;
       spi_cs_adc_n_o   : out   std_logic;
@@ -241,6 +246,7 @@ architecture rtl of svec_top is
       slave_i           : in  t_wishbone_slave_in;
       slave_o           : out t_wishbone_slave_out);
   end component xwr_si57x_interface;
+
   
   function f_int_to_bool (x : integer) return boolean is
   begin
@@ -266,7 +272,7 @@ architecture rtl of svec_top is
         vendor_id => x"000000000000CE42",  -- CERN
         device_id => x"dd334410",
         version   => x"00000001",
-        date      => x"20150427",
+        date      => x"20160427",
         name      => "WR-D3S-ADC_Core    ")));
 
   constant c_hmq_config : t_wrn_mqueue_config :=
@@ -483,7 +489,7 @@ begin
       carrier_sda_b        => carrier_sda_b);
 
 
-  xwb_crossbar_1 : xwb_crossbar
+ xwb_crossbar_1 : xwb_crossbar
     generic map (
       g_num_masters => 2,
       g_num_slaves  => 2,
@@ -512,7 +518,7 @@ begin
   fmc_dp_wb_in(1).stall <= '0';
 
 
-  U_D3S_ADC_Core : wr_d3s_adc
+ U_D3S_ADC_Core : wr_d3s_adc
     port map (
       clk_sys_i        => clk_sys,
       clk_wr_o => fmc0_clk_wr,
