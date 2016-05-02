@@ -415,10 +415,10 @@ NET "*/gc_sync_register_in[*]" MAXDELAY=4ns;
 
 
 
-#NET "adc0_ext_trigger_n_i" LOC = "A15";
-#NET "adc0_ext_trigger_n_i" IOSTANDARD = "LVDS_25";
-#NET "adc0_ext_trigger_p_i" LOC = "B15";
-#NET "adc0_ext_trigger_p_i" IOSTANDARD = "LVDS_25";
+NET "adc0_ext_trigger_n_i" LOC = "A15";
+NET "adc0_ext_trigger_n_i" IOSTANDARD = "LVDS_25";
+NET "adc0_ext_trigger_p_i" LOC = "B15";
+NET "adc0_ext_trigger_p_i" IOSTANDARD = "LVDS_25";
 NET "adc0_dco_n_i" LOC = "A16";
 NET "adc0_dco_n_i" IOSTANDARD = "LVDS_25";
 NET "adc0_dco_p_i" LOC = "C16";

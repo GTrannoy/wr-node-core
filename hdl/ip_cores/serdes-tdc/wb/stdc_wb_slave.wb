@@ -1,0 +1,90 @@
+-- -*- Mode: LUA; tab-width: 2 -*-
+
+peripheral {
+   name = "TDC serializer";
+   hdl_entity = "stdc_wb_slave";
+   prefix = "stdc";
+
+	reg {
+			prefix = "STATUS";
+			name = "FIFO status registers";
+			description = "The bits in this register describe if the fifo is empty/overflown";
+			field {
+				 name = "FIFO empty";
+				 prefix = "EMPTY";
+				 description = "if 1 the fifo is empty";
+				 type = BIT;
+				 access_bus = READ_ONLY;
+         access_dev = WRITE_ONLY;
+			};
+			field {
+				 name = "FIFO overflown";
+				 prefix = "OVF";
+				 description = "if 1 the fifo has overflown";
+				 type = BIT;
+				 access_bus = READ_ONLY;
+         access_dev = WRITE_ONLY;
+			};
+	};
+
+	reg {
+			prefix = "CTRL";
+			name = "FIFO control registers";
+			description = "The bits in this register allow to process a new element, clear the fifo, setup the transitions filter or assert the overflown flag";
+			field {
+				 name = "Clear FIFO";
+				 prefix = "CLR";
+				 description = "write 1 to remove all the events stored in the fifo";
+				 type = MONOSTABLE;
+				 access_bus = WRITE_ONLY;
+         access_dev = READ_ONLY;
+			};
+	 		field {
+				 name = "FIFO Overflown";
+				 prefix = "CLR_OVF";
+				 description = "write 1 to clear the overflown flag";
+				 type = MONOSTABLE;
+				 access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+			};
+			field {
+				 name = "FIFO Next";
+				 prefix = "NEXT";
+				 description = "write 1 to process next fifo event";
+				 type = MONOSTABLE;
+				 access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+			};
+			field {
+				 name = "TDC transitions filter";
+				 prefix = "FILTER";
+				 description = "Defines which transitions to report. \
+				 		Write 0 to disable the TDC.\
+				 		Write 1 to report rising edges.\
+				 		Write 2 to report falling edges.\
+					 	Write 3 to report both";
+				 type = SLV;
+				 size = 2;
+				 access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+			};
+	};
+	reg {
+			prefix = "TDC_DATA";
+			name = "FIFO timestamp element";
+			description = "Time stamp of a transition: \
+					MSB: 1 bit for transation polarity \
+					28 bits for cycle tick \
+					3 LSB bits for 1/8th of a cycle";
+			field {
+				 name = "FIFO timestamp element";
+				 type = SLV;
+				 size = 32;
+				 access_bus = READ_ONLY;
+         access_dev = WRITE_ONLY;
+			};
+	};
+};
+
+
+

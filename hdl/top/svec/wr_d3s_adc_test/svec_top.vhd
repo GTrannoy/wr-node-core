@@ -57,6 +57,9 @@ entity svec_top is
   port (
     rst_n_a_i : in std_logic;
 
+    -------------------------------------------------------------------------
+    --  Clock controls
+    -------------------------------------------------------------------------
     clk_20m_vcxo_i : in std_logic;      -- 20MHz VCXO clock
 
     clk_125m_pllref_p_i : in std_logic;  -- 125 MHz PLL reference
@@ -65,9 +68,9 @@ entity svec_top is
     clk_125m_gtp_p_i : in std_logic;    -- 125 MHz PLL reference
     clk_125m_gtp_n_i : in std_logic;
 
-	-------------------------------------------------------------------------    
-	-- SVEC Front panel LEDs
-	-------------------------------------------------------------------------
+    -------------------------------------------------------------------------    
+    -- SVEC Front panel LEDs
+    -------------------------------------------------------------------------
 
     fp_led_line_oen_o : out std_logic_vector(1 downto 0);
     fp_led_line_o     : out std_logic_vector(1 downto 0);
@@ -87,8 +90,15 @@ entity svec_top is
     dbg_led2_o : out std_logic;
     dbg_led3_o : out std_logic;
 
+    ----------------------------------------
+    --  Carrier I2C EEPROM
+    ----------------------------------------
     carrier_scl_b : inout std_logic;
     carrier_sda_b : inout std_logic;
+
+    ----------------------------------------   
+    -- Fmc Management 
+    ----------------------------------------
     fmc0_prsntm2c_n_i : in    std_logic;  -- Mezzanine present (active low)
     fmc1_prsntm2c_n_i : in    std_logic;  -- Mezzanine present (active low)
     
@@ -122,9 +132,9 @@ entity svec_top is
     VME_ADDR_DIR_o  : inout std_logic;
     VME_ADDR_OE_N_o : inout std_logic;
 
-    -------------------------------------------------------------------------
-    -- SFP pins
-    -------------------------------------------------------------------------
+    ----------------------------------------
+    --  SFP pins
+    ----------------------------------------
 
     sfp_txp_o : out std_logic;
     sfp_txn_o : out std_logic;
@@ -140,6 +150,9 @@ entity svec_top is
     sfp_tx_disable_o  : out   std_logic;
     sfp_los_i         : in    std_logic := '0';
 
+    ----------------------------------------
+    --  Clock controls
+    ----------------------------------------
     pll20dac_din_o    : out std_logic;
     pll20dac_sclk_o   : out std_logic;
     pll20dac_sync_n_o : out std_logic;
@@ -147,8 +160,25 @@ entity svec_top is
     pll25dac_sclk_o   : out std_logic;
     pll25dac_sync_n_o : out std_logic;
 
+    ----------------------------------------
+    -- 1-wire thermoeter + unique ID
+    ----------------------------------------
+    tempid_dq_b : inout std_logic;
 
-    adc0_dco_p_i  : in std_logic;       -- ADC data clock
+    ----------------------------------------
+    --  UART
+    ----------------------------------------
+    uart_rxd_i : in  std_logic := '1';
+    uart_txd_o : out std_logic ;
+
+    ----------------------------------------
+    -- Put the FMC I/Os here
+    ----------------------------------------
+
+    adc0_ext_trigger_p_i  :  in std_logic;
+	 adc0_ext_trigger_n_i  :  in std_logic;
+	 
+	 adc0_dco_p_i  : in std_logic;       -- ADC data clock
     adc0_dco_n_i  : in std_logic;
     adc0_fr_p_i   : in std_logic;       -- ADC frame start
     adc0_fr_n_i   : in std_logic;
@@ -178,14 +208,8 @@ entity svec_top is
     adc0_si570_scl_b : inout std_logic;  -- I2C bus clock (Si570)
     adc0_si570_sda_b : inout std_logic;  -- I2C bus data (Si570)
 
-    adc0_one_wire_b : inout std_logic;  -- Mezzanine 1-wire interface (DS18B20 thermometer + unique ID)
+    adc0_one_wire_b : inout std_logic  -- Mezzanine 1-wire interface (DS18B20 thermometer + unique ID)
 
-    tempid_dq_b : inout std_logic;
-
-    uart_rxd_i : in  std_logic := '1';
-    uart_txd_o : out std_logic
-
-   -- put the FMC I/Os here
     );
 end svec_top;
 
@@ -195,16 +219,15 @@ architecture rtl of svec_top is
   component wr_d3s_adc is
     port (
       clk_sys_i        : in    std_logic;
-      clk_wr_o : out std_logic;
-	   rst_n_sys_i      : in    std_logic;
+      clk_wr_o         : out std_logic;
+      rst_n_sys_i      : in    std_logic;
       tm_cycles_i      : in    std_logic_vector(27 downto 0);
           
-		tm_time_valid_i : in std_logic;
-		tm_clk_aux_lock_en_o : out std_logic;
-		tm_clk_aux_locked_i: in std_logic;
+      tm_time_valid_i : in std_logic;
+      tm_clk_aux_lock_en_o : out std_logic;
+      tm_clk_aux_locked_i: in std_logic;
 
-
-		spi_din_i        : in    std_logic;
+      spi_din_i        : in    std_logic;
       spi_dout_o       : out   std_logic;
       spi_sck_o        : out   std_logic;
       spi_cs_adc_n_o   : out   std_logic;
@@ -222,12 +245,13 @@ architecture rtl of svec_top is
       adc_outa_n_i     : in    std_logic_vector(3 downto 0);
       adc_outb_p_i     : in    std_logic_vector(3 downto 0);
       adc_outb_n_i     : in    std_logic_vector(3 downto 0);
-      gpio_dac_clr_n_o : out   std_logic;
+      adc0_ext_trigger_p_i  : in std_logic;
+	   adc0_ext_trigger_n_i  : in std_logic;
+	   gpio_dac_clr_n_o : out   std_logic;
       gpio_si570_oe_o  : out   std_logic;
       slave_i          : in    t_wishbone_slave_in;
       slave_o          : out   t_wishbone_slave_out;
       debug_o : out std_logic_vector(3 downto 0)
-
       );
   end component wr_d3s_adc;
 
@@ -543,6 +567,8 @@ begin
       adc_outa_n_i     => adc0_outa_n_i,
       adc_outb_p_i     => adc0_outb_p_i,
       adc_outb_n_i     => adc0_outb_n_i,
+		adc0_ext_trigger_p_i  => adc0_ext_trigger_p_i,
+	   adc0_ext_trigger_n_i  => adc0_ext_trigger_n_i,
       slave_i          => fmc_wb_muxed_out(0),
       slave_o          => fmc_wb_muxed_in(0),
       debug_o => debug

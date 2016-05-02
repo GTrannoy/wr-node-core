@@ -7,6 +7,9 @@ use work.genram_pkg.all;
 use work.wishbone_pkg.all;
 use work.d3s_wbgen2_pkg.all;
 
+use work.stdc_wbgen2_pkg.all;
+use work.stdc_hostif_package.all;
+
 library UNISIM;
 use UNISIM.vcomponents.all;
 
@@ -48,7 +51,10 @@ entity wr_d3s_adc is
     adc_outb_p_i : in std_logic_vector(3 downto 0);  -- ADC serial data (even bits)
     adc_outb_n_i : in std_logic_vector(3 downto 0);
 
-    gpio_dac_clr_n_o : out std_logic;   -- offset DACs clear (active low)
+    adc0_ext_trigger_p_i  : in std_logic;
+	 adc0_ext_trigger_n_i  : in std_logic;
+		
+	 gpio_dac_clr_n_o : out std_logic;   -- offset DACs clear (active low)
     gpio_si570_oe_o  : out std_logic;  -- Si570 (programmable oscillator) output enable
 
     
@@ -159,6 +165,14 @@ architecture rtl of wr_d3s_adc is
   signal serdes_synced       : std_logic;
   signal bitslip_sreg        : std_logic_vector(7 downto 0);
 
+  --  Signals for SERDES-TDC  -----------------
+  signal pllout_stdc_clk, pllout_stdc_clkdiv8, pllout_stdc_locked, pllout_stdc_fb : std_logic;  
+  signal stdc_clkdiv8, stdc_serdes_strobe, stdc_serdes_clk  : std_logic;				     
+  signal stdc_in, stdc_wb_clk: std_logic;
+  signal stdc_strobe: std_logic;
+  signal stdc_data: std_logic_vector(31 downto 0);
+  signal ext_trigger : std_logic;
+  ----------------------------------------------
 
   signal dco_clk, dco_clk_buf : std_logic;
   signal clk_wr               : std_logic;
@@ -169,28 +183,29 @@ architecture rtl of wr_d3s_adc is
   signal serdes_clk           : std_logic;
   signal fs_clk_buf           : std_logic;
   signal sys_rst              : std_logic;
-
+  
   signal clk_wr_div2 : std_logic;
   
   signal scl_out, sda_out : std_logic;
 
-  constant c_CNX_MASTER_COUNT : integer := 4;
+  constant c_CNX_MASTER_COUNT : integer := 5;
 
   signal raw_hp_data, raw_phase : std_logic_vector(15 downto 0);
   
   constant c_cnx_base_addr : t_wishbone_address_array(c_CNX_MASTER_COUNT-1 downto 0) :=
     (x"00000000",                      -- Base regs
-     x"00000100",                       -- AcqBuf
+     x"00000100",                      -- AcqBuf1
      x"00000200",                      -- AcqBuf2
-     x"00000300"                       -- AcqBuf2
-
+     x"00000300",                      -- AcqBuf3
+     x"00000400"                       -- Serdes TDC
      );
 
   constant c_cnx_base_mask : t_wishbone_address_array(c_CNX_MASTER_COUNT-1 downto 0) :=
-    (x"00000300",
-     x"00000300",
-     x"00000300",
-     x"00000300"
+    (x"00000700",
+     x"00000700",
+     x"00000700",
+     x"00000700",
+	  x"00000700"
      );
 
   signal cnx_out : t_wishbone_master_out_array(0 to c_CNX_MASTER_COUNT-1);
@@ -265,6 +280,31 @@ begin
       I  => adc_dco_p_i,
       IB => adc_dco_n_i,
       O  => dco_clk_buf
+      );
+	
+-- Serializer TDC data input buffer:
+
+--	  1st attempt
+--   cmp_trig_buf : IBUFDS
+--    generic map (
+--      DIFF_TERM  => true,               -- Differential termination
+--      IOSTANDARD => "LVDS_25")
+--    port map (
+--      I  => adc0_ext_trigger_p_i,
+--      IB => adc0_ext_trigger_n_i,
+--      O  => ext_trigger
+--      );
+
+--	  2nd attempt				
+	cmp_trig_buf : IBUFGDS
+    generic map (
+      DIFF_TERM    => true,
+      IBUF_LOW_PWR => true  -- Low power (TRUE) vs. performance (FALSE) setting for referenced
+      )
+    port map (
+      O  => ext_trigger,             
+      I  => adc0_ext_trigger_p_i,  
+      IB => adc0_ext_trigger_n_i  
       );
 
   cmp_dco_bufio : BUFIO2
@@ -519,4 +559,75 @@ begin
   debug_o(0)<=clk_wr_div2;
   clk_wr_o <= clk_wr;
   
+  ----- Adding the new component: stdc_hostif  ----
+  cmp_stdc : stdc_hostif 
+	 generic map (
+		D_DEPTH   => 10)    -- Length of the fifo storing the event time stamps
+	 port map(
+		sys_rst_n_i	=>  rst_n_sys_i,
+		clk_sys_i	=>  clk_sys_i, -- 62.5 MHz
+		clk_125m_i	=>  clk_wr, -- 125 MHz
+		serdes_clk_i	=>  stdc_serdes_clk, -- 1000 MHz
+		serdes_strobe_i	=>  stdc_serdes_strobe, 
+		wb_addr_i	=>  cnx_out(4).adr,
+		wb_data_i	=>  cnx_out(4).dat,
+		wb_data_o	=>  cnx_in(4).dat,
+		wb_cyc_i		=>  cnx_out(4).cyc,
+		wb_sel_i		=>  cnx_out(4).sel,
+		wb_stb_i		=>  cnx_out(4).stb,
+		wb_we_i		=>  cnx_out(4).we,
+		wb_ack_o		=>  cnx_in(4).ack,
+		wb_stall_o	=>  cnx_in(4).stall,
+		signal_i		=>  ext_trigger,
+		cycles_i		=>  tm_cycles_i,
+		strobe_o    =>  stdc_strobe  ,
+		stdc_data_o =>  stdc_data  );	
+
+  cnx_in(4).err <= '0';
+  cnx_in(4).rty <= '0';
+
+  cmp_stdc_clk_pll : PLL_BASE
+    generic map (
+      BANDWIDTH          => "OPTIMIZED",
+      CLK_FEEDBACK       => "CLKFBOUT",
+      COMPENSATION       => "INTERNAL",
+      DIVCLK_DIVIDE      => 1,
+      CLKFBOUT_MULT      => 8,
+      CLKFBOUT_PHASE     => 0.000,
+      CLKOUT0_DIVIDE     => 1,          -- 1000 MHz
+      CLKOUT0_PHASE      => 0.000,
+      CLKOUT0_DUTY_CYCLE => 0.500,
+      CLKOUT1_DIVIDE     => 1,          -- 125 MHz
+      CLKOUT1_PHASE      => 0.000,
+      CLKOUT1_DUTY_CYCLE => 0.500,
+      CLKIN_PERIOD       => 8.0,
+      REF_JITTER         => 0.016)
+    port map (
+      CLKFBOUT => pllout_stdc_fb,
+      CLKOUT0  => pllout_stdc_clk,
+      CLKOUT1  => pllout_stdc_clkdiv8,
+      CLKOUT2  => open,
+      CLKOUT3  => open, 
+      CLKOUT4  => open,
+      CLKOUT5  => open,
+      LOCKED   => pllout_stdc_locked,
+      RST      => rst_n_sys_i,
+      CLKFBIN  => pllout_stdc_fb,
+      CLKIN    => clk_wr);
+
+  cmp_dds_ref_buf : BUFG
+    port map (
+      O => stdc_clkdiv8,
+      I => pllout_stdc_clkdiv8);
+  
+  cmp_serdes_clk_buf : BUFPLL
+      generic map (
+	DIVIDE	=> 8)
+      port map (
+        PLLIN	=> pllout_stdc_clk,  	--  from PLL (CLKOUT0, CLKOUT1) 
+	GCLK 	=> stdc_clkdiv8,	--  from BUFG or GCLK
+        IOCLK	=> stdc_serdes_clk,	--  Connects to IOSERDES2(CLK0),BUFIO2FB(I),or IODELAY2 IOCLK0, IOCLK1)
+	LOCK 	=> open,
+	LOCKED 	=> pllout_stdc_locked,  -- LOCKED signal from PLL
+	SERDESSTROBE	=> stdc_serdes_strobe);  --  used to drive IOSERDES2(IOCE)
 end rtl;
