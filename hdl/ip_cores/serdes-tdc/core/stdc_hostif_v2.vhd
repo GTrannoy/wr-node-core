@@ -167,13 +167,13 @@ begin
 	stdc_data_o <= fifo_di;
 	strobe_o <= fifo_we;
 	
-	p_reg_cycles: process(sys_rst_n_i, serdes_strobe_i)
+	p_reg_cycles: process(sys_rst_n_i, clk_125m_i)
   begin
     if sys_rst_n_i = '0' then
       prev_signal <= '0';
       cycles_reg  <= (cycles_reg'range => '0');
     
-    elsif rising_edge(serdes_strobe_i) then
+    elsif rising_edge(clk_125m_i) then
        prev_signal <= signal_i;
        if en='1' then
           cycles_reg <= cycles_i; -- dbg_cycles_slv; (dbg_cycles_slv only used for simulation)

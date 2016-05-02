@@ -7,7 +7,7 @@
 --				Eva Calvo
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2016-04-27
+-- Last update: 2016-05-02
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -68,6 +68,8 @@ entity svec_top is
     clk_125m_gtp_p_i : in std_logic;    -- 125 MHz PLL reference
     clk_125m_gtp_n_i : in std_logic;
 
+
+    
     -------------------------------------------------------------------------    
     -- SVEC Front panel LEDs
     -------------------------------------------------------------------------
@@ -213,6 +215,7 @@ entity svec_top is
     );
 end svec_top;
 
+
 architecture rtl of svec_top is
 
 
@@ -220,6 +223,8 @@ architecture rtl of svec_top is
     port (
       clk_sys_i        : in    std_logic;
       clk_wr_o         : out std_logic;
+      clk_125m_pllref_i: in std_logic;
+
       rst_n_sys_i      : in    std_logic;
       tm_cycles_i      : in    std_logic_vector(27 downto 0);
           
@@ -397,6 +402,8 @@ architecture rtl of svec_top is
   signal fmc_wb_muxed_in  : t_wishbone_master_in_array(1 downto 0);
 
   signal scl_pad_oen, sda_pad_oen : std_logic;
+  signal clk_125m_pllref : std_logic;
+
 begin
 
   --chipscope_icon_1: chipscope_icon
@@ -432,6 +439,7 @@ begin
       clk_125m_pllref_n_i => clk_125m_pllref_n_i,
       clk_125m_gtp_p_i    => clk_125m_gtp_p_i,
       clk_125m_gtp_n_i    => clk_125m_gtp_n_i,
+      clk_125m_pllref_o   => clk_125m_pllref,
       fp_led_line_oen_o   => fp_led_line_oen_o,
       fp_led_line_o       => fp_led_line_o,
       fp_led_column_o     => fp_led_column_o,
@@ -546,6 +554,7 @@ begin
     port map (
       clk_sys_i        => clk_sys,
       clk_wr_o => fmc0_clk_wr,
+      clk_125m_pllref_i => clk_125m_pllref,
       rst_n_sys_i      => rst_n,
       tm_time_valid_i  => tm_time_valid,
       tm_clk_aux_lock_en_o => tm_clk_aux_lock_en(0),

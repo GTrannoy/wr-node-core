@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-07-23
+-- Last update: 2016-05-02
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -80,6 +80,8 @@ package svec_node_pkg is
       clk_125m_pllref_n_i  : in    std_logic;
       clk_125m_gtp_p_i     : in    std_logic;
       clk_125m_gtp_n_i     : in    std_logic;
+      clk_125m_pllref_o : out std_logic;
+
       fp_led_line_oen_o    : out   std_logic_vector(1 downto 0);
       fp_led_line_o        : out   std_logic_vector(1 downto 0);
       fp_led_column_o      : out   std_logic_vector(3 downto 0);

@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-08-26
+-- Last update: 2016-05-02
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -111,6 +111,8 @@ entity svec_node_template is
 
     clk_125m_gtp_p_i : in std_logic;    -- 125 MHz PLL reference
     clk_125m_gtp_n_i : in std_logic;
+
+    clk_125m_pllref_o : out std_logic;
 
     -- SVEC Front panel LEDs
 
@@ -468,6 +470,8 @@ begin
       I  => clk_125m_pllref_p_i,  -- Diff_p buffer input (connect directly to top-level port)
       IB => clk_125m_pllref_n_i  -- Diff_n buffer input (connect directly to top-level port)
       );
+
+  clk_125m_pllref_o <= clk_125m_pllref;
 
   cmp_sys_clk_pll : PLL_BASE
     generic map (
