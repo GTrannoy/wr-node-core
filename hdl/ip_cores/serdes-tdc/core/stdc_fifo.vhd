@@ -50,11 +50,11 @@ begin
 process(clear_i, sys_clk_i)	  
 	begin
 --		if rising_edge(sys_clk_i) then
-			if clear_i = '1' then
+		if clear_i = '1' then
 				level <= (level'range => '0');
 				produce <= (produce'range => '0');
 				consume <= (consume'range => '0');
---			else
+--		else
       elsif rising_edge(sys_clk_i) then
 				if do_write = '1' then
 					produce <= std_logic_vector(unsigned(produce) + 1);

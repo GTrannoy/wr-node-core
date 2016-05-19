@@ -4,9 +4,8 @@ import wishbone_pkg::*;
 import wr_node_pkg::*;
 
 `include "vhd_wishbone_master.svh"
-
 `include "d3s_acq_buffer_wb.vh"
-
+`include "stdc_wb_slave.vh"
 
 class RFGenerator;
 
@@ -122,6 +121,7 @@ module main;
    reg clk_wr =0, clk_wr_2x = 0;
 
    reg frev_in = 0;
+   reg trig_p;
 
 
    initial begin
@@ -148,7 +148,6 @@ module main;
    end
 
    IVHDWishboneMaster Host1 ( clk_sys, rst_n );
-   IVHDWishboneMaster Host2 ( clk_sys, rst_n );
 
    reg [39:0]  tm_tai = 100;
    reg [31:0]  tm_nsec = 0;
@@ -180,22 +179,19 @@ module main;
 
    real sine_in;
    
-   
+  
    initial forever begin
       sine_in = gen.y();
       #100ps;
    end
    
-
    real y_under;
-   
-   
-   
+     
    always@(posedge clk_wr)
      begin
-	y_under = gen.y_under_sample();
+	      y_under = gen.y_under_sample();
 	
-	sine <= int'(2000.0*y_under);
+	      sine <= int'(2000.0*y_under);
      end
 
    reg [31:0] frev_ts_ns;
@@ -217,64 +213,116 @@ module main;
 	
      end
    
-   
-   
-   wr_d3s_adc
-     
-     #(
-.g_use_fake_data(1)
-       )
-DUT (
+     wr_d3s_adc
+       #(
+        .g_use_fake_data(1)
+        )
+       DUT (
 	  .rst_n_sys_i(rst_n),
-	  .clk_sys_i (clk_wr),
+	  .clk_sys_i (clk_sys),
+	  .clk_125m_pllref_i(clk_wr),
+	  
+	  .tm_cycles_i(tm_nsec[30:3]),
+    .tm_time_valid_i(1'b1),
+      
 	  .adc_dco_p_i(clk_adc),
 	  .adc_dco_n_i(~clk_adc),
-
+    
+    .adc0_ext_trigger_p_i(trig_p),
+    .adc0_ext_trigger_n_i(~trig_p),
+	  
 	  .fake_data_i(sine),
 
 	  .slave_i(Host1.master.out),
 	  .slave_o(Host1.master.in)
-
- 
-     );
+       );
 
 
-   d3s_upsample_divide DUT2
-     (
-      .clk_i(clk_wr),
-      .rst_n_i(rst_n),
-      .phase_i (DUT.raw_phase[13:0]),
-
-      .frev_ts_tai_i(frev_ts_tai),
-      .frev_ts_nsec_i(frev_ts_ns),
-      .frev_ts_valid_i(frev_ts_valid),
-
-      .tm_time_valid_i(1'b1),
-      .tm_tai_i(tm_tai),
-      .tm_cycles_i(tm_nsec[30:3])
-      );
+//   d3s_upsample_divide DUT2
+//     (
+//      .clk_i(clk_wr),
+//      .rst_n_i(rst_n),
+//      .phase_i (DUT.raw_phase[13:0]),
+//
+//      .frev_ts_tai_i(frev_ts_tai),
+//      .frev_ts_nsec_i(frev_ts_ns),
+//      .frev_ts_valid_i(frev_ts_valid),
+//
+//      .tm_time_valid_i(1'b1),
+//      .tm_tai_i(tm_tai),
+//      .tm_cycles_i(tm_nsec[30:3])
+//      );
    
      
-  
-
-
-   
+   initial begin
+      
+      integer delay1, pulse_duration; 
+            
+      trig_p <= 0;
+      #400ns;
+      while(1) begin
+      // repeat(2) begin  
+          if ($stime>=1000us) begin
+            $stop;
+          end
+          
+          // Random delays
+          //delay1 = $urandom_range(200,900); 
+          //pulse_duration = $urandom_range(8,100); 
+          //#(delay1 *1ns);
+          //trig_p <= 1;
+          //$display("Pulse rising edge", $stime);
+          //#(pulse_duration *1ns);
+          //trig_p <= 0;
+          
+          for (int i = 0; i<9; i++) begin
+            @(posedge clk_wr);
+            #(i *1ns);
+            trig_p <= 1;
+            #100ns;
+            trig_p <= 0;
+            #150ns;
+          end 
+      end
+    end    
 
 
    initial begin
       uint64_t rv;
-      CBusAccessor acc = Host1.get_accessor();
+      uint64_t status;
+      uint64_t timestamp;
       
+      automatic CBusAccessor acc = Host1.get_accessor();
       
-      #10us;
+      #1us;
+
+      `define BASE_STDC 'h400
       
+      acc.write(`BASE_STDC + `ADDR_STDC_CTRL, 1<<3);  // Write ctrl filter to report rising edges
+            
+      while(1) begin
+      // repeat(2) begin  
+          if ($stime>=1000us) begin
+            $stop;
+          end
+          
+          acc.read(`BASE_STDC + `ADDR_STDC_STATUS, status);  // Write ctrl filter to report rising edges
+          $display("Event @ %x", status);
+          
+          if (~(status & 32'h01)) begin   // if not empty
+            acc.read(`BASE_STDC + `ADDR_STDC_TDC_DATA, timestamp);
+            $display("Event @ %x", timestamp);
+            #16ns;
+            acc.write(`BASE_STDC + `ADDR_STDC_CTRL, 1<<3 | 1<<2 );
+          end
+          #100ns;
+      end
+   //   acc.write('h100 + `ADDR_ACQ_CR, `ACQ_CR_START);
 
-	acc.write('h100 + `ADDR_ACQ_CR, `ACQ_CR_START);
+     // #10us;
+     // acc.read('h100 + `ADDR_ACQ_CR, rv);
 
-      #10us;
-      acc.read('h100 + `ADDR_ACQ_CR, rv);
-
-      $display("Rv %x", rv);
+     // $display("Rv %x", rv);
       
       
 		    

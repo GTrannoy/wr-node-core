@@ -67,8 +67,6 @@ entity svec_top is
 
     clk_125m_gtp_p_i : in std_logic;    -- 125 MHz PLL reference
     clk_125m_gtp_n_i : in std_logic;
-
-
     
     -------------------------------------------------------------------------    
     -- SVEC Front panel LEDs
@@ -104,7 +102,6 @@ entity svec_top is
     fmc0_prsntm2c_n_i : in    std_logic;  -- Mezzanine present (active low)
     fmc1_prsntm2c_n_i : in    std_logic;  -- Mezzanine present (active low)
     
-
     -------------------------------------------------------------------------
     -- VME Interface pins
     -------------------------------------------------------------------------
@@ -211,7 +208,6 @@ entity svec_top is
     adc0_si570_sda_b : inout std_logic;  -- I2C bus data (Si570)
 
     adc0_one_wire_b : inout std_logic  -- Mezzanine 1-wire interface (DS18B20 thermometer + unique ID)
-
     );
 end svec_top;
 
@@ -256,7 +252,10 @@ architecture rtl of svec_top is
       gpio_si570_oe_o  : out   std_logic;
       slave_i          : in    t_wishbone_slave_in;
       slave_o          : out   t_wishbone_slave_out;
-      debug_o : out std_logic_vector(3 downto 0)
+      debug_o : out std_logic_vector(3 downto 0);
+		
+		-- ChipScope Signals
+	   TRIG_O	: out std_logic_vector(127 downto 0)
       );
   end component wr_d3s_adc;
 
@@ -285,8 +284,6 @@ architecture rtl of svec_top is
       return true;
     end if;
   end function;
-
-
   
   constant c_D3S_ADC_SDB_DEVICE : t_sdb_device := (
     abi_class     => x"0000",              -- undocumented device
@@ -387,6 +384,7 @@ architecture rtl of svec_top is
 
   signal CONTROL     : std_logic_vector(35 downto 0);
   signal TRIG        : std_logic_vector(127 downto 0);
+  
   signal fmc0_clk_wr : std_logic;
 
   signal debug : std_logic_vector(3 downto 0);
@@ -405,20 +403,19 @@ architecture rtl of svec_top is
   signal clk_125m_pllref : std_logic;
 
 begin
+   
+  chipscope_icon_1: chipscope_icon
+    port map (
+      CONTROL0 => CONTROL);
 
-  --chipscope_icon_1: chipscope_icon
-  --  port map (
-  --    CONTROL0 => CONTROL);
-
-  --chipscope_ila_1: chipscope_ila
-  --  port map (
-  --    CONTROL => CONTROL,
-  --    CLK     => clk_sys,
-  --    TRIG0   => TRIG(31 downto 0),
-  --    TRIG1   => TRIG(63 downto 32),
-  --    TRIG2   => TRIG(95 downto 64),
-  --    TRIG3   => TRIG(127 downto 96));
-
+  chipscope_ila_1: chipscope_ila
+    port map (
+      CONTROL => CONTROL,
+      CLK     => clk_125m_pllref, --clk_sys,
+      TRIG0   => TRIG(31 downto 0),
+      TRIG1   => TRIG(63 downto 32),
+      TRIG2   => TRIG(95 downto 64),
+      TRIG3   => TRIG(127 downto 96));
  
   U_Node_Template : svec_node_template
     generic map (
@@ -580,7 +577,9 @@ begin
 	   adc0_ext_trigger_n_i  => adc0_ext_trigger_n_i,
       slave_i          => fmc_wb_muxed_out(0),
       slave_o          => fmc_wb_muxed_in(0),
-      debug_o => debug
+      debug_o          => debug ,
+		-- ChipScope Signals
+	   TRIG_O	=> TRIG
       );
 
   U_Silabs_IF: xwr_si57x_interface
@@ -600,7 +599,6 @@ begin
 
   adc0_si570_sda_b <= '0' when sda_pad_oen = '0' else 'Z';
   adc0_si570_scl_b <= '0' when scl_pad_oen = '0' else 'Z';
-
 
   fp_gpio1_b <= debug(0);
   fp_gpio2_b <= tm_dac_wr(0);

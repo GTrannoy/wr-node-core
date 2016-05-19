@@ -119,8 +119,8 @@ module main;
    reg force_irq = 0;
    
    initial begin
-      CBusAccessor_VME64x acc = new(VME.master);
-      CBusAccessor acc_casted = CBusAccessor'(acc);
+      automatic CBusAccessor_VME64x acc = new(VME.master);
+      automatic CBusAccessor acc_casted = CBusAccessor'(acc);
       NodeCPUControl cpu_csr;
       MQueueHost hmq;
       uint64_t d;

@@ -59,17 +59,19 @@ entity wr_d3s_adc is
     gpio_dac_clr_n_o : out std_logic;   -- offset DACs clear (active low)
     gpio_si570_oe_o  : out std_logic;  -- Si570 (programmable oscillator) output enable
 
-
     slave_i : in  t_wishbone_slave_in;
     slave_o : out t_wishbone_slave_out;
 
-    debug_o : out std_logic_vector(3 downto 0)
+    debug_o : out std_logic_vector(3 downto 0);
+	 
+	 -- ChipScope Signals
+	 TRIG_O	: out std_logic_vector(127 downto 0)
     );
 
 end wr_d3s_adc;
 
 architecture rtl of wr_d3s_adc is
-
+  
   component d3s_adc_wb is
     port (
       rst_n_i    : in  std_logic;
@@ -170,7 +172,6 @@ architecture rtl of wr_d3s_adc is
   --  Signals for SERDES-TDC  -----------------
   signal pllout_stdc_clk, pllout_stdc_clkdiv8, pllout_stdc_locked, pllout_stdc_fb : std_logic;
   signal stdc_clkdiv8, stdc_serdes_strobe, stdc_serdes_clk                        : std_logic;
-  signal stdc_in, stdc_wb_clk                                                     : std_logic;
   signal stdc_strobe                                                              : std_logic;
   signal stdc_data                                                                : std_logic_vector(31 downto 0);
   signal ext_trigger                                                              : std_logic;
@@ -215,7 +216,7 @@ architecture rtl of wr_d3s_adc is
 
   
 begin
-
+  
   U_Intercon : xwb_crossbar
     generic map (
       g_num_masters => 1,
@@ -367,7 +368,6 @@ begin
       I => clk_fb_buf,
       O => clk_fb
       );
-
 
   cmp_adc_serdes : adc_serdes
     port map(
@@ -528,7 +528,6 @@ begin
       data_i      => raw_phase,
       slave_i     => cnx_out(3),
       slave_o     => cnx_in(3));
-
   
   U_Phase_Enc : d3s_phase_encoder
     port map (
@@ -564,7 +563,7 @@ begin
   ----- Adding the new component: stdc_hostif  ----
   cmp_stdc : stdc_hostif
     generic map (
-      D_DEPTH => 10)  -- Length of the fifo storing the event time stamps
+      D_DEPTH => 12)  -- Length of the fifo storing the event time stamps
     port map(
       sys_rst_n_i     => rst_n_sys_i,
       clk_sys_i       => clk_sys_i,     -- 62.5 MHz
@@ -583,8 +582,11 @@ begin
       signal_i        => ext_trigger,
       cycles_i        => tm_cycles_i,
       strobe_o        => stdc_strobe,
-      stdc_data_o     => stdc_data);    
-
+      stdc_data_o     => stdc_data,
+		-- ChipScope Signals
+		TRIG_O			 => TRIG_O
+	);    
+		
   cnx_in(4).err <= '0';
   cnx_in(4).rty <= '0';
 
@@ -613,7 +615,7 @@ begin
       CLKOUT4  => open,
       CLKOUT5  => open,
       LOCKED   => pllout_stdc_locked,
-      RST      => rst_n_sys_i,
+      RST      => sys_rst,
       CLKFBIN  => pllout_stdc_fb,
       CLKIN    => clk_125m_pllref_i);
 

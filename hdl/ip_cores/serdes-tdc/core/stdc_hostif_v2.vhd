@@ -40,7 +40,10 @@ entity stdc_hostif is
 		
 		-- TDC outputs			
 		strobe_o         : out    std_logic;
-		stdc_data_o       : out    std_logic_vector(31 downto 0)
+		stdc_data_o       : out    std_logic_vector(31 downto 0);
+		
+		-- ChipScope Signals
+		TRIG_O			: out std_logic_vector(127 downto 0)
 	);
 end entity;
 
@@ -81,15 +84,71 @@ signal regs_i: t_stdc_in_registers;
 signal regs_o: t_stdc_out_registers;
 
 signal cycles_reg: std_logic_vector(27 downto 0);  
-signal dbg_cycles_slv: std_logic_vector(27 downto 0);  -- for debugging only
+-- signal dbg_cycles_slv: std_logic_vector(27 downto 0);  -- for debugging only
 
-signal prev_signal, en: std_logic;
+signal signal_reg, signal_reg2, en: std_logic;
+
+--  component chipscope_ila
+--    port (
+--      CONTROL : inout std_logic_vector(35 downto 0);
+--      CLK     : in    std_logic;
+--      TRIG0   : in    std_logic_vector(31 downto 0);
+--      TRIG1   : in    std_logic_vector(31 downto 0);
+--      TRIG2   : in    std_logic_vector(31 downto 0);
+--      TRIG3   : in    std_logic_vector(31 downto 0));
+--  end component;
+--
+--  component chipscope_icon
+--    port (
+--      CONTROL0 : inout std_logic_vector (35 downto 0));
+--  end component;
+--
+--  signal CONTROL     : std_logic_vector(35 downto 0);
+--  signal TRIG        : std_logic_vector(127 downto 0);
 
 begin
+	
+	-- Debugging part -----
+--  chipscope_icon_1: chipscope_icon
+--    port map (
+--      CONTROL0 => CONTROL);
+--
+--  chipscope_ila_1: chipscope_ila
+--    port map (
+--      CONTROL => CONTROL,
+--      CLK     => clk_125m_i,
+--      TRIG0   => TRIG(31 downto 0),
+--      TRIG1   => TRIG(63 downto 32),
+--      TRIG2   => TRIG(95 downto 64),
+--      TRIG3   => TRIG(127 downto 96));
+		
+   TRIG_O(31 downto 0)  <= fifo_di ;
+	--TRIG_O(63 downto 32) <= fifo_do; 
+	TRIG_O(59 downto 32) <= fifo_do(27 downto 0) ;
+	
+	TRIG_O(60) <= fifo_re ;
+	TRIG_O(61) <= signal_i ;
+	TRIG_O(62) <= signal_reg ;
+	TRIG_O(63) <= signal_reg2 ;
+   TRIG_O(64) <= en ;
+		
+   TRIG_O(65) <= detect ;
+	TRIG_O(93 downto 66) <= cycles_i ;
+		
+	TRIG_O(96 downto 94) <= timestamp_resync ;
+	TRIG_O(124 downto 97) <= cycles_reg ;
+	
+	TRIG_O(125) <= fifo_full ;
+	TRIG_O(126) <= fifo_we ;
+	TRIG_O(127) <= polarity ;
+		
+	-- Debugging part end ------
+	
+	
 	-- instantiate basic TDC core
 	cmp_stdc: stdc
 		port map(
-			sys_clk_i 		 => clk_125m_i,  --clk_sys_i,
+			sys_clk_i 		 => clk_125m_i,  
 			sys_rst_n_i 	 => sys_rst_n_i,
 			serdes_clk_i 	 => serdes_clk_i,
 			serdes_strobe_i => serdes_strobe_i,
@@ -106,7 +165,7 @@ begin
 			D_WIDTH => 32
 		)
 		port map(
-			sys_clk_i => clk_125m_i,  --clk_sys_i,
+			sys_clk_i => clk_125m_i,  
 			clear_i 	=> fifo_clear,
 			full_o 	=> fifo_full,
 			we_i 		=> fifo_we,
@@ -134,56 +193,64 @@ begin
 			regs_o 		=>  regs_o
 		);
 		
-	-- if enabled edge detected write in the fifo	
-	--fifo_we <= detect and ((polarity and regs_o.ctrl_filter_o(0)) or (not polarity and regs_o.ctrl_filter_o(1)));
-	fifo_di <= polarity & cycles_reg & timestamp_resync when timestamp_8th(2)='1' else
-	           polarity & std_logic_vector(unsigned(cycles_reg)-1) & timestamp_resync;
+		
+--	fifo_di <= polarity & std_logic_vector(unsigned(cycles_reg)-0) & timestamp_resync when timestamp_resync(2)='0' else
+--	           polarity & std_logic_vector(unsigned(cycles_reg)-1) & timestamp_resync;
 	
-	timestamp_resync <= std_logic_vector(unsigned(timestamp_8th)+3);
+	timestamp_resync <= std_logic_vector(unsigned(timestamp_8th)+1);
 		
 	-- if next =1 and fifo not empty, send to tdc_data next fifo element
-	--fifo_re <= regs_o.ctrl_next_o and /main/DUT/U_DDS_Core0/cmp_stdc/fifo_re /main/DUT/U_DDS_Core0/cmp_stdc/regs_o /main/DUT/U_DDS_Core0/cmp_stdc/fifo_empty(not fifo_empty);
 	regs_i.tdc_data_i <= fifo_do;
 	
 	-- if clear command, send a reset to the fifo
 	fifo_clear <= regs_o.ctrl_clr_o or (not(sys_rst_n_i));
 	
 	-- fill status registers
-	regs_i.status_empty_i <= fifo_empty;
-	regs_i.status_ovf_i <= fifo_we and fifo_full;
+	regs_i.status_empty_i <= fifo_empty ;
+	regs_i.status_ovf_i   <= fifo_we and fifo_full ;
 	
 	pc_reg_fifo_xclk_hdl: process (sys_rst_n_i, clk_125m_i)
-	 begin
-	   if sys_rst_n_i = '0' then
+	begin
+	    if sys_rst_n_i = '0' then
 				fifo_we <= '0';
-        fifo_re <= '0';
-        
-     elsif rising_edge(clk_125m_i) then  
-	     fifo_we <= detect and ((polarity and regs_o.ctrl_filter_o(0)) or (not polarity and regs_o.ctrl_filter_o(1)));
-	     fifo_re <= regs_o.ctrl_next_o and (not fifo_empty) and not(fifo_re);  
-	   end if;
-	 end process;
+            fifo_re <= '0';
+       elsif rising_edge(clk_125m_i) then 
+		    -- if enabled edge detected write in the fifo	  
+	       fifo_we <= detect and ((polarity and regs_o.ctrl_filter_o(0)) or (not polarity and regs_o.ctrl_filter_o(1)));
+	       fifo_re <= regs_o.ctrl_next_o and not(fifo_re); 
+          if detect = '1' then
+				  if (timestamp_resync(2)='0') then
+				       fifo_di <= polarity & std_logic_vector(unsigned(cycles_reg)-1) & timestamp_resync ;
+			     else
+	                fifo_di <= polarity & std_logic_vector(unsigned(cycles_reg)-2) & timestamp_resync ;
+				  end if;
+			 end if;
+	    end if;
+	end process;
 	
-	stdc_data_o <= fifo_di;
-	strobe_o <= fifo_we;
+	stdc_data_o <= fifo_di;  
+	strobe_o <= fifo_we;     
 	
 	p_reg_cycles: process(sys_rst_n_i, clk_125m_i)
-  begin
-    if sys_rst_n_i = '0' then
-      prev_signal <= '0';
-      cycles_reg  <= (cycles_reg'range => '0');
-    
-    elsif rising_edge(clk_125m_i) then
-       prev_signal <= signal_i;
-       if en='1' then
-          cycles_reg <= cycles_i; -- dbg_cycles_slv; (dbg_cycles_slv only used for simulation)
+   begin
+       if sys_rst_n_i = '0' then
+          signal_reg  <= '0' ;
+			 signal_reg2  <= '0' ;
+			 cycles_reg  <= (cycles_reg'range => '0') ;
+			 
+       elsif rising_edge(clk_125m_i) then
+          signal_reg  <= signal_i ;
+			 signal_reg2  <= signal_reg ;
+			 if en = '1' then
+             cycles_reg <= cycles_i ; -- dbg_cycles_slv; --(dbg_cycles_slv only used for simulation)
+          end if;
        end if;
-    end if;
   end process;
+
+  en <= signal_reg xor signal_reg2 ;  --  Edge detector
 	
-	en <= not(prev_signal) and signal_i;
 	
-	--  ********* For debugging only. Remove later!!
+--  ********* For debugging only. Remove later!!
 --  p_debugging_counter: process(sys_rst_n_i, clk_125m_i)
 --  begin
 --    if sys_rst_n_i = '0' then
@@ -192,6 +259,6 @@ begin
 --      dbg_cycles_slv <= std_logic_vector(unsigned(dbg_cycles_slv)+1); 
 --    end if;
 --  end process;
-	
-	
+		
+		
 end architecture;

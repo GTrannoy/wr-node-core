@@ -44,7 +44,7 @@ package stdc_wbgen2_pkg is
       ctrl_clr_o => '0',
       ctrl_clr_ovf_o => '0',
       ctrl_next_o => '0',
-      ctrl_filter_o => (others => '0')
+      ctrl_filter_o => "01"
       );
     function "or" (left, right: t_stdc_in_registers) return t_stdc_in_registers;
     function f_x_to_zero (x:std_logic) return std_logic;

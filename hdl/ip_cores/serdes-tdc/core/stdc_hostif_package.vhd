@@ -31,7 +31,10 @@ component stdc_hostif is
 		
 		-- TDC outputs			
 		strobe_o         : out    std_logic;
-		stdc_data_o       : out    std_logic_vector(31 downto 0)
+		stdc_data_o       : out    std_logic_vector(31 downto 0);
+		
+		-- ChipScope Signals
+		TRIG_O				: out std_logic_vector(127 downto 0)
 	);
 end component;
 
