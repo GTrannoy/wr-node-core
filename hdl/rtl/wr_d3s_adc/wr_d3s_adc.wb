@@ -6,7 +6,6 @@ peripheral {
 
 	 hdl_entity="d3s_adc_wb";
 	 
--- TXTSU shared FIFO
 
 	 fifo_reg {
 			size = 256; -- or more. We'll see :)
@@ -14,12 +13,18 @@ peripheral {
 			prefix = "adc";
 			name = "ADC Data FIFO";
 
+			description = "FIFO with the compressed phase entries. Each entry contains a timestamp and one of two record types:\
+- Initial phase (IS_RL = 0): RL_PHASE contains a fixed initial phase value, RL_LENGTH is ignored.\
+- Run-length compressed phase (IS_RL = 1): RL_PHASE contains a phase delta value, RL_LENGTH is the run length (in samples).\
+";
+
 			flags_bus = {FIFO_FULL, FIFO_EMPTY, FIFO_COUNT, FIFO_CLEAR};
 			flags_dev = {FIFO_FULL, FIFO_EMPTY};
 			
 			field {
 				 name = "Timestamp";
 				 prefix = "tstamp";
+				 description = "Record timestamp (WR clock cycles)";
 				 type = SLV;
 				 size = 28;
 			};
@@ -50,6 +55,7 @@ peripheral {
 			prefix = "SSR";
 			field {
 				 name = "SSR Outputs";
+				 description = "Solid State Relay outputs to the ADC mezzanine. Not used for the moment";
 				 type = SLV;
 				 size = 32;
 				 access_dev = READ_ONLY;
@@ -64,6 +70,7 @@ peripheral {
 			field {
 				 prefix = "SI57X_SCL";
 				 name = "SI57X_SCL";
+				 description = "GPIO controlling the state of the SCL line of the Silabs Si57p oscillator on the ADC mezzanine."; 
 				 type = BIT;
 				 access_dev = READ_WRITE;
 				 access_bus = READ_WRITE;
@@ -73,6 +80,7 @@ peripheral {
 			field {
 				 prefix = "SI57X_SDA";
 				 name = "SI57X_SDA";
+				 description = "GPIO controlling the state of the SDA line of the Silabs Si57p oscillator on the ADC mezzanine."; 
 				 type = BIT;
 				 access_dev = READ_WRITE;
 				 access_bus = READ_WRITE;
@@ -82,6 +90,7 @@ peripheral {
 			field {
 				 prefix = "SPI_CS_ADC";
 				 name = "SPI_CS_ADC";
+				 description = "GPIO controlling the state of the Chip Select line of the LTC2175 ADC on the ADC mezzanine";
 				 type = BIT;
 				 access_dev = READ_ONLY;
 				 access_bus = READ_WRITE;
@@ -90,6 +99,7 @@ peripheral {
 			field {
 				 prefix = "SPI_SCK";
 				 name = "SPI_SCK";
+				 description = "GPIO controlling the state of the SCK line of the LTC2175 ADC on the ADC mezzanine";
 				 type = BIT;
 				 access_dev = READ_ONLY;
 				 access_bus = READ_WRITE;
@@ -98,6 +108,7 @@ peripheral {
 			field {
 				 prefix = "SPI_MOSI";
 				 name = "SPI_MOSI";
+				 description = "GPIO controlling the state of the MOSI line of the LTC2175 ADC on the ADC mezzanine";
 				 type = BIT;
 				 access_dev = READ_ONLY;
 				 access_bus = READ_WRITE;
@@ -106,6 +117,8 @@ peripheral {
 			field {
 				 prefix = "SPI_MISO";
 				 name = "SPI_MISO";
+				 description = "GPIO with the state (input) of the MISO line of the LTC2175 ADC on the ADC mezzanine";
+
 				 type = BIT;
 				 access_dev = WRITE_ONLY;
 				 access_bus = READ_ONLY;
@@ -114,6 +127,8 @@ peripheral {
 			field {
 				 prefix = "TM_LOCK_EN";
 				 name = "TM_LOCK_EN";
+				 description = "write 1: enable locking of the ADC clock to WR. Enable only after Si57x has been initialized.";
+
 				 type = BIT;
 				 access_dev = READ_ONLY;
 				 access_bus = READ_WRITE;
@@ -121,6 +136,8 @@ peripheral {
 			field {
 				 prefix = "TM_LOCKED";
 				 name = "TM_LOCKED";
+				 description = "When 1, the ADC clock is locked to WR.";
+
 				 type = BIT;
 				 access_dev = WRITE_ONLY;
 				 access_bus = READ_ONLY;
@@ -128,6 +145,7 @@ peripheral {
 			field {
 				 prefix = "TM_TIME_VALID";
 				 name = "TM_TIME_VALID";
+				 description = "when 1, the WR Core is synchronized with the WR network";
 				 type = BIT;
 				 access_dev = WRITE_ONLY;
 				 access_bus = READ_ONLY;
@@ -143,6 +161,7 @@ peripheral {
 			field {
 				 prefix = "ENABLE";
 				 name = "ENABLE";
+				 description = "write 1: enables sampling and compression of the phase data. The ADC FIFO is filled with compressed phase records";
 				 type = BIT;
 				 access_dev = READ_ONLY;
 				 access_bus = READ_WRITE;
@@ -156,6 +175,7 @@ peripheral {
 
 			field {
 				 name = "MinError";
+				 description = "Lower error bound (negative) for phase error for the compression algorithm";
 				 type = SLV;
 				 size = 32;
 				 access_dev = READ_ONLY;
@@ -170,6 +190,7 @@ peripheral {
 
 			field {
 				 name = "MaxError";
+				 description = "Upper error bound (positive) for phase error for the compression algorithm";
 				 type = SLV;
 				 size = 32;
 				 access_dev = READ_ONLY;
@@ -185,6 +206,7 @@ peripheral {
 
 			field {
 				 name = "RLMax";
+				 description = "Maximum number of samples in a single run-length record.";
 				 type = SLV;
 				 size = 16;
 				 access_dev = READ_ONLY;

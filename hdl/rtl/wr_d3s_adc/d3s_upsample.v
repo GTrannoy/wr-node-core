@@ -1,4 +1,91 @@
-`timescale 1ns/1ps
+`timescale 1ps/1ps
+
+module monitor_phase
+  (
+   input 	clk_i,
+   input [13:0] ph0_i,
+   input [13:0] ph1_i,
+   input [13:0] ph2_i,
+   input [13:0] ph3_i
+   );
+
+   parameter g_delay = 0;
+   parameter g_oversample = 80;
+   parameter g_step = 100;
+
+
+   
+   
+   function integer f_interp(input integer k, input integer n, input integer y0, input integer y1);
+      reg[13:0] y;
+      
+      begin
+	 if(y1 < y0)
+	   y = y0 + k*((y1+16384)-y0)/n;
+	 else
+	   y = y0 + k*(y1-y0)/n;
+//	 $display("%d %d %d %d -> %d", k,n,y0,y1,y);
+	 
+	 f_interp = y;
+	 
+	 
+	 
+      end
+      
+   endfunction // f_interp
+   
+
+   reg [13:0] ph3_d;
+   
+   always@(posedge clk_i)
+     ph3_d <= ph3_i;
+	   
+   
+   reg [13:0 ] ph_recon_undiv;
+
+   wire [13:0] ph_tab[0:4];
+
+   assign ph_tab[0] = ph3_d;
+   assign ph_tab[1] = ph0_i;
+   assign ph_tab[2] = ph1_i;
+   assign ph_tab[3] = ph2_i;
+   assign ph_tab[4] = ph3_i;
+   
+
+   reg [13:0]  ph_over;
+   
+   
+   initial forever begin : reconstruct_undiv
+      integer i,p;
+
+      
+      @(posedge clk_i);
+
+      for( p = 0; p < 4; p=p+1)
+      begin
+	for( i = 0; i < g_oversample/4; i=i+1)
+	  begin
+	     #(g_step/2);
+//	     if(p==3)
+//	       ph_over <= 'hx;
+//	     else
+	       ph_over <= f_interp(i, g_oversample/4  , ph_tab[p], ph_tab[p+1] );
+	     #(g_step/2);
+	  end
+      end
+      
+   end
+   
+
+   reg [13:0] ph_out;
+
+   always@(ph_over)
+     ph_out <= #(g_delay) ph_over;
+   
+
+endmodule // monitor_phase
+
+   
 
 module d3s_upsample_divide
  (
@@ -112,7 +199,7 @@ module d3s_upsample_divide
      end
 
    reg [13:0] phase_up0, phase_up1, phase_up2, phase_up3, phase_up3_d;
-   reg [3:0] zc;
+   wire [3:0] zc;
    
    always@(posedge clk_i)
      begin
@@ -122,15 +209,17 @@ module d3s_upsample_divide
 	phase_up2 <= (t_alias_acc_p2 >> c_acc_frac_bits) - interp2;
 	phase_up3 <= (t_alias_acc_p3 >> c_acc_frac_bits) - interp3;
 
-	zc[0] <= phase_up3_d > phase_up0;
-	zc[1] <= phase_up0 > phase_up1;
-	zc[2] <= phase_up1 > phase_up2;
-	zc[3] <= phase_up2 > phase_up3;
 	
      end
 
-   reg [13:0] div_start_phase;
-   reg 	      div_start_phase_valid;
+   assign zc[0] = phase_up3_d > phase_up0;
+   assign zc[1] = phase_up0 > phase_up1;
+   assign zc[2] = phase_up1 > phase_up2;
+   assign zc[3] = phase_up2 > phase_up3;
+
+   
+   reg [3:0] div_start_phase_sel;
+   reg 	     div_start_phase_sel_valid;
 
    reg [31:0] frev_ts_adjust_ns_i  = 5000;
 
@@ -194,12 +283,15 @@ module d3s_upsample_divide
 	zc_masked <= 0;
    
    
-   
    always@(posedge clk_i) begin
       if (!rst_n_i) begin
-	 div_start_phase_valid <= 0;
+	 div_start_phase_sel_valid <= 0;
+	 match_pending <= 0;
       end else begin
 
+	 div_start_phase_sel_valid <= 0;
+	 
+	 
 	 if( frev_ts_match && !zc_masked)
 	   match_pending <= 1;
 	 
@@ -207,20 +299,24 @@ module d3s_upsample_divide
 	 else if(zc_masked)
 	   begin
 	      if(zc_masked[0])
-		div_start_phase <= phase_up0;
-	      else if (zc_masked[1]) div_start_phase <= phase_up1;
-	      else if (zc_masked[2])  div_start_phase <= phase_up2;
-	      else if (zc_masked[3]) div_start_phase <= phase_up3;
+		div_start_phase_sel <= 'b1111;
+	      else if (zc_masked[1]) 
+		div_start_phase_sel <= 'b1110;
+	      else if (zc_masked[2])
+		div_start_phase_sel <= 'b1100;
+	      else 
+		div_start_phase_sel <= 'b1000;
+	      
 	      match_pending <= 0;
-	      div_start_phase_valid <= 1;
+	      div_start_phase_sel_valid <= 1;
 	   end
 	 
 	 
 	 if(frev_ts_match)
 	   begin
-		 
-		 
-		$display("GotFrevTs zcd %x ns %x!", zc, frev_ts_ns[2:0]);
+	      
+	      
+	      $display("GotFrevTs zcd %x ns %x!", zc, frev_ts_ns[2:0]);
 	   end
 	 
 	 
@@ -235,41 +331,21 @@ module d3s_upsample_divide
    
 // synthesis translate_off
    
-   reg clk_dds = 0;
-   integer phase_sel = 0;
-   integer ph_int;
-   real    y_test;
-   
-   always #1 clk_dds <= ~clk_dds;
 
-   always@(posedge clk_i)
-     phase_sel <= 0;
+   monitor_phase #(.g_delay(8000)) MonUndiv( clk_i, phase_up0, phase_up1, phase_up2, phase_up3 );
    
    
-   always@(posedge clk_dds) begin
-      phase_sel <= (phase_sel == 3 ? 0 : phase_sel + 1);
-      case(phase_sel)
-	0: ph_int = phase_up0;
-	1: ph_int = phase_up1;
-	2: ph_int = phase_up2;
-	3: ph_int = phase_up3;
-      endcase // case (phase_sel)
+   
 
-      y_test = $sin(2*3.1415926535 * real'(ph_int) / 16384.0);
-      
-      
-	
-   end
-   
 // synthesis translate_on
 
    
 
-   function f_fast_div_by_5( input [13:0] x );
+   function integer f_fast_div_by_5( input [13:0] x );
       reg [31:0] x_mul;      
       begin
 	 x_mul = x * 3277;
-	 f_fast_div_by_5 = (x_mul >> 14);
+	 f_fast_div_by_5 = x/5;//(x_mul >> 14);
       end
    endfunction // f_fast_div_by_5
    
@@ -280,7 +356,58 @@ module d3s_upsample_divide
    reg[13:0] phase_divided2;
    reg[13:0] phase_divided3;
 
-   reg[13:0] div_bias;
+   reg[13:0] div_bias = 0;
+
+
+   function integer f_count_ones(input [31:0] x, input integer n);
+      integer c,i;
+      begin
+	 c = 0;
+	 for(i=0;i<n;i=i+1)
+	   if(x[i])
+	     c=c+1;
+	 f_count_ones = c;
+      end
+   endfunction // f_count_ones
+   
+	 
+      
+   
+   always@(posedge clk_i)
+     begin
+	
+
+	if(div_start_phase_sel_valid)
+	  begin
+	     phase_divided0 <= f_fast_div_by_5(phase_up0) + (f_count_ones(zc, 1) * div_start_phase_sel[0]) * (16384/5) ;
+	     phase_divided1 <= f_fast_div_by_5(phase_up1) + (f_count_ones(zc, 2) * div_start_phase_sel[1]) * (16384/5) ;
+	     phase_divided2 <= f_fast_div_by_5(phase_up2) + (f_count_ones(zc, 3) * div_start_phase_sel[2]) * (16384/5) ;
+	     phase_divided3 <= f_fast_div_by_5(phase_up3) + (f_count_ones(zc, 4) * div_start_phase_sel[3]) * (16384/5) ;
+
+	     div_bias <= f_count_ones(zc & div_start_phase_sel,4);
+	     
+
+	  end else begin
+
+	     phase_divided0 <= f_fast_div_by_5(phase_up0) + (f_count_ones(zc, 1) + div_bias) * (16384/5) ;
+	     phase_divided1 <= f_fast_div_by_5(phase_up1) + (f_count_ones(zc, 2) + div_bias) * (16384/5) ;
+	     phase_divided2 <= f_fast_div_by_5(phase_up2) + (f_count_ones(zc, 3) + div_bias) * (16384/5) ;
+	     phase_divided3 <= f_fast_div_by_5(phase_up3) + (f_count_ones(zc, 4) + div_bias) * (16384/5) ;
+
+	     
+	     if(div_bias + f_count_ones(zc,4) >= 5)
+	       div_bias <= div_bias + f_count_ones(zc,4) - 5;
+	     else
+	       div_bias <= div_bias + f_count_ones(zc,4);
+
+	  end
+	
+
+	  
+	
+     end
+
+   monitor_phase #(.g_delay(0)) MonDiv( clk_i, phase_divided0, phase_divided1, phase_divided2, phase_divided3 );
    
    
 
