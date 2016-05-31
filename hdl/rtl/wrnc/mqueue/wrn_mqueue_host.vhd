@@ -88,7 +88,7 @@ begin  -- rtl
 
   U_SI_Wishbone_Slave : wrn_mqueue_wishbone_slave
     generic map (
-      g_with_gcr => false,
+      g_with_gcr => true,
       g_config   => g_config)
     port map (
       clk_i             => clk_i,
