@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2014-12-01
+-- Last update: 2016-05-31
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -91,7 +91,7 @@ architecture rtl of wrn_mqueue_slot is
   signal wr_state : t_wr_state;
   signal rd_state : t_rd_state;
 
-  signal in_claim, in_purge, in_ready : std_logic;
+  signal in_claim, in_purge, in_ready, in_enqueue, in_commit : std_logic;
 
   signal in_cmd_wr, in_stat_rd   : std_logic;
   signal out_cmd_wr, out_stat_rd : std_logic;
@@ -130,6 +130,8 @@ begin  -- rtl
   in_claim <= in_cmd_wr and inb_i.dat(24);
   in_purge <= in_cmd_wr and inb_i.dat(25);
   in_ready <= in_cmd_wr and inb_i.dat(26);
+  in_enqueue <= in_cmd_wr and inb_i.dat(29);
+  in_commit <= in_cmd_wr and inb_i.dat(30);
 
   in_cmd_wr  <= '1' when inb_i.sel = '1' and inb_i.we = '1' and (unsigned(inb_i.adr(9 downto 2)) = c_addr_command)    else '0';
   out_cmd_wr <= '1' when outb_i.sel = '1' and outb_i.we = '1' and (unsigned(outb_i.adr(9 downto 2)) = c_addr_command) else '0';
@@ -193,7 +195,16 @@ begin  -- rtl
     if rising_edge(clk_i) then
       if rst_n_i = '0' then
         wr_state <= IDLE;
+        stat_o.commit_mask <= '0';
       else
+
+        if(in_commit = '1') then
+          stat_o.commit_mask <= '1';
+        elsif ( empty = '1') then
+          stat_o.commit_mask <= '0';
+        end if;
+          
+        
         case wr_state is
           when IDLE =>
             if in_claim = '1' then
@@ -213,6 +224,10 @@ begin  -- rtl
           when ACCEPT_DATA =>
             
             if in_ready = '1' then
+              stat_o.commit_mask <= '1';
+              wr_state <= READY_SEND;
+            elsif in_enqueue = '1' then
+              stat_o.commit_mask <= '0';
               wr_state <= READY_SEND;
             end if;
 

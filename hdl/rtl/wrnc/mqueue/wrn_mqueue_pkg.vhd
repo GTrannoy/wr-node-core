@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2014-12-01
+-- Last update: 2016-05-31
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -95,6 +95,7 @@ package wrn_mqueue_pkg is
     count        : std_logic_vector(7 downto 0);
     current_size : std_logic_vector(7 downto 0);
     ready        : std_logic;
+    commit_mask : std_logic;
   end record;
 
   type t_slot_bus_in_array is array(integer range <>) of t_slot_bus_in;
@@ -110,7 +111,7 @@ package wrn_mqueue_pkg is
   end record;
 
   constant c_dummy_status_out : t_slot_status_out := (
-    '0', '0', x"00", x"00", '0');
+    '0', '0', x"00", x"00", '0', '0');
 
   constant c_dummy_slot_bus_in : t_slot_bus_out := (
     dat => x"00000000"

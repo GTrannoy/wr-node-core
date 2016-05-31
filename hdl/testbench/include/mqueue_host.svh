@@ -213,11 +213,11 @@ class MQueueHost;
 
       gcr_read( `MQUEUE_GCR_SLOT_STATUS, in_stat);
 
-      $display("GCR stat %x", in_stat);
+//      $display("GCR stat %x", in_stat);
 
       gcr_read( `MQUEUE_GCR_IRQ_MASK, irq_mask);
 
-      $display("GCR irq_mask %x", irq_mask);
+//      $display("GCR irq_mask %x", irq_mask);
       
 
       if(in_stat & `MQUEUE_GCR_INCOMING_STATUS_MASK)
@@ -232,7 +232,6 @@ class MQueueHost;
         begin
            if ( slots_out[i].size() )
              begin
-                incoming_send(i, slots_out[i][$].data);
                 slots_out[i].pop_back();
              end
         end

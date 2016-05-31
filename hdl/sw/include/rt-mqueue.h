@@ -33,6 +33,8 @@
 #define MQ_CMD_PURGE (1 << 25)
 #define MQ_CMD_READY (1 << 26)
 #define MQ_CMD_DISCARD (1 << 27)
+#define MQ_CMD_ENQUEUE (1 << 29)
+#define MQ_CMD_COMMIT (1 << 30)
 
 /* MQ Registers */
 #define MQ_SLOT_COMMAND 0
@@ -56,6 +58,16 @@ static inline void mq_writel( int remote, uint32_t val, uint32_t reg )
 static inline void mq_claim (int remote, int slot)
 {
   mq_writel ( remote, MQ_CMD_CLAIM, MQ_OUT(slot) + MQ_SLOT_COMMAND );
+}
+
+static inline void mq_enqueue (int remote, int slot, int count)
+{
+  mq_writel ( remote, MQ_CMD_ENQUEUE | count, MQ_OUT(slot) + MQ_SLOT_COMMAND );
+}
+
+static inline void mq_commit (int remote, int slot)
+{
+  mq_writel ( remote, MQ_CMD_COMMIT, MQ_OUT(slot) + MQ_SLOT_COMMAND );
 }
 
 static inline void mq_send( int remote, int slot, int count)

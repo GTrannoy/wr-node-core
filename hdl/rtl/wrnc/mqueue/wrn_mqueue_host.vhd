@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2014-12-01
+-- Last update: 2016-05-31
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -201,7 +201,7 @@ begin  -- rtl
         end loop;
 
         for i in 0 to g_config.out_slot_count-1 loop
-          irq_vec_out(i) <= not outgoing_stat(i).empty;
+          irq_vec_out(i) <= not outgoing_stat(i).empty and outgoing_stat(i).commit_mask;
         end loop;
 
         if((irq_vec_out and irq_config.mask_out) /= x"0000")
