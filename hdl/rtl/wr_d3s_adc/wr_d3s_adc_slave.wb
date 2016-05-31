@@ -1,0 +1,88 @@
+-- -*- Mode: LUA; tab-width: 2 -*-
+
+peripheral {
+	 name = "WR D3S WB (slave)";
+   prefix="d3s";
+
+	 hdl_entity="d3ss_adc_slave_wb";
+	 
+
+	 fifo_reg {
+			size = 2048; -- or more. We'll see :)
+			direction = BUS_TO_CORE;
+			prefix = "phfifo";
+			name = "Phase Data FIFO";
+
+			description = "FIFO with the compressed phase entries. Each entry contains a timestamp and one of two record types:\
+- Initial phase (IS_RL = 0): RL_PHASE contains a fixed initial phase value, RL_LENGTH is ignored.\
+- Run-length compressed phase (IS_RL = 1): RL_PHASE contains a phase delta value, RL_LENGTH is the run length (in samples).\
+";
+
+			flags_bus = {FIFO_FULL, FIFO_EMPTY, FIFO_COUNT, FIFO_CLEAR};
+			flags_dev = {FIFO_FULL, FIFO_EMPTY};
+			
+			field {
+				 name = "Timestamp";
+				 prefix = "tstamp";
+				 description = "Record timestamp (WR clock cycles)";
+				 type = SLV;
+				 size = 28;
+			};
+
+			field {
+				 name = "Run Length Enable";
+				 prefix = "IS_RL";
+				 type = BIT;
+			};
+
+			field {
+				 name = "Run Length";
+				 prefix = "RL_LENGTH";
+				 size = 16;
+				 type = SLV;
+			};
+
+			field {
+				 name = "Phase";
+				 prefix = "RL_PHASE";
+				 size = 32;
+				 type = SLV;
+			};
+	 };
+
+
+	 reg {
+			name = "Control Reg";
+			prefix = "CR";
+
+			field {
+				 prefix = "ENABLE";
+				 name = "ENABLE";
+				 description = "write 1: enables sampling and compression of the phase data. The ADC FIFO is filled with compressed phase records";
+				 type = BIT;
+				 access_dev = READ_ONLY;
+				 access_bus = READ_WRITE;
+			};
+
+	 };
+
+
+	 reg {
+			name = "Reconstruction delay(coarse)";
+			prefix = "REC_DELAY_COARSE";
+
+			field {
+				 name = "Delay";
+
+				 description = "Delay in 8ns ticks";
+				 type = SLV;
+				 size = 16;
+				 access_dev = READ_ONLY;
+				 access_bus = READ_WRITE;
+				 clock = "clk_wr_i";
+			};
+
+	 };
+	 
+
+};

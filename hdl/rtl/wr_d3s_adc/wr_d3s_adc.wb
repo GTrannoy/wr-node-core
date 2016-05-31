@@ -1,7 +1,7 @@
 -- -*- Mode: LUA; tab-width: 2 -*-
 
 peripheral {
-    name = "WR D3S WB";
+	 name = "WR D3S WB (master)";
    prefix="d3s";
 
 	 hdl_entity="d3s_adc_wb";
