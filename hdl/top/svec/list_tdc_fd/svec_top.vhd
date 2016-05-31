@@ -280,16 +280,16 @@ architecture rtl of svec_top is
     (
       out_slot_count  => 4,
       out_slot_config => (
-        0             => (width => 128, entries => 8),  -- control CPU 0 (to host)
-        1             => (width => 128, entries => 8),  -- control CPU 1 (to host)
-        2             => (width => 16, entries => 128),  -- log CPU 0
-        3             => (width => 16, entries => 128),  -- log CPU 1
+        0             => (width => 128, entries => 32),  -- control CPU 0 (to host)
+        1             => (width => 128, entries => 32),  -- control CPU 1 (to host)
+        2             => (width => 128, entries => 32),  -- log CPU 0
+        3             => (width => 128, entries => 32),  -- log CPU 1
         others        => (0, 0)),
 
       in_slot_count  => 2,
       in_slot_config => (
-        0            => (width => 32, entries => 8),  -- control CPU 0 (from host)
-        1            => (width => 32, entries => 8),  -- control CPU 1 (from host)
+        0            => (width => 128, entries => 32),  -- control CPU 0 (from host)
+        1            => (width => 128, entries => 32),  -- control CPU 1 (from host)
         others       => (0, 0)
         )
       );
