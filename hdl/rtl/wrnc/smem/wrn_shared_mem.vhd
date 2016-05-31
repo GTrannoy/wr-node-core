@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-10-14
+-- Last update: 2016-05-27
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -67,7 +67,7 @@ architecture rtl of wrn_shared_mem is
   constant c_RANGE_FLIP   : std_logic_vector(2 downto 0) := "101";
   constant c_RANGE_TEST_AND_SET   : std_logic_vector(2 downto 0) := "110";
 
-  type t_smem_array is array (0 to g_size-1) of std_logic_vector(31 downto 0);
+  type t_smem_array is array (0 to g_size-1) of std_logic_vector(7 downto 0);
   type t_state is (FETCH_IDLE, UPDATE, WRITEBACK);
 
   function f_is_synthesis return boolean is
@@ -98,25 +98,55 @@ architecture rtl of wrn_shared_mem is
         return tmp;
       end f_clear_smem;
   
-  signal mem                : t_smem_array := f_clear_smem;
+  signal mem0                : t_smem_array := f_clear_smem;
+  signal mem1                : t_smem_array := f_clear_smem;
+  signal mem2                : t_smem_array := f_clear_smem;
+  signal mem3                : t_smem_array := f_clear_smem;
   signal op_addr            : integer;
   signal op_sel             : std_logic_vector(2 downto 0);
   signal fetch_data, result : std_logic_vector(31 downto 0);
   signal state              : t_state;
+
+  signal wr_mask :std_logic_vector(3 downto 0);
 begin  -- rtl
 
   op_sel  <= slave_i.adr(18 downto 16);
   op_addr <= f_sanitize_address( slave_i.adr(15 downto 2) );
 
+  p_byte_mask: process(state, op_sel, slave_i)
+    begin
+      if state = WRITEBACK then
+        wr_mask <= (others => '1');
+      elsif (op_sel = c_RANGE_DIRECT and slave_i.we = '1') then
+        wr_mask <= slave_i.sel;
+        else
+          wr_mask <= (others => '0');
+          end if;
+       
+      end process;
+          
   p_readout : process(clk_i)
   begin
     if rising_edge(clk_i) then
       if(slave_i.cyc = '1' and slave_i.stb = '1') then
-        if(state = WRITEBACK or (op_sel = c_RANGE_DIRECT and slave_i.we = '1')) then
-          mem(op_addr) <= result;
+
+        if wr_mask(0) = '1' then
+          mem0(op_addr) <= result(7 downto 0);
+        end if;
+        if wr_mask(1) = '1' then
+          mem1(op_addr) <= result(15 downto 8);
+        end if;
+        if wr_mask(2) = '1' then
+          mem2(op_addr) <= result(23 downto 16);
+        end if;
+        if wr_mask(3) = '1' then
+          mem3(op_addr) <= result(31 downto 24);
         end if;
 
-        fetch_data <= mem(op_addr);
+        fetch_data(7 downto 0) <= mem0(op_addr);
+        fetch_data(15 downto 8) <= mem1(op_addr);
+        fetch_data(23 downto 16) <= mem2(op_addr);
+        fetch_data(31 downto 24) <= mem3(op_addr);
       end if;
     end if;
   end process;
