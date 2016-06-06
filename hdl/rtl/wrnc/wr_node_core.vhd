@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-08-13
+-- Last update: 2016-05-27
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -89,6 +89,9 @@ entity wr_node_core is
     gpio_o : out std_logic_vector(31 downto 0);
     gpio_i : in  std_logic_vector(31 downto 0);
 
+    wrn_i2c_i : in t_wrn_i2c_in_array(0 to g_config.cpu_count-1);
+    wrn_i2c_o : out t_wrn_i2c_out_array(0 to g_config.cpu_count-1);
+    
     host_irq_o      : out std_logic;
     debug_msg_irq_o : out std_logic
     );
@@ -121,6 +124,12 @@ architecture rtl of wr_node_core is
       hmq_ready_i : in  std_logic_vector(15 downto 0);
       gpio_i      : in  std_logic_vector(31 downto 0);
       gpio_o      : out std_logic_vector(31 downto 0);
+      i2c_sel_o : out std_logic;
+      wrn_scl_i : in std_logic := '1';
+      wrn_sda_i : in std_logic := '1';
+      wrn_scl_o : out std_logic;
+      wrn_sda_o : out std_logic;
+      i2c_lck_i : in std_logic;
       dbg_drdy_o  : out std_logic;
       dbg_dack_i  : in  std_logic;
       dbg_data_o  : out std_logic_vector(7 downto 0));
@@ -455,6 +464,12 @@ begin  -- rtl
         hmq_ready_i => hmq_status,
         gpio_o      => cpu_gpio_out(i),
         gpio_i      => gpio_i,
+        i2c_sel_o   => wrn_i2c_o(i).sel,
+        wrn_scl_i   => wrn_i2c_i(i).scl,
+        wrn_sda_i   => wrn_i2c_i(i).sda,
+        wrn_scl_o   => wrn_i2c_o(i).scl,
+        wrn_sda_o   => wrn_i2c_o(i).sda,
+        i2c_lck_i   => wrn_i2c_i(i).lck,
         dbg_drdy_o  => cpu_dbg_drdy(i),
         dbg_dack_i  => cpu_dbg_dack(i),
         dbg_data_o  => cpu_dbg_msg_data(i));

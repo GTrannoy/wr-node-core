@@ -107,6 +107,83 @@ peripheral {
 
 
 	 reg {
+	    name = "GPIO Set/Readback Register";
+	    prefix = "GPSR";
+	 
+	    field {
+	       name = "FMC I2C bitbanged SCL";
+	       prefix = "fmc_scl";
+	       description = "write 1: Set FMC SCL line to 1 (pullup)\
+	                      read : returns the current status of the SCL line.";
+	       type = BIT;
+	       access_bus = READ_WRITE;
+	       access_dev = READ_WRITE;
+	       load = LOAD_EXT;
+	    };
+	 
+	    field {
+	       name = "FMC I2C bitbanged SDA";
+	       prefix = "fmc_sda";
+	       description = "write 1: Set FMC SDA line to 1 (pullup)\
+	                      read : returns the current status of the SCL line.";
+	       type = BIT;
+	       access_bus = READ_WRITE;
+	       access_dev = READ_WRITE;
+	       load = LOAD_EXT;
+	    };
+
+	    field {
+	       name = "Select I2C bus";
+	       prefix = "fmc_sel";
+	       description = "write 1 : the i2c bus is locked for this peripheral";
+	       type = BIT;
+               access_bus = READ_WRITE;
+               access_dev = READ_WRITE;
+               load = LOAD_EXT;
+	       align = 2;
+	    };
+
+	    field {
+	       name = "I2C bus locked";
+	       prefix = "fmc_lck";
+	       description = "read 1 : the i2c bus is locked by another peripheral";
+	       type = BIT;
+	       access_bus = READ_ONLY;
+	       access_dev = WRITE_ONLY;
+	    };
+
+	 };
+	 
+	 reg {
+	    name = "GPIO Clear Register";
+	    prefix = "GPCR";
+	 
+	    field {
+	       name = "FMC I2C bitbanged SCL";
+	       prefix = "fmc_scl";
+	       description = "write 1: Set FMC SCL line to 1 (pullup)\
+	                      read : returns the current status of the SCL line.";
+	       type = MONOSTABLE;
+	    };
+	 
+	    field {
+	       name = "FMC I2C bitbanged SDA";
+	       prefix = "fmc_sda";
+	       description = "write 1: Set FMC SDA line to 1 (pullup)\
+	                      read : returns the current status of the SCL line.";
+	       type = MONOSTABLE;
+	    };
+
+            field {
+               name = "Select FMC I2C bus";
+               prefix = "fmc_sel";
+               description = "write 1 : Set fmc i2c sel line to 0. Release i2c bus";
+               type = MONOSTABLE;
+               align = 2;
+            };
+	 };
+
+	 reg {
 			name = "TAI Cycles";
 			prefix = "TAI_CYCLES";
 

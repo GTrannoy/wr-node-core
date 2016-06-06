@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2016-01-22
+-- Last update: 2016-04-29
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -88,6 +88,9 @@ entity wr_node_core_with_etherbone is
     gpio_o : out std_logic_vector(31 downto 0);
     gpio_i : in  std_logic_vector(31 downto 0);
 
+    wrn_i2c_i       : in t_wrn_i2c_in_array(0 to g_config.cpu_count-1);
+    wrn_i2c_o       : out t_wrn_i2c_out_array(0 to g_config.cpu_count-1);
+    
     debug_msg_irq_o : out std_logic
 
     );
@@ -335,6 +338,8 @@ begin
         tm_i         => tm_i,
         gpio_i       => gpio_i,
         gpio_o       => gpio_o,
+        wrn_i2c_i    => wrn_i2c_i,
+        wrn_i2c_o    => wrn_i2c_o,
         debug_msg_irq_o => debug_msg_irq_o);
 
     ebs_mux_in(c_MUX_TOPXBAR) <= eb_topxbar_i;
@@ -369,6 +374,8 @@ begin
         tm_i         => tm_i,
         gpio_i       => gpio_i,
         gpio_o       => gpio_o,
+        wrn_i2c_i    => wrn_i2c_i,
+        wrn_i2c_o    => wrn_i2c_o,
         debug_msg_irq_o => debug_msg_irq_o);
     
   end generate gen_wr_node_without_eb_remote;

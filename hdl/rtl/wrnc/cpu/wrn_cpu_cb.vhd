@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-08-13
+-- Last update: 2016-05-27
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -86,6 +86,13 @@ entity wrn_cpu_cb is
     gpio_i : in  std_logic_vector(31 downto 0);
     gpio_o : out std_logic_vector(31 downto 0);
 
+    i2c_sel_o : out std_logic;
+    wrn_scl_i : in std_logic := '1';
+    wrn_sda_i : in std_logic := '1';
+    wrn_scl_o : out std_logic;
+    wrn_sda_o : out std_logic;
+    i2c_lck_i : in std_logic;
+    
     dbg_drdy_o : out std_logic;
     dbg_dack_i : in  std_logic;
     dbg_data_o : out std_logic_vector(7 downto 0)
@@ -301,8 +308,42 @@ begin  -- rtl
     end if;
   end process;
 
-  
-  
+  -------------------------------------
+  -- I2C - FMC
+  -------------------------------------
+  p_drive_i2c : process(clk_sys_i)
+  begin
+    if rising_edge(clk_sys_i) then
+      if rst_n_i = '0' then
+        wrn_scl_o <= '1';
+        wrn_sda_o <= '1';
+        i2c_sel_o <= '0';
+      else
+        if(local_regs_out.gpsr_fmc_sda_load_o = '1' and local_regs_out.gpsr_fmc_sda_o = '1') then
+          wrn_sda_o <= '1';
+        elsif(local_regs_out.gpcr_fmc_sda_o = '1') then
+          wrn_sda_o <= '0';
+        end if;
+
+        if(local_regs_out.gpsr_fmc_scl_load_o = '1' and local_regs_out.gpsr_fmc_scl_o = '1') then
+          wrn_scl_o <= '1';
+        elsif(local_regs_out.gpcr_fmc_scl_o = '1') then
+          wrn_scl_o <= '0';
+        end if;
+
+        if(local_regs_out.gpsr_fmc_sel_load_o = '1' and local_regs_out.gpsr_fmc_sel_o = '1') then
+          i2c_sel_o <= '1';
+        elsif(local_regs_out.gpcr_fmc_sel_o = '1') then
+          i2c_sel_o <= '0';
+        end if;
+      end if;
+    end if;
+  end process;
+
+  local_regs_in.gpsr_fmc_sda_i        <= wrn_sda_i;
+  local_regs_in.gpsr_fmc_scl_i        <= wrn_scl_i;
+  local_regs_in.gpsr_fmc_lck_i <= i2c_lck_i;
+
   p_gpio : process(clk_sys_i)
   begin
     if rising_edge(clk_sys_i) then

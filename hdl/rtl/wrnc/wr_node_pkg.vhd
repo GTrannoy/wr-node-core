@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2016-01-22
+-- Last update: 2016-05-27
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -59,6 +59,21 @@ package wr_node_pkg is
     cycles     : std_logic_vector(27 downto 0);
     aux_locked : std_logic_vector(7 downto 0);
   end record;
+
+  type t_wrn_i2c_in is record
+    scl  : std_logic;
+    sda  : std_logic;
+    lck  : std_logic;
+  end record;
+
+  type t_wrn_i2c_out is record
+    scl : std_logic;
+    sda : std_logic;
+    sel : std_logic;
+  end record;
+
+  type t_wrn_i2c_in_array is array(integer range <>) of t_wrn_i2c_in;
+  type t_wrn_i2c_out_array is array(integer range <>) of t_wrn_i2c_out;
 
   type t_int_array is array(integer range<>) of integer;
 
@@ -114,6 +129,8 @@ package wr_node_pkg is
       tm_i            : in  t_wrn_timing_if;
       gpio_o          : out std_logic_vector(31 downto 0);
       gpio_i          : in  std_logic_vector(31 downto 0);
+      wrn_i2c_i       : in t_wrn_i2c_in_array(0 to g_config.cpu_count-1);
+      wrn_i2c_o       : out t_wrn_i2c_out_array(0 to g_config.cpu_count-1);
       host_irq_o      : out std_logic;
       debug_msg_irq_o : out std_logic);
   end component wr_node_core;
@@ -148,6 +165,8 @@ package wr_node_pkg is
       tm_i            : in  t_wrn_timing_if;
       gpio_o          : out std_logic_vector(31 downto 0);
       gpio_i          : in  std_logic_vector(31 downto 0);
+      wrn_i2c_i       : in t_wrn_i2c_in_array(0 to g_config.cpu_count-1);
+      wrn_i2c_o       : out t_wrn_i2c_out_array(0 to g_config.cpu_count-1);
       debug_msg_irq_o : out std_logic
       );
   end component wr_node_core_with_etherbone;
