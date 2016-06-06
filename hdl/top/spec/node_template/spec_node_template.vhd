@@ -1,3 +1,4 @@
+
 -------------------------------------------------------------------------------
 -- Title      : WR Node Core template design for the SPEC carrier
 -- Project    : WR Node Core
@@ -6,7 +7,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2016-04-27
+-- Last update: 2016-06-02
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -260,6 +261,41 @@ architecture rtl of spec_node_template is
       rst_n_o          : out std_logic);
   end component spec_reset_gen;
 
+  component i2c_mux is
+    port (
+      i2c_sel_i : in  std_logic_vector(1 downto 0);
+      i2c_lck_o : out std_logic;
+      sda_mux_i : in  std_logic;
+      sda_mux_o : out std_logic;
+      scl_mux_i : in  std_logic;
+      scl_mux_o : out std_logic;
+      wrc_sda_i : out std_logic;
+      wrc_sda_o : in  std_logic;
+      wrc_scl_i : out std_logic;
+      wrc_scl_o : in  std_logic;
+      wrn_sda_i : out std_logic;
+      wrn_sda_o : in  std_logic;
+      wrn_scl_i : out std_logic;
+      wrn_scl_o : in  std_logic
+    );
+  end component;
+
+  component chipscope_ila
+    port (
+      CONTROL : inout std_logic_vector(35 downto 0);
+      CLK     : in    std_logic;
+      TRIG0   : in    std_logic_vector(31 downto 0);
+      TRIG1   : in    std_logic_vector(31 downto 0);
+      TRIG2   : in    std_logic_vector(31 downto 0);
+      TRIG3   : in    std_logic_vector(31 downto 0));
+  end component;
+  component chipscope_icon
+    port (
+      CONTROL0 : inout std_logic_vector (35 downto 0));
+  end component;
+  signal CONTROL : std_logic_vector(35 downto 0);
+  signal TRIG    : std_logic_vector(127 downto 0);
+  
   signal dac_hpll_load_p1 : std_logic;
   signal dac_dpll_load_p1 : std_logic;
   signal dac_hpll_data    : std_logic_vector(15 downto 0);
@@ -341,12 +377,26 @@ architecture rtl of spec_node_template is
   signal tm_dac_wr          : std_logic_vector(0 downto 0);
 
 
-  signal wrc_scl_out, wrc_scl_in, wrc_sda_out, wrc_sda_in : std_logic;
+  signal wrc_scl_out : std_logic;
+  signal wrc_scl_in  : std_logic;
+  signal wrc_sda_out : std_logic;
+  signal wrc_sda_in  : std_logic;
+  signal wrc_i2c_sel : std_logic;
+  signal wrn_i2c_in  : t_wrn_i2c_in_array(0 to g_wr_node_config.cpu_count-1);
+  signal wrn_i2c_out : t_wrn_i2c_out_array(0 to g_wr_node_config.cpu_count-1);
+  signal i2c_lck     : std_logic;
+  signal fmc_scl_in  : std_logic;
+  signal fmc_sda_in  : std_logic;
+  signal fmc_scl_out : std_logic;
+  signal fmc_sda_out : std_logic;
+
+  --signal wrc_scl_out, wrc_scl_in, wrc_sda_out, wrc_sda_in : std_logic;
   signal sfp_scl_out, sfp_scl_in, sfp_sda_out, sfp_sda_in : std_logic;
   signal wrc_owr_en, wrc_owr_in                           : std_logic_vector(1 downto 0);
 
   signal pllout_clk_sys       : std_logic;
   signal pllout_clk_multiboot       : std_logic;
+  signal pllout_clk_csi2c     : std_logic;
   signal pllout_clk_cpu       : std_logic;
   signal pllout_clk_dmtd      : std_logic;
   signal pllout_clk_fb_pllref : std_logic;
@@ -356,7 +406,8 @@ architecture rtl of spec_node_template is
   signal clk_125m_pllref  : std_logic;
   signal clk_125m_gtp     : std_logic;
   signal clk_sys          : std_logic;
-  signal clk_multiboot          : std_logic;
+  signal clk_multiboot    : std_logic;
+  signal clk_csi2c        : std_logic;
   signal clk_cpu         : std_logic;
   signal clk_dmtd         : std_logic;
 
@@ -500,6 +551,9 @@ begin
       CLKOUT2_DIVIDE     => 100,
       CLKOUT2_PHASE      => 0.000,
       CLKOUT2_DUTY_CYCLE => 0.500,
+      CLKOUT3_DIVIDE     => 128,
+      CLKOUT3_PHASE      => 0.000,
+      CLKOUT3_DUTY_CYCLE => 0.500,
       CLKIN_PERIOD       => 8.0,
       REF_JITTER         => 0.016)
     port map (
@@ -507,7 +561,7 @@ begin
       CLKOUT0  => pllout_clk_sys,
       CLKOUT1  => pllout_clk_cpu,
       CLKOUT2  => pllout_clk_multiboot,
-      CLKOUT3  => open,
+      CLKOUT3  => pllout_clk_csi2c,
       CLKOUT4  => open,
       CLKOUT5  => open,
       LOCKED   => sys_locked,
@@ -556,6 +610,12 @@ begin
     port map (
       O => clk_multiboot,
       I => pllout_clk_multiboot);
+
+ cmp_clk_sys_csi2c : BUFG
+    port map (
+      O => clk_csi2c,
+      I => pllout_clk_csi2c);
+  
   cmp_clk_cpu_buf : BUFG
     port map (
       O => clk_cpu,
@@ -712,10 +772,12 @@ begin
       led_link_o => led_green,
       led_act_o  => led_red,
 
-      scl_o     => wrc_scl_out,
-      scl_i     => wrc_scl_in,
-      sda_o     => wrc_sda_out,
-      sda_i     => wrc_sda_in,
+      scl_o        => wrc_scl_out,
+      scl_i        => wrc_scl_in,
+      sda_o        => wrc_sda_out,
+      sda_i        => wrc_sda_in,
+      i2c_sel_o    => wrc_i2c_sel,
+      i2c_lck_i    => i2c_lck,
       sfp_scl_o => sfp_scl_out,
       sfp_scl_i => sfp_scl_in,
       sfp_sda_o => sfp_sda_out,
@@ -756,12 +818,6 @@ begin
       pps_led_o   => open
       );
 
-  -- FMC I2C connection
-  fmc_scl_b <= '0' when wrc_scl_out = '0' else 'Z';
-  fmc_sda_b <= '0' when wrc_sda_out = '0' else 'Z';
-  wrc_scl_in <= fmc_scl_b;
-  wrc_sda_in <= fmc_sda_b;
-
   U_DAC_ARB : spec_serial_dac_arb
     generic map (
       g_invert_sclk    => false,
@@ -783,6 +839,65 @@ begin
       dac_din_o     => dac_din_o);
 
   end generate gen_with_wr;
+
+  wrn_i2c_in(1).lck <= i2c_lck;
+  -- FMC I2C connection
+  U_I2C_MUX : i2c_mux
+    port map (
+      i2c_sel_i(0) => wrc_i2c_sel,
+      i2c_sel_i(1) => wrn_i2c_out(1).sel,
+      i2c_lck_o => i2c_lck,
+
+      sda_mux_i => fmc_sda_in,
+      sda_mux_o => fmc_sda_out,
+      scl_mux_i => fmc_scl_in,
+      scl_mux_o => fmc_scl_out,
+
+      wrc_sda_i => wrc_sda_in,
+      wrc_sda_o => wrc_sda_out,
+      wrc_scl_i => wrc_scl_in,
+      wrc_scl_o => wrc_scl_out,
+
+      wrn_sda_i => wrn_i2c_in(1).sda,
+      wrn_sda_o => wrn_i2c_out(1).sda,
+      wrn_scl_i => wrn_i2c_in(1).scl,
+      wrn_scl_o => wrn_i2c_out(1).scl
+      );
+
+  --3 state I2C port
+  fmc_scl_b <= '0' when fmc_scl_out = '0' else 'Z';
+  fmc_sda_b <= '0' when fmc_sda_out = '0' else 'Z';
+  fmc_scl_in <= fmc_scl_b;
+  fmc_sda_in <= fmc_sda_b;
+
+--  chipscope_icon_1: chipscope_icon
+--    port map (
+--      CONTROL0 => CONTROL);
+--
+--  chipscope_ila_1: chipscope_ila
+--    port map (
+--      CONTROL => CONTROL,
+--      CLK     => clk_csi2c,
+--      TRIG0   => TRIG(31 downto 0),
+--      TRIG1   => TRIG(63 downto 32),
+--      TRIG2   => TRIG(95 downto 64),
+--      TRIG3   => TRIG(127 downto 96));
+--
+--  trig(0)  <= i2c_lck;
+--  trig(1)  <= wrc_i2c_sel;
+--  trig(2)  <= wrn_i2c_out(1).sel;
+--  trig(3)  <= wrc_sda_in;
+--  trig(4)  <= wrc_sda_out;
+--  trig(5)  <= wrc_scl_in;
+--  trig(6)  <= wrc_scl_out;
+--  trig(7)  <= wrn_i2c_in(1).sda;
+--  trig(8)  <= wrn_i2c_out(1).sda;
+--  trig(9)  <= wrn_i2c_in(1).scl;
+--  trig(10) <= wrn_i2c_out(1).scl;
+--  trig(11) <= fmc_scl_in;
+--  trig(12) <= fmc_sda_in;
+--  trig(13) <= fmc_scl_out;
+--  trig(14) <= fmc_sda_out;
 
   gen_without_wr: if ( not g_with_white_rabbit ) generate
     cnx_master_in(c_SLAVE_WR_CORE).ack <= '1';
@@ -855,6 +970,8 @@ begin
       tm_i           => tm,
       gpio_o         => wrn_gpio_out,
       gpio_i         => wrn_gpio_in,
+      wrn_i2c_i      => wrn_i2c_in,
+      wrn_i2c_o      => wrn_i2c_out,
       debug_msg_irq_o => wrn_debug_msg_irq
       );
 
@@ -882,6 +999,8 @@ begin
         host_irq_o     => wrn_irq,
         gpio_o         => wrn_gpio_out,
         gpio_i         => wrn_gpio_in,
+        wrn_i2c_i      => wrn_i2c_in,
+        wrn_i2c_o      => wrn_i2c_out,
         debug_msg_irq_o => wrn_debug_msg_irq,
         tm_i => tm
     );
