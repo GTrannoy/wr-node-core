@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2016-05-31
+-- Last update: 2016-06-06
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -83,6 +83,7 @@ package wrn_mqueue_pkg is
     dat : std_logic_vector(31 downto 0);
     adr : std_logic_vector(9 downto 0);
     we  : std_logic;
+    wmask : std_logic_vector(3 downto 0);
   end record;
 
   type t_slot_bus_out is record

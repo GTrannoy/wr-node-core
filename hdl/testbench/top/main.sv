@@ -138,7 +138,7 @@ module main;
       
       
       forever begin
-//	 cpu_csr.update();
+	 cpu_csr.update();
 	 while(host_irq)
            hmq.update();
          #1us;

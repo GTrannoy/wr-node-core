@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2016-05-31
+-- Last update: 2016-06-06
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -71,9 +71,13 @@ architecture rtl of wrn_mqueue_slot is
   constant c_slot_offset_bits : integer := f_log2_size(g_width);
   constant c_memory_size      : integer := g_width * g_entries;
 
-  type t_slot_mem_array is array (0 to c_memory_size-1) of std_logic_vector(31 downto 0);
+  type t_slot_mem_array is array (0 to c_memory_size-1) of std_logic_vector(7 downto 0);
 
-  shared variable mem                           : t_slot_mem_array;
+  shared variable mem0 : t_slot_mem_array;
+  shared variable mem1 : t_slot_mem_array;
+  shared variable mem2 : t_slot_mem_array;
+  shared variable mem3 : t_slot_mem_array;
+
   signal mem_raddr, mem_waddr                   : unsigned(f_log2_size(c_memory_size)-1 downto 0);
   signal mem_wdata, mem_rdata_in, mem_rdata_out : std_logic_vector(31 downto 0);
 
@@ -84,7 +88,7 @@ architecture rtl of wrn_mqueue_slot is
   type t_wr_state is (IDLE, READY_SEND, ACCEPT_DATA, IGNORE_MESSAGE);
   type t_rd_state is (IDLE, READ_SIZE, WAIT_DISCARD);
 
-  signal mem_we : std_logic;
+  signal mem_we : std_logic_vector(3 downto 0);
 
   signal full, empty : std_logic;
 
@@ -103,7 +107,7 @@ architecture rtl of wrn_mqueue_slot is
 
   constant c_addr_command : integer := 0;
   constant c_addr_status  : integer := 1;
-  signal   n_words_last   : std_logic_vector(7 downto 0);
+  signal n_words_last     : std_logic_vector(7 downto 0);
   
 begin  -- rtl
 
@@ -111,9 +115,11 @@ begin  -- rtl
   p_mem_write : process(inb_i, wr_ptr, wr_state)
   begin
     if(wr_state = IGNORE_MESSAGE) then
-      mem_we <= '0';
+      mem_we <= (others => '0');
     else
-      mem_we <= (inb_i.we and inb_i.sel);
+      for i in 0 to 3 loop
+        mem_we(i) <= (inb_i.we and inb_i.sel and inb_i.wmask(i));
+      end loop;
     end if;
 
     mem_waddr <= wr_ptr & unsigned(inb_i.adr(c_slot_offset_bits+1 downto 2));
@@ -127,17 +133,17 @@ begin  -- rtl
   status(31 downto 28) <= std_logic_vector(to_unsigned(f_log2_size(g_width), 4));
   status(7 downto 2)   <= std_logic_vector(to_unsigned(f_log2_size(g_entries), 6));
 
-  in_claim <= in_cmd_wr and inb_i.dat(24);
-  in_purge <= in_cmd_wr and inb_i.dat(25);
-  in_ready <= in_cmd_wr and inb_i.dat(26);
+  in_claim   <= in_cmd_wr and inb_i.dat(24);
+  in_purge   <= in_cmd_wr and inb_i.dat(25);
+  in_ready   <= in_cmd_wr and inb_i.dat(26);
   in_enqueue <= in_cmd_wr and inb_i.dat(29);
-  in_commit <= in_cmd_wr and inb_i.dat(30);
+  in_commit  <= in_cmd_wr and inb_i.dat(30);
 
   in_cmd_wr  <= '1' when inb_i.sel = '1' and inb_i.we = '1' and (unsigned(inb_i.adr(9 downto 2)) = c_addr_command)    else '0';
   out_cmd_wr <= '1' when outb_i.sel = '1' and outb_i.we = '1' and (unsigned(outb_i.adr(9 downto 2)) = c_addr_command) else '0';
 
   out_discard <= out_discard_i or (out_cmd_wr and outb_i.dat(27));
-  out_purge <= out_cmd_wr and outb_i.dat(25);
+  out_purge   <= out_cmd_wr and outb_i.dat(25);
 
   p_read_status : process(clk_i)
   begin
@@ -163,17 +169,33 @@ begin  -- rtl
   p_mem_port1 : process(clk_i)
   begin
     if rising_edge(clk_i) then
-      if(mem_we = '1') then
-        mem(to_integer(mem_waddr)) := mem_wdata;
+      if(mem_we(0) = '1') then
+        mem0(to_integer(mem_waddr)) := mem_wdata(7 downto 0);
       end if;
-      mem_rdata_in <= mem(to_integer(unsigned(mem_waddr)));
+      if(mem_we(1) = '1') then
+        mem1(to_integer(mem_waddr)) := mem_wdata(15 downto 8);
+      end if;
+      if(mem_we(2) = '1') then
+        mem2(to_integer(mem_waddr)) := mem_wdata(23 downto 16);
+      end if;
+      if(mem_we(3) = '1') then
+        mem3(to_integer(mem_waddr)) := mem_wdata(31 downto 24);
+      end if;
+
+      mem_rdata_in(7 downto 0)   <= mem0(to_integer(unsigned(mem_waddr)));
+      mem_rdata_in(15 downto 8)  <= mem1(to_integer(unsigned(mem_waddr)));
+      mem_rdata_in(23 downto 16) <= mem2(to_integer(unsigned(mem_waddr)));
+      mem_rdata_in(31 downto 24) <= mem3(to_integer(unsigned(mem_waddr)));
     end if;
   end process;
 
   p_mem_port2 : process(clk_i)
   begin
     if rising_edge(clk_i) then
-      mem_rdata_out <= mem(to_integer(mem_raddr));
+      mem_rdata_out(7 downto 0)   <= mem0(to_integer(mem_raddr));
+      mem_rdata_out(15 downto 8)  <= mem1(to_integer(mem_raddr));
+      mem_rdata_out(23 downto 16) <= mem2(to_integer(mem_raddr));
+      mem_rdata_out(31 downto 24) <= mem3(to_integer(mem_raddr));
     end if;
   end process;
 
@@ -194,17 +216,17 @@ begin  -- rtl
   begin
     if rising_edge(clk_i) then
       if rst_n_i = '0' then
-        wr_state <= IDLE;
+        wr_state           <= IDLE;
         stat_o.commit_mask <= '0';
       else
 
         if(in_commit = '1') then
           stat_o.commit_mask <= '1';
-        elsif ( empty = '1') then
+        elsif (empty = '1') then
           stat_o.commit_mask <= '0';
         end if;
-          
-        
+
+
         case wr_state is
           when IDLE =>
             if in_claim = '1' then
@@ -225,10 +247,10 @@ begin  -- rtl
             
             if in_ready = '1' then
               stat_o.commit_mask <= '1';
-              wr_state <= READY_SEND;
+              wr_state           <= READY_SEND;
             elsif in_enqueue = '1' then
               stat_o.commit_mask <= '0';
-              wr_state <= READY_SEND;
+              wr_state           <= READY_SEND;
             end if;
 
           when READY_SEND =>
