@@ -78,3 +78,7 @@ xst/
 rtl/*.h
 scp.sh
 disasm.S
+*.mif
+*.asy
+*.xco
+*.debug
