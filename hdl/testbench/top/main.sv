@@ -31,17 +31,20 @@ module main;
       rst_n = 1;
    end
 
+   wire host_irq;   
+
    IVHDWishboneMaster Host ( clk_sys, rst_n );
 
    wr_node_core # (
 		   .g_double_core_clock(1'b0)
 		   )DUT (
-                     .clk_i   (clk_sys),
-		     .clk_cpu_i(clk_cpu),
-		     .rst_n_i (rst_n),
-                     .host_slave_i (Host.master.out),
-                     .host_slave_o (Host.master.in)
-    );
+			 .clk_i   (clk_sys),
+			 .clk_cpu_i(clk_cpu),
+			 .rst_n_i (rst_n),
+			 .host_slave_i (Host.master.out),
+			 .host_slave_o (Host.master.in),
+			 .host_irq_o(host_irq)
+			 );
 
    initial begin
       NodeCPUControl cpu_csr;
@@ -59,15 +62,20 @@ module main;
       cpu_csr = new ( Host.get_accessor(), 'hc000 );
       hmq = new ( Host.get_accessor(), 0 );
 
+      // enable all IRQs
+      host_acc.write(`MQUEUE_GCR_IRQ_MASK, 'hffff);
+      
       cpu_csr.init();
 
       cpu_csr.load_firmware (0, "../../sw/debug-test/debug-test.ram");
       cpu_csr.reset_core(0, 0);
+
 /* -----\/----- EXCLUDED -----\/-----
       cpu_csr.load_firmware (1, "../../sw/debug-test/debug-test.ram");
       cpu_csr.reset_core(1, 0);
  -----/\----- EXCLUDED -----/\----- */
 
+      
 
       $display("CPU0 started\n");
       
@@ -101,6 +109,7 @@ module main;
  -----/\----- EXCLUDED -----/\----- */
 
 
+/* -----\/----- EXCLUDED -----\/-----
       cpu_csr.set_smem_op(`SMEM_OP_DIRECT);
 
       host_acc.write('h10000, 'hcafebabe);
@@ -123,12 +132,15 @@ module main;
       $display("smem-read: %x", rv);
       host_acc.read('h10004, rv);
       $display("smem-read: %x", rv);
+ -----/\----- EXCLUDED -----/\----- */
       
+      $error("Loop");
       
       
       forever begin
 	 cpu_csr.update();
-         hmq.update();
+	 while(host_irq)
+           hmq.update();
          #1us;
 	 @(posedge clk_sys);
 	 

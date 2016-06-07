@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2014-12-01
+-- Last update: 2016-06-06
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -102,6 +102,7 @@ begin  -- rtl
   gen_incoming_slots : for i in 0 to g_config.in_slot_count-1 generate
     incoming_o(i).sel <= '1' when in_area_sel = '1' and unsigned(slot_num) = i else '0';
     incoming_o(i).we  <= wb_write;
+    incoming_o(i).wmask <= slave_i.sel;
     incoming_o(i).dat <= slave_i.dat;
     incoming_o(i).adr <= slave_i.adr(9 downto 0);
   end generate gen_incoming_slots;
@@ -109,6 +110,7 @@ begin  -- rtl
   gen_outgoing_slots : for i in 0 to g_config.out_slot_count-1 generate
     outgoing_o(i).sel <= '1' when out_area_sel = '1' and unsigned(slot_num) = i else '0';
     outgoing_o(i).we  <= wb_write;
+    outgoing_o(i).wmask <= slave_i.sel;
     outgoing_o(i).dat <= slave_i.dat;
     outgoing_o(i).adr <= slave_i.adr(9 downto 0);
   end generate gen_outgoing_slots;
