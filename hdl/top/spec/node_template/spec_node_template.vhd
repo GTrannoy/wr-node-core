@@ -1,4 +1,3 @@
-
 -------------------------------------------------------------------------------
 -- Title      : WR Node Core template design for the SPEC carrier
 -- Project    : WR Node Core
@@ -7,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2016-06-02
+-- Last update: 2016-06-08
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -302,12 +301,12 @@ architecture rtl of spec_node_template is
   signal dac_dpll_data    : std_logic_vector(15 downto 0);
 
   signal phy_tx_data      : std_logic_vector(7 downto 0);
-  signal phy_tx_k         : std_logic;
+  signal phy_tx_k         : std_logic_vector(0 downto 0);
   signal phy_tx_disparity : std_logic;
   signal phy_tx_enc_err   : std_logic;
   signal phy_rx_data      : std_logic_vector(7 downto 0);
   signal phy_rx_rbclk     : std_logic;
-  signal phy_rx_k         : std_logic;
+  signal phy_rx_k         : std_logic_vector(0 downto 0);
   signal phy_rx_enc_err   : std_logic;
   signal phy_rx_bitslide  : std_logic_vector(3 downto 0);
   signal phy_rst          : std_logic;
@@ -741,8 +740,7 @@ begin
       g_interface_mode            => PIPELINED,
       g_address_granularity       => BYTE,
       g_softpll_enable_debugger   => false,
-      g_dpram_size                => 90112/4,  --16384,
-
+      g_dpram_size                => 131072/4,
       g_dpram_initf               => g_wr_core_dpram_initf)
     port map (
       clk_sys_i    => clk_sys,
@@ -1031,12 +1029,12 @@ begin
 
         ch1_ref_clk_i      => clk_125m_pllref,
         ch1_tx_data_i      => phy_tx_data,
-        ch1_tx_k_i         => phy_tx_k,
+        ch1_tx_k_i         => phy_tx_k(0),
         ch1_tx_disparity_o => phy_tx_disparity,
         ch1_tx_enc_err_o   => phy_tx_enc_err,
         ch1_rx_data_o      => phy_rx_data,
         ch1_rx_rbclk_o     => phy_rx_rbclk,
-        ch1_rx_k_o         => phy_rx_k,
+        ch1_rx_k_o         => phy_rx_k(0),
         ch1_rx_enc_err_o   => phy_rx_enc_err,
         ch1_rx_bitslide_o  => phy_rx_bitslide,
         ch1_rst_i          => phy_rst,
