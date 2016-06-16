@@ -6,5 +6,5 @@ modules = {
     "local" : [	"../../../rtl", 
 		"../node_template", 
 		"../../../ip_cores/vme64x-core",
-                "../../../ip_cores/serdes-tdc" ],
+                "../../../rtl/serdes-tdc" ],
     }

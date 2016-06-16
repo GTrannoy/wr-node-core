@@ -78,3 +78,4 @@ xst/
 rtl/*.h
 scp.sh
 disasm.S
+*.xise
