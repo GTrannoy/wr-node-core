@@ -563,7 +563,7 @@ begin
   ----- Adding the new component: stdc_hostif  ----
   cmp_stdc : stdc_hostif
     generic map (
-      D_DEPTH => 12)  -- Length of the fifo storing the event time stamps
+      D_DEPTH => 4)  -- Length of the fifo storing the event time stamps
     port map(
       sys_rst_n_i     => rst_n_sys_i,
       clk_sys_i       => clk_sys_i,     -- 62.5 MHz
@@ -601,7 +601,7 @@ begin
       CLKOUT0_DIVIDE     => 1,          -- 1000 MHz
       CLKOUT0_PHASE      => 0.000,
       CLKOUT0_DUTY_CYCLE => 0.500,
-      CLKOUT1_DIVIDE     => 1,          -- 125 MHz
+      CLKOUT1_DIVIDE     => 8, --1,          -- 125 MHz
       CLKOUT1_PHASE      => 0.000,
       CLKOUT1_DUTY_CYCLE => 0.500,
       CLKIN_PERIOD       => 8.0,
