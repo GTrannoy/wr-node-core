@@ -2,10 +2,6 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-library work;
-use work.stdc_package.all;
-use work.stdc_hostif_package.all;
-
 entity stdc_fifo is
 	generic(
 		D_DEPTH: positive;

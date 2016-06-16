@@ -3,8 +3,6 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 library work;
-use work.stdc_package.all;
-use work.stdc_hostif_package.all;
 use work.stdc_wbgen2_pkg.all;
 
 entity stdc_hostif is
@@ -49,7 +47,40 @@ end entity;
 
 architecture rtl of stdc_hostif is
 
-	component stdc_wb_slave is
+	component stdc is
+	port(
+		sys_clk_i: in std_logic;
+		sys_rst_n_i: in std_logic;		
+		serdes_clk_i: in std_logic;
+		serdes_strobe_i: in std_logic;		
+		signal_i: in std_logic;
+		detect_o: out std_logic;
+		polarity_o: out std_logic;
+		timestamp_8th_o: out std_logic_vector(2 downto 0)
+	);
+        end component;
+        
+        component stdc_fifo is
+	generic(
+		D_DEPTH: positive;
+		D_WIDTH: positive
+	);
+	port(
+		sys_clk_i: in std_logic;
+		
+		clear_i: in std_logic;
+		
+		full_o: out std_logic;
+		we_i: in std_logic;
+		data_i: in std_logic_vector(D_WIDTH-1 downto 0);
+		
+		empty_o: out std_logic;
+		re_i: in std_logic;
+		data_o: out std_logic_vector(D_WIDTH-1 downto 0)
+	);
+        end component;
+
+        component stdc_wb_slave is
 		port (
 			rst_n_i        : in     std_logic;
 			clk_sys_i      : in     std_logic;

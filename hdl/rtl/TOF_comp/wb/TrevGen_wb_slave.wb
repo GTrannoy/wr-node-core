@@ -1,0 +1,69 @@
+-- -*- Mode: LUA; tab-width: 2 -*-
+
+peripheral {
+   name = "TOF";
+   hdl_entity = "TrevGen_wb_slave";
+   prefix = "TOF";
+   description ="This wishbone interface allows to setup several parameters of the TrevGen module";
+
+   reg {
+		      prefix= "MinTrev";
+         	name = "MinTrev";
+          description = "Minimum Trev that could be measured and still be considered a correct measurement. It should be expresent in ns.";
+                
+          field {
+                    name = "MinTrev";
+                    type = UNSIGNED;
+                    size = 31;
+                    acces_dev = READ_ONLY;
+                    access_bus = READ_WRITE;
+                };
+       };
+   reg {
+		      prefix= "MaxTrev";
+         	name = "MaxTrev";
+          description = "Maximum Trev that could be measured and still be considered a correct measurement. It should be expresent in ns.";
+          field {
+                    name = "MaxTrev";
+                    type = UNSIGNED;
+                    size = 31;
+                    acces_dev = READ_ONLY;
+                    access_bus = READ_WRITE;
+                };
+       };
+   reg {
+		      prefix = "Ctrl";
+          name = "Ctrl parameters";
+          description = "This register contains several parameters to control the behavious of the TrevGen module";
+          field {
+                    prefix = "WRLtcy"; 
+                    name = "WRLtcy";
+                    description = "Latency of the WR link. It should be expresent in ns.";
+			              type = UNSIGNED;
+                    size = 20;
+                    acces_dev = READ_ONLY;
+                    access_bus = READ_WRITE;
+                };
+          field {
+                    prefix = "GMargin";
+                    name = "GMargin";
+                    description = "Number of WR cycles that the gate enabling Bclock to generate Trev is opened"; 
+			              type = UNSIGNED;
+                    size = 2;
+                    acces_dev = READ_ONLY;
+                    access_bus = READ_WRITE;
+                    align = 24;
+                };
+          field {
+                    prefix = "GWidth";
+                    name="GWidth";
+                    description = "Number of WR cycles that the gate to generate Trev is left opened. It should be smaller than Bclk period"; 
+			              type = UNSIGNED;
+                    size = 2;
+                    acces_dev = READ_ONLY;
+                    access_bus = READ_WRITE;
+                };
+
+       };
+  };
+

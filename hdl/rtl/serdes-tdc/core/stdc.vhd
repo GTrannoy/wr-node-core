@@ -5,9 +5,6 @@ use ieee.numeric_std.all;
 library unisim;
 use unisim.vcomponents.all;
 
-library work;
-use work.stdc_package.all;
- 
 entity stdc is
 	port(
 		-- system signals
