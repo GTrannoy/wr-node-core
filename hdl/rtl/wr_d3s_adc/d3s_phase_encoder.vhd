@@ -128,7 +128,7 @@ architecture rtl of d3s_phase_encoder is
   signal rl_integ, rl_phase_ext : unsigned(22 downto 0);
   signal rl_length              : unsigned(15 downto 0);
   signal rl_state               : t_state;
-
+  signal rl_cycles_start : std_logic_vector(27 downto 0);
   signal err_st : signed(22 downto 0);
   signal err_lt : signed(22 downto 0);
   signal err_lt_bound, err_st_bound : std_logic;
@@ -302,10 +302,11 @@ raw_phase_o <= adc_phase;
           when IDLE =>
             
 --            fifo_we_o <= '0';
+            fifo_tstamp_o <= tm_cycles_i;
+            rl_cycles_start <= std_logic_vector(unsigned(tm_cycles_i) + 1);
             fifo_we_o <= fifo_en_i;
             fifo_is_rl_o <= '0';
             fifo_phase_o <= std_logic_vector(resize(rl_phase_ext,32));
-            fifo_tstamp_o <= tm_cycles_i;
             avg_st_d <= avg_st;
             avg_lt_d <= avg_lt;
 
@@ -325,6 +326,7 @@ raw_phase_o <= adc_phase;
             
           when RL_SHORT =>
             fifo_we_o <= '0';
+
             if (err_st_bound = '1' and rl_length < unsigned(r_max_run_len_i)) then
               rl_length <= rl_length + 1;
               rl_state  <= RL_SHORT;
@@ -334,7 +336,8 @@ raw_phase_o <= adc_phase;
               fifo_is_rl_o <= '1';
               fifo_phase_o <= std_logic_vector(resize(unsigned(avg_st_d(avg_st'length-3 downto 0) & "000000"),32));
               fifo_rl_o <= std_logic_vector(rl_length);
-
+              fifo_tstamp_o <= rl_cycles_start;
+              
               rl_length <= (others => '0');
               rl_state  <= IDLE;
               rl_integ  <= rl_phase_ext;
@@ -343,6 +346,7 @@ raw_phase_o <= adc_phase;
 
           when RL_LONG =>
             fifo_we_o <= '0';
+
             if (err_lt_bound = '1' and rl_length < unsigned(r_max_run_len_i)) then
               rl_length <= rl_length + 1;
               rl_state  <= RL_LONG;
@@ -352,6 +356,7 @@ raw_phase_o <= adc_phase;
               fifo_is_rl_o <= '1';
               fifo_phase_o <= std_logic_vector(resize(unsigned(avg_lt_d(avg_lt'length-3 downto 0) & "00"),32));
               fifo_rl_o <= std_logic_vector(rl_length);
+              fifo_tstamp_o <= rl_cycles_start;
 
               rl_state  <= IDLE;
               rl_length <= (others => '0');

@@ -8,7 +8,7 @@ peripheral {
 	 
 
 	 fifo_reg {
-			size = 256; -- or more. We'll see :)
+			size = 16384; -- or more. We'll see :)
 			direction = CORE_TO_BUS;
 			prefix = "adc";
 			name = "ADC Data FIFO";

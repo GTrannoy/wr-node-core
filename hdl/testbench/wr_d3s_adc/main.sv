@@ -340,6 +340,7 @@ DUT (
       int 	  phase;
       int 	  length;
       uint32_t cycles;
+      uint64_t r0, r1, r2;
    } phase_rl_record_t;
 
 
@@ -421,7 +422,6 @@ endclass // Decompressor
    initial begin
       uint64_t rv;
       CBusAccessor acc = Host1.get_accessor();
-      CBusAccessor acc_slave = Host2.get_accessor();
       int max_error_deg = 3;
       int max_err = (1<<(9+14))  * max_error_deg / 360;
       
@@ -430,8 +430,6 @@ endclass // Decompressor
 
       
       acc.write(`ADDR_D3S_CR, `D3S_CR_ENABLE);
-      acc_slave.write(`ADDR_D3SS_REC_DELAY_COARSE, (200000/8)); // 200us
-      acc_slave.write(`ADDR_D3SS_CR, `D3SS_CR_ENABLE);
       
 
       acc.write(`ADDR_D3S_RL_ERR_MIN, -max_err);
@@ -456,23 +454,23 @@ endclass // Decompressor
 	      acc.read(`ADDR_D3S_ADC_R1, r1);
 	      acc.read(`ADDR_D3S_ADC_R2, r2);
 
+	      rec.r0 = r0;
+	      rec.r1=r1;
+	      rec.r2=r2;
+	      
+	      
 	      rec.is_rl = (r0 & `D3S_ADC_R0_IS_RL) ? 1 : 0;
 	      rec.cycles = r0 & `D3S_ADC_R0_TSTAMP ;
 	      rec.phase = r2;
 	      rec.length = r1 & `D3S_ADC_R1_RL_LENGTH;
 
-	      acc_slave.write(`ADDR_D3SS_PHFIFO_R0, r0);
-	      acc_slave.write(`ADDR_D3SS_PHFIFO_R1, r1);
-	      acc_slave.write(`ADDR_D3SS_PHFIFO_R2, r2);
-
 	  //    $display("is_rl %d cyc %d phase %d len %d", rec.is_rl, rec.cycles, rec.phase, rec.length);
-	     
 	      compr_records.push_back(rec);
 	      
 	      ph_rec.uncompress(rec);
 	      
 	      
-	      
+  
 	   end
 	   
 	end
@@ -482,6 +480,39 @@ endclass // Decompressor
 
    end // initial begin
 
+   initial begin
+      CBusAccessor acc_slave = Host2.get_accessor();
+
+      #10us;
+      acc_slave.write(`ADDR_D3SS_REC_DELAY_COARSE, (200000/8)); // 20us
+      acc_slave.write(`ADDR_D3SS_CR, `D3SS_CR_ENABLE);
+
+      forever begin
+	 uint64_t fifo_stat;
+
+	 acc_slave.read(`ADDR_D3SS_PHFIFO_CSR, fifo_stat);
+	 
+	 
+	 if(compr_records.size() > 0 && !(fifo_stat & `D3SS_PHFIFO_CSR_FULL))
+	   begin
+	      phase_rl_record_t  rec;
+	      rec = compr_records.pop_front();
+	      
+	      
+	      acc_slave.write(`ADDR_D3SS_PHFIFO_R0, rec.r0);
+	      acc_slave.write(`ADDR_D3SS_PHFIFO_R1, rec.r1);
+	      acc_slave.write(`ADDR_D3SS_PHFIFO_R2, rec.r2);
+
+	end  else begin
+	   #100ns;
+	end // if (!compr_records.empty() && !(fifo_stat & `D3SS_PHFIFO_CSR_FULL))
+	 
+      end // forever begin
+      
+   end // initial begin
+   
+   
+   
    initial
      begin
 	int i;

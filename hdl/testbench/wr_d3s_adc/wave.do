@@ -92,10 +92,6 @@ add wave -noupdate -expand -group Phasedec /main/DUT_S/U_Phase_Dec/fifo_empty_i
 add wave -noupdate -expand -group Phasedec /main/DUT_S/U_Phase_Dec/fifo_rd_o
 add wave -noupdate -expand -group Phasedec /main/DUT_S/U_Phase_Dec/phase_o
 add wave -noupdate -expand -group Phasedec /main/DUT_S/U_Phase_Dec/phase_valid_o
-add wave -noupdate -expand -group Phasedec /main/DUT_S/U_Phase_Dec/phase_integ
-add wave -noupdate -expand -group Phasedec /main/DUT_S/U_Phase_Dec/dphase
-add wave -noupdate -expand -group Phasedec /main/DUT_S/U_Phase_Dec/rl_count
-add wave -noupdate -expand -group Phasedec /main/DUT_S/U_Phase_Dec/cyc_adjusted
 add wave -noupdate -expand -group Phasedec /main/DUT_S/U_Phase_Dec/s2_valid_comb
 add wave -noupdate -expand -group Phasedec /main/DUT_S/U_Phase_Dec/s2_valid
 add wave -noupdate -expand -group Phasedec /main/DUT_S/U_Phase_Dec/s2_phase
@@ -103,11 +99,14 @@ add wave -noupdate -expand -group Phasedec /main/DUT_S/U_Phase_Dec/s2_is_rl
 add wave -noupdate -expand -group Phasedec /main/DUT_S/U_Phase_Dec/s2_tstamp
 add wave -noupdate -expand -group Phasedec /main/DUT_S/U_Phase_Dec/s2_rl
 add wave -noupdate -expand -group Phasedec /main/DUT_S/U_Phase_Dec/s3_ts_match
+add wave -noupdate -expand -group Phasedec /main/DUT_S/U_Phase_Dec/s3_ts_miss
 add wave -noupdate -expand -group Phasedec /main/DUT_S/U_Phase_Dec/s3_valid
-add wave -noupdate -expand -group Phasedec /main/DUT_S/U_Phase_Dec/s3_phase
+add wave -noupdate -expand -group Phasedec -format Analog-Step -height 84 -max 8385536.0 -radix unsigned /main/DUT_S/U_Phase_Dec/s3_phase
 add wave -noupdate -expand -group Phasedec /main/DUT_S/U_Phase_Dec/s3_dphase
 add wave -noupdate -expand -group Phasedec /main/DUT_S/U_Phase_Dec/s3_count
-add wave -noupdate -expand -group Phasedec /main/DUT_S/U_Phase_Dec/s3_state
+add wave -noupdate -expand -group Phasedec /main/DUT_S/U_Phase_Dec/tm_cycles_adj0
+add wave -noupdate -expand -group Phasedec /main/DUT_S/U_Phase_Dec/tm_cycles_adj1
+add wave -noupdate -expand -group Phasedec -height 16 /main/DUT_S/U_Phase_Dec/s3_state
 add wave -noupdate -expand -group Phasedec /main/DUT_S/U_Phase_Dec/s1_phase
 add wave -noupdate -expand -group Phasedec /main/DUT_S/U_Phase_Dec/s1_is_rl
 add wave -noupdate -expand -group Phasedec /main/DUT_S/U_Phase_Dec/s1_valid
@@ -117,7 +116,7 @@ add wave -noupdate -expand -group Phasedec /main/DUT_S/U_Phase_Dec/fifo_rd
 add wave -noupdate -expand -group Phasedec /main/DUT_S/U_Phase_Dec/fifo_rd_d
 add wave -noupdate -expand -group Phasedec /main/DUT_S/U_Phase_Dec/stall
 TreeUpdate [SetDefaultTree]
-WaveRestoreCursors {{Cursor 1} {97959634 ps} 0}
+WaveRestoreCursors {{Cursor 1} {262945000 ps} 0}
 configure wave -namecolwidth 406
 configure wave -valuecolwidth 156
 configure wave -justifyvalue left
@@ -132,4 +131,4 @@ configure wave -griddelta 40
 configure wave -timeline 0
 configure wave -timelineunits ns
 update
-WaveRestoreZoom {0 ps} {204996608 ps}
+WaveRestoreZoom {262689604 ps} {263490372 ps}

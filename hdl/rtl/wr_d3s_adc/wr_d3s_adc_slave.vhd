@@ -42,6 +42,24 @@ end wr_d3s_adc_slave;
 
 architecture rtl of wr_d3s_adc_slave is
 
+  component d3ss_adc_slave_wb is
+    port (
+      rst_n_i    : in  std_logic;
+      clk_sys_i  : in  std_logic;
+      wb_adr_i   : in  std_logic_vector(2 downto 0);
+      wb_dat_i   : in  std_logic_vector(31 downto 0);
+      wb_dat_o   : out std_logic_vector(31 downto 0);
+      wb_cyc_i   : in  std_logic;
+      wb_sel_i   : in  std_logic_vector(3 downto 0);
+      wb_stb_i   : in  std_logic;
+      wb_we_i    : in  std_logic;
+      wb_ack_o   : out std_logic;
+      wb_stall_o : out std_logic;
+      clk_wr_i   : in  std_logic;
+      regs_i     : in  t_d3ss_in_registers;
+      regs_o     : out t_d3ss_out_registers);
+  end component d3ss_adc_slave_wb;
+  
   signal clk_wr_ref, clk_wr_ref_pllin : std_logic;
   signal pllout_clk_fb_pllref, pllout_clk_wr_ref : std_logic;
   signal clk_dds_phy                             : std_logic;
@@ -115,7 +133,7 @@ locked_out <= '1';
       data_i   => rst_n_sys_i and locked_out,
       synced_o => rst_n_wr);
 
-  U_CSR : entity work.d3s_adc_slave_wb
+  U_CSR : d3ss_adc_slave_wb
     port map (
       rst_n_i    => rst_n_sys_i,
       clk_sys_i  => clk_sys_i,

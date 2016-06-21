@@ -10,7 +10,7 @@ interface IVHDWishboneMaster
    parameter g_addr_width 	   = 32;
    parameter g_data_width 	   = 32;
 
-   typedef virtual IWishboneMaster VIWishboneMaster;
+//   typedef virtual IWishboneMaster VIWishboneMaster;
    
    IWishboneMaster #(g_addr_width, g_data_width) TheMaster (clk_i, rst_n_i);
 

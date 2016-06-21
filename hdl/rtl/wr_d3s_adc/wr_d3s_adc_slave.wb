@@ -2,13 +2,13 @@
 
 peripheral {
 	 name = "WR D3S WB (slave)";
-   prefix="d3s";
+   prefix="d3ss";
 
 	 hdl_entity="d3ss_adc_slave_wb";
 	 
 
 	 fifo_reg {
-			size = 2048; -- or more. We'll see :)
+			size = 16384; -- or more. We'll see :)
 			direction = BUS_TO_CORE;
 			prefix = "phfifo";
 			name = "Phase Data FIFO";
