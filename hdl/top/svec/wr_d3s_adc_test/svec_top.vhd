@@ -4,7 +4,6 @@
 -------------------------------------------------------------------------------
 -- File       : svec_top.vhd
 -- Author     : Tomasz Włostowski
---				Eva Calvo
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
 -- Last update: 2016-05-02
@@ -12,8 +11,8 @@
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
 -- Description: 
--- RF DDS distribution Node for the the Adc FmC card.
--- fill me
+-- RF DDS distribution Node for the the Fmc-adc card.
+-- 
 -------------------------------------------------------------------------------
 --
 -- Copyright (c) 2014 CERN
@@ -96,12 +95,6 @@ entity svec_top is
     carrier_scl_b : inout std_logic;
     carrier_sda_b : inout std_logic;
 
-    ----------------------------------------   
-    -- Fmc Management 
-    ----------------------------------------
-    fmc0_prsntm2c_n_i : in    std_logic;  -- Mezzanine present (active low)
-    fmc1_prsntm2c_n_i : in    std_logic;  -- Mezzanine present (active low)
-    
     -------------------------------------------------------------------------
     -- VME Interface pins
     -------------------------------------------------------------------------
@@ -170,6 +163,12 @@ entity svec_top is
     uart_rxd_i : in  std_logic := '1';
     uart_txd_o : out std_logic ;
 
+    ----------------------------------------   
+    -- Fmc Management 
+    ----------------------------------------
+    fmc0_prsntm2c_n_i : in    std_logic;  -- Mezzanine present (active low)
+    fmc1_prsntm2c_n_i : in    std_logic;  -- Mezzanine present (active low)
+    
     ----------------------------------------
     -- Put the FMC I/Os here
     ----------------------------------------
@@ -384,7 +383,7 @@ architecture rtl of svec_top is
 
   signal CONTROL     : std_logic_vector(35 downto 0);
   signal TRIG        : std_logic_vector(127 downto 0);
-  
+
   signal fmc0_clk_wr : std_logic;
 
   signal debug : std_logic_vector(3 downto 0);
@@ -550,7 +549,7 @@ begin
  U_D3S_ADC_Core : wr_d3s_adc
     port map (
       clk_sys_i        => clk_sys,
-      clk_wr_o => fmc0_clk_wr,
+      clk_wr_o         => fmc0_clk_wr,
       clk_125m_pllref_i => clk_125m_pllref,
       rst_n_sys_i      => rst_n,
       tm_time_valid_i  => tm_time_valid,

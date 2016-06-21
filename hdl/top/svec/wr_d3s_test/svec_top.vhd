@@ -6,13 +6,13 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-09-07
+-- Last update: 2016-06-17
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
 -- Description: 
---
--- fill me
+-- RF DDS distribution Node for the the Fmc-dds card.
+-- 
 -------------------------------------------------------------------------------
 --
 -- Copyright (c) 2014 CERN
@@ -56,6 +56,9 @@ entity svec_top is
   port (
     rst_n_a_i : in std_logic;
 
+    -------------------------------------------------------------------------
+    --  Clock controls
+    -------------------------------------------------------------------------
     clk_20m_vcxo_i : in std_logic;      -- 20MHz VCXO clock
 
     clk_125m_pllref_p_i : in std_logic;  -- 125 MHz PLL reference
@@ -63,8 +66,10 @@ entity svec_top is
 
     clk_125m_gtp_p_i : in std_logic;    -- 125 MHz PLL reference
     clk_125m_gtp_n_i : in std_logic;
-
+    
+    -------------------------------------------------------------------------    
     -- SVEC Front panel LEDs
+    -------------------------------------------------------------------------
 
     fp_led_line_oen_o : out std_logic_vector(1 downto 0);
     fp_led_line_o     : out std_logic_vector(1 downto 0);
@@ -84,6 +89,9 @@ entity svec_top is
     dbg_led2_o : out std_logic;
     dbg_led3_o : out std_logic;
 
+    ----------------------------------------
+    --  Carrier I2C EEPROM
+    ----------------------------------------
     carrier_scl_b : inout std_logic;
     carrier_sda_b : inout std_logic;
 
@@ -116,9 +124,9 @@ entity svec_top is
     VME_ADDR_DIR_o  : inout std_logic;
     VME_ADDR_OE_N_o : inout std_logic;
 
-    -------------------------------------------------------------------------
-    -- SFP pins
-    -------------------------------------------------------------------------
+    ----------------------------------------
+    --  SFP pins
+    ----------------------------------------
 
     sfp_txp_o : out std_logic;
     sfp_txn_o : out std_logic;
@@ -134,6 +142,9 @@ entity svec_top is
     sfp_tx_disable_o  : out   std_logic;
     sfp_los_i         : in    std_logic := '0';
 
+    ----------------------------------------
+    --  Clock controls
+    ----------------------------------------
     pll20dac_din_o    : out std_logic;
     pll20dac_sclk_o   : out std_logic;
     pll20dac_sync_n_o : out std_logic;
@@ -141,16 +152,35 @@ entity svec_top is
     pll25dac_sclk_o   : out std_logic;
     pll25dac_sync_n_o : out std_logic;
 
+    ----------------------------------------
+    -- 1-wire thermoeter + unique ID
+    ----------------------------------------
+    tempid_dq_b : inout std_logic;
+
+    ----------------------------------------
+    --  UART
+    ----------------------------------------
+    uart_rxd_i : in  std_logic := '1';
+    uart_txd_o : out std_logic ;
+
+    ----------------------------------------   
+    -- Fmc Management 
+    ----------------------------------------
+    fmc0_prsntm2c_n_i : in    std_logic;
+    fmc1_prsntm2c_n_i : in    std_logic;
+
+    ----------------------------------------
+    -- Put the FMC I/Os here
+    ----------------------------------------
 
     -- DDS Dac I/F (Maxim)
     fmc0_dac_n_o : out std_logic_vector(13 downto 0);
     fmc0_dac_p_o : out std_logic_vector(13 downto 0);
-
+    
     -- SPI bus to both PLL chips
-    fmc0_pll_sclk_o : buffer  std_logic;
+    fmc0_pll_sclk_o : buffer std_logic;
     fmc0_pll_sdio_b : inout std_logic;
-    fmc0_pll_sdo_i  : in    std_logic;
-
+    fmc0_pll_sdo_i   : in std_logic;
 
     -- System/WR PLL dedicated lines
     fmc0_pll_sys_ld_i      : in  std_logic;
@@ -201,25 +231,19 @@ entity svec_top is
     fmc0_wr_dac_din_o : out std_logic;
     fmc0_wr_dac_sync_n_o : out std_logic;
 
-    fmc0_prsntm2c_n_i : in    std_logic;
     fmc0_scl_b        : inout std_logic;
     fmc0_sda_b        : inout std_logic;
-
-    fmc1_prsntm2c_n_i : in    std_logic;
+    
     fmc1_scl_b        : inout std_logic;
-    fmc1_sda_b        : inout std_logic;
+    fmc1_sda_b        : inout std_logic
 
-    tempid_dq_b : inout std_logic;
-
-    uart_rxd_i : in  std_logic := '1';
-    uart_txd_o : out std_logic
-
-   -- put the FMC I/Os here
     );
 end svec_top;
 
 architecture rtl of svec_top is
-
+----------------------------------------
+--           Functions
+----------------------------------------
   function f_int_to_bool (x : integer) return boolean is
   begin
     if (x = 0) then
@@ -229,7 +253,9 @@ architecture rtl of svec_top is
     end if;
   end function;
 
-
+----------------------------------------
+--           Components
+----------------------------------------
   component wr_d3s_core is
     generic (
       g_simulation     : boolean;
@@ -237,9 +263,10 @@ architecture rtl of svec_top is
     port (
       clk_sys_i            : in    std_logic;
       rst_n_i              : in    std_logic;
-      clk_ref_i            : in    std_logic;
+      clk_125m_pllref_i    : in    std_logic;
       clk_wr_o             : out   std_logic;
-      tm_link_up_i         : in    std_logic := '1';
+      
+		tm_link_up_i         : in    std_logic := '1';
       tm_time_valid_i      : in    std_logic;
       tm_tai_i             : in    std_logic_vector(39 downto 0);
       tm_cycles_i          : in    std_logic_vector(27 downto 0);
@@ -247,7 +274,8 @@ architecture rtl of svec_top is
       tm_clk_aux_locked_i  : in    std_logic;
       tm_dac_value_i       : in    std_logic_vector(23 downto 0);
       tm_dac_wr_i          : in    std_logic;
-      dac_n_o              : out   std_logic_vector(13 downto 0);
+      
+		dac_n_o              : out   std_logic_vector(13 downto 0);
       dac_p_o              : out   std_logic_vector(13 downto 0);
       wr_ref_clk_n_i       : in    std_logic;
       wr_ref_clk_p_i       : in    std_logic;
@@ -287,7 +315,25 @@ architecture rtl of svec_top is
       slave_o              : out   t_wishbone_slave_out;
       debug_o : out std_logic_vector(3 downto 0));
   end component wr_d3s_core;
-  
+
+  component chipscope_ila
+    port (
+      CONTROL : inout std_logic_vector(35 downto 0);
+      CLK     : in    std_logic;
+      TRIG0   : in    std_logic_vector(31 downto 0);
+      TRIG1   : in    std_logic_vector(31 downto 0);
+      TRIG2   : in    std_logic_vector(31 downto 0);
+      TRIG3   : in    std_logic_vector(31 downto 0));
+  end component;
+
+  component chipscope_icon
+    port (
+      CONTROL0 : inout std_logic_vector (35 downto 0));
+  end component;
+
+----------------------------------------
+--           Constants
+----------------------------------------
  constant c_D3S_SDB_DEVICE : t_sdb_device := (
     abi_class     => x"0000",              -- undocumented device
     abi_ver_major => x"01",
@@ -301,7 +347,7 @@ architecture rtl of svec_top is
         vendor_id => x"000000000000CE42",  -- CERN
         device_id => x"dd334410",          
         version   => x"00000001",
-        date      => x"20150427",
+        date      => x"20160617",
         name      => "WR-D3S-Core        ")));
   
   constant c_hmq_config : t_wrn_mqueue_config :=
@@ -322,7 +368,6 @@ architecture rtl of svec_top is
         )
       );
 
-  
   constant c_rmq_config : t_wrn_mqueue_config :=
     (
       out_slot_count  => 2,
@@ -335,11 +380,10 @@ architecture rtl of svec_top is
       in_slot_config => (
         0            => (width => 128, entries => 16),  -- RF stream (CPU0)
         1            => (width => 128, entries => 16),  -- Events (CPU1)
-        others => (0, 0)
+        others       => (0, 0)
         )
       );
 
-  
   constant c_node_config : t_wr_node_config :=
     (
       app_id       => x"dd3f3c01",
@@ -347,19 +391,26 @@ architecture rtl of svec_top is
       cpu_memsizes => (32768, 32768, 0, 0, 0, 0, 0, 0),
       hmq_config   => c_hmq_config,
       rmq_config   => c_rmq_config,
-		shared_mem_size => 8192
+	  shared_mem_size => 8192
       );
 
+  constant c_d3s0_sdb_record : t_sdb_record       := f_sdb_embed_device(c_D3S_SDB_DEVICE, x"00010000");
+  constant c_d3s1_sdb_record : t_sdb_record       := f_sdb_embed_device(c_D3S_SDB_DEVICE, x"00011000");
+  constant c_d3s_vector      : t_wishbone_address := x"ffffffff";
+  constant c_slave_addr : t_wishbone_address_array(0 downto 0) :=
+    ( 0 =>    x"00000000" );
+  constant c_slave_mask : t_wishbone_address_array(0 downto 0) :=
+    ( 0 =>    x"00000000" );
+
+----------------------------------------
+--           Signals
+----------------------------------------
   signal clk_sys : std_logic;
   signal rst_n   : std_logic;
 
   signal fmc_host_wb_out, fmc_dp_wb_out : t_wishbone_master_out_array(0 to 1);
   signal fmc_host_wb_in, fmc_dp_wb_in   : t_wishbone_master_in_array(0 to 1);
   signal fmc_host_irq                   : std_logic_vector(1 downto 0);
-
-  constant c_d3s0_sdb_record : t_sdb_record       := f_sdb_embed_device(c_D3S_SDB_DEVICE, x"00010000");
-  constant c_d3s1_sdb_record : t_sdb_record       := f_sdb_embed_device(c_D3S_SDB_DEVICE, x"00011000");
-  constant c_d3s_vector     : t_wishbone_address := x"ffffffff";
 
   signal tm_link_up         : std_logic;
   signal tm_dac_value       : std_logic_vector(23 downto 0);
@@ -370,37 +421,18 @@ architecture rtl of svec_top is
   signal tm_tai             : std_logic_vector(39 downto 0);
   signal tm_cycles          : std_logic_vector(27 downto 0);
 
-  component chipscope_ila
-    port (
-      CONTROL : inout std_logic_vector(35 downto 0);
-      CLK     : in    std_logic;
-      TRIG0   : in    std_logic_vector(31 downto 0);
-      TRIG1   : in    std_logic_vector(31 downto 0);
-      TRIG2   : in    std_logic_vector(31 downto 0);
-      TRIG3   : in    std_logic_vector(31 downto 0));
-  end component;
+  signal CONTROL     : std_logic_vector(35 downto 0);
+  signal TRIG        : std_logic_vector(127 downto 0);
 
-  component chipscope_icon
-    port (
-      CONTROL0 : inout std_logic_vector (35 downto 0));
-  end component;
-
-  signal CONTROL : std_logic_vector(35 downto 0);
-  signal TRIG    : std_logic_vector(127 downto 0);
   signal fmc0_clk_wr : std_logic;
 
   signal debug : std_logic_vector(3 downto 0);
 
-  constant c_slave_addr : t_wishbone_address_array(0 downto 0) :=
-    ( 0 =>    x"00000000" );
-  constant c_slave_mask : t_wishbone_address_array(0 downto 0) :=
-    ( 0 =>    x"00000000" );
-
   signal fmc_wb_muxed_out : t_wishbone_master_out;
-  signal fmc_wb_muxed_in : t_wishbone_master_in;
+  signal fmc_wb_muxed_in  : t_wishbone_master_in;
 
+  signal clk_125m_pllref : std_logic;
 
-    
 begin
 
   --chipscope_icon_1: chipscope_icon
@@ -445,12 +477,13 @@ begin
     port map (
       rst_n_a_i           => rst_n_a_i,
       rst_n_sys_o         => rst_n,
-      clk_sys_o           => clk_sys,
+      clk_sys_o           => clk_sys,  -- system clock output for user design, 62.5 MHz
       clk_20m_vcxo_i      => clk_20m_vcxo_i,
       clk_125m_pllref_p_i => clk_125m_pllref_p_i,
       clk_125m_pllref_n_i => clk_125m_pllref_n_i,
       clk_125m_gtp_p_i    => clk_125m_gtp_p_i,
       clk_125m_gtp_n_i    => clk_125m_gtp_n_i,
+      clk_125m_pllref_o   => clk_125m_pllref,
       fp_led_line_oen_o   => fp_led_line_oen_o,
       fp_led_line_o       => fp_led_line_o,
       fp_led_column_o     => fp_led_column_o,
@@ -531,7 +564,6 @@ begin
       carrier_scl_b        => carrier_scl_b,
       carrier_sda_b        => carrier_sda_b);
 
-
   xwb_crossbar_1 : xwb_crossbar
     generic map (
       g_num_masters => 2,
@@ -540,14 +572,14 @@ begin
       g_address     => c_slave_addr,
       g_mask        => c_slave_mask)
     port map (
-      clk_sys_i => clk_sys,
-      rst_n_i   => rst_n,
+      clk_sys_i    => clk_sys,
+      rst_n_i      => rst_n,
       slave_i(0)   => fmc_dp_wb_out(0),
       slave_i(1)   => fmc_dp_wb_out(1),
       slave_o(0)   => fmc_dp_wb_in(0),
       slave_o(1)   => fmc_dp_wb_in(1),
-      master_o(0) => fmc_wb_muxed_out,
-      master_i(0) => fmc_wb_muxed_in
+      master_o(0)  => fmc_wb_muxed_out,
+      master_i(0)  => fmc_wb_muxed_in
       );
 
   fmc_host_wb_in(0).ack <= '0';
@@ -559,46 +591,51 @@ begin
   fmc_host_wb_in(0).stall <= '0';
   fmc_host_wb_in(1).stall <= '0';
 
-
-
   U_DDS_Core0 : wr_d3s_core
     generic map (
       g_simulation     => g_simulation,
       g_sim_pps_period => 1000)
     port map (
-      clk_sys_i            => clk_sys,
+      clk_sys_i            => clk_sys,  -- 62.5MHz
+      clk_wr_o             => fmc0_clk_wr,
+      clk_125m_pllref_i    => clk_125m_pllref,
       rst_n_i              => rst_n,
-      clk_ref_i            => '0',
-      clk_wr_o => fmc0_clk_wr,
-      tm_link_up_i         => tm_link_up,
       tm_time_valid_i      => tm_time_valid,
-      tm_tai_i             => tm_tai,
-      tm_cycles_i          => tm_cycles,
-      tm_clk_aux_lock_en_o => tm_clk_aux_lock_en(0),
+	   tm_clk_aux_lock_en_o => tm_clk_aux_lock_en(0),
       tm_clk_aux_locked_i  => tm_clk_aux_locked(0),
-      tm_dac_value_i => tm_dac_value,
-      tm_dac_wr_i => tm_dac_wr(0),
-      dac_n_o              => fmc0_dac_n_o,
+      tm_cycles_i          => tm_cycles,
+      tm_link_up_i         => tm_link_up,
+      tm_tai_i             => tm_tai,
+      
+      tm_dac_value_i       => tm_dac_value,
+      tm_dac_wr_i          => tm_dac_wr(0),
+      
+	   dac_n_o              => fmc0_dac_n_o,
       dac_p_o              => fmc0_dac_p_o,
-      wr_ref_clk_n_i       => fmc0_wr_ref_clk_n_i,
+      
+	   wr_ref_clk_n_i       => fmc0_wr_ref_clk_n_i,
       wr_ref_clk_p_i       => fmc0_wr_ref_clk_p_i,
-      synth_clk_n_i     => fmc0_synth_clk_n_i,
-      synth_clk_p_i     => fmc0_synth_clk_p_i,
-      rf_clk_n_i     => fmc0_rf_clk_n_i,
-      rf_clk_p_i     => fmc0_rf_clk_p_i,
       
+	   synth_clk_n_i        => fmc0_synth_clk_n_i,
+      synth_clk_p_i        => fmc0_synth_clk_p_i,
       
+ 	   rf_clk_n_i           => fmc0_rf_clk_n_i,
+      rf_clk_p_i           => fmc0_rf_clk_p_i,
+            
       pll_sys_cs_n_o       => fmc0_pll_sys_cs_n_o,
       pll_sys_ld_i         => fmc0_pll_sys_ld_i,
       pll_sys_reset_n_o    => fmc0_pll_sys_reset_n_o,
       pll_sys_sync_n_o     => fmc0_pll_sys_sync_n_o,
-      pll_vcxo_cs_n_o      => fmc0_pll_vcxo_cs_n_o,
+      
+	   pll_vcxo_cs_n_o      => fmc0_pll_vcxo_cs_n_o,
       pll_vcxo_sync_n_o    => fmc0_pll_vcxo_sync_n_o,
       pll_vcxo_status_i    => fmc0_pll_vcxo_status_i,
-      pll_sclk_o           => fmc0_pll_sclk_o,
+      
+	   pll_sclk_o           => fmc0_pll_sclk_o,
       pll_sdio_b           => fmc0_pll_sdio_b,
       pll_sdo_i            => fmc0_pll_sdo_i,
-      pd_lockdet_i         => fmc0_pd_lockdet_i,
+      
+	   pd_lockdet_i         => fmc0_pd_lockdet_i,
       pd_clk_o             => fmc0_pd_clk_o,
       pd_data_b            => fmc0_pd_data_b,
       pd_le_o              => fmc0_pd_le_o,

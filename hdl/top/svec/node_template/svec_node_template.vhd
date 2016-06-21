@@ -487,9 +487,9 @@ begin
       CLKOUT1_DIVIDE     => 8,         -- 125 MHz
       CLKOUT1_PHASE      => 0.000,
       CLKOUT1_DUTY_CYCLE => 0.500,
-      CLKOUT2_DIVIDE     => 16,
-      CLKOUT2_PHASE      => 0.000,
-      CLKOUT2_DUTY_CYCLE => 0.500,
+--      CLKOUT2_DIVIDE     => 16,
+--      CLKOUT2_PHASE      => 0.000,
+--      CLKOUT2_DUTY_CYCLE => 0.500,
       CLKIN_PERIOD       => 8.0,
       REF_JITTER         => 0.016)
     port map (
@@ -516,12 +516,12 @@ begin
       CLKOUT0_DIVIDE     => 16,         -- 62.5 MHz
       CLKOUT0_PHASE      => 0.000,
       CLKOUT0_DUTY_CYCLE => 0.500,
-      CLKOUT1_DIVIDE     => 16,         -- 62.5 MHz
-      CLKOUT1_PHASE      => 0.000,
-      CLKOUT1_DUTY_CYCLE => 0.500,
-      CLKOUT2_DIVIDE     => 8,
-      CLKOUT2_PHASE      => 0.000,
-      CLKOUT2_DUTY_CYCLE => 0.500,
+--      CLKOUT1_DIVIDE     => 16,         -- 62.5 MHz
+--      CLKOUT1_PHASE      => 0.000,
+--      CLKOUT1_DUTY_CYCLE => 0.500,
+--      CLKOUT2_DIVIDE     => 8,
+--      CLKOUT2_PHASE      => 0.000,
+--      CLKOUT2_DUTY_CYCLE => 0.500,
       CLKIN_PERIOD       => 50.0,
       REF_JITTER         => 0.016)
     port map (
@@ -809,7 +809,7 @@ begin
       g_double_core_clock => g_double_wrnode_core_clock )
     port map (
       clk_i          => clk_sys,
-      clk_cpu_i => clk_cpu,
+      clk_cpu_i      => clk_cpu,
       clk_ref_i      => clk_125m_pllref,
       rst_n_i        => local_reset_n,
       rst_net_n_i    => rst_net_n,

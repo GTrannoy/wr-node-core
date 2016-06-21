@@ -2,13 +2,15 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+library unisim;
+use unisim.vcomponents.all;
+
 use work.wishbone_pkg.all;
 use work.dds_wbgen2_pkg.all;
 use work.gencores_pkg.all;
 use work.genram_pkg.all;
 
-library unisim;
-use unisim.vcomponents.all;
+use work.stdc_wbgen2_pkg.all;
 
 entity wr_d3s_core is
   generic
@@ -19,10 +21,10 @@ entity wr_d3s_core is
   port (
 
     -- Clocks & resets
-    clk_sys_i : in std_logic;
+    clk_sys_i : in std_logic;           -- 62.5 MHz
     rst_n_i   : in std_logic;
 
-    clk_ref_i : in  std_logic;
+    clk_125m_pllref_i : in  std_logic;
     clk_wr_o  : out std_logic;          -- aux clock for WR disciplining
 
     -- Timing (WRC)
@@ -125,6 +127,54 @@ end wr_d3s_core;
 
 architecture behavioral of wr_d3s_core is
 
+------------------------------------------
+--        FUNCTIONS  
+------------------------------------------
+
+  function resize(x : std_logic_vector; new_size : integer)
+    return std_logic_vector is
+    variable tmp : std_logic_vector(new_size-1 downto 0);
+  begin
+    
+    if(new_size <= x'length) then
+      tmp := x(new_size-1 downto 0);
+    else
+      tmp := std_logic_vector(to_unsigned(0, x'length-new_size)) & x;
+    end if;
+
+    return tmp;
+  end function;
+  
+    function f_signed_multiply(a : std_logic_vector; b : std_logic_vector; shift : integer; output_length : integer)
+    return std_logic_vector is
+    variable mul    : signed(a'length + b'length downto 0);
+    variable result : std_logic_vector(output_length-1 downto 0);
+  begin
+    mul    := signed(a) * signed('0' & b);
+    result := std_logic_vector(resize(mul(mul'length-1 downto shift), output_length));
+    return result;
+  end f_signed_multiply;
+  
+  function f_sign_extend(x : std_logic_vector; output_length : integer) return std_logic_vector is
+    variable tmp : std_logic_vector(output_length-1 downto 0);
+  begin
+    tmp(x'length-1 downto 0)             := x;
+    tmp(output_length-1 downto x'length) := (others => x(x'length-1));
+    return tmp;
+  end f_sign_extend;
+
+  impure function f_pps_period return integer is
+  begin
+    if g_simulation then
+      return g_sim_pps_period;
+    else
+      return 125000000;
+    end if;
+  end f_pps_period;
+------------------------------------------
+--        COMPONENTS DECLARATION  
+------------------------------------------
+
   component dds_wb_slave is
     port (
       rst_n_i    : in  std_logic;
@@ -143,21 +193,6 @@ architecture behavioral of wr_d3s_core is
       regs_i     : in  t_dds_in_registers;
       regs_o     : out t_dds_out_registers);
   end component dds_wb_slave;
-
-  function resize(x : std_logic_vector; new_size : integer)
-    return std_logic_vector is
-    variable tmp : std_logic_vector(new_size-1 downto 0);
-  begin
-    
-    if(new_size <= x'length) then
-      tmp := x(new_size-1 downto 0);
-    else
-      tmp := std_logic_vector(to_unsigned(0, x'length-new_size)) & x;
-    end if;
-
-    return tmp;
-  end function;
-
 
   component ad7980_if
     port (
@@ -221,82 +256,42 @@ architecture behavioral of wr_d3s_core is
       ce_out_o : out std_logic);
   end component;
 
-  signal dac_data_par : std_logic_vector(14 * 4 - 1 downto 0);
-
-
-  signal synth_tune, synth_tune_d0, synth_tune_d1, synth_tune_bias, synth_acc_in, synth_acc_out, synth_phase_adj : std_logic_vector(42 downto 0);
-  signal synth_tune_load, synth_acc_load                                                                         : std_logic;
-  signal synth_y0, synth_y1, synth_y2, synth_y3                                                                  : std_logic_vector(13 downto 0);
-
-
-
-  signal regs_in  : t_dds_in_registers;
-  signal regs_out : t_dds_out_registers;
-
-  signal swrst, swrst_n, rst_n_ref, rst_ref : std_logic;
-
-  signal synth_acc_out_msb : std_logic_vector(7 downto 0);
-
-  function f_signed_multiply(a : std_logic_vector; b : std_logic_vector; shift : integer; output_length : integer)
-    return std_logic_vector is
-    variable mul    : signed(a'length + b'length downto 0);
-    variable result : std_logic_vector(output_length-1 downto 0);
-  begin
-    mul    := signed(a) * signed('0' & b);
-    result := std_logic_vector(resize(mul(mul'length-1 downto shift), output_length));
-    return result;
-  end f_signed_multiply;
-
-
-  signal tune_empty_d0 : std_logic;
-
-  signal adc_data   : std_logic_vector(15 downto 0);
-  signal adc_dvalid : std_logic;
-
-  function f_sign_extend(x : std_logic_vector; output_length : integer) return std_logic_vector is
-    variable tmp : std_logic_vector(output_length-1 downto 0);
-  begin
-    tmp(x'length-1 downto 0)             := x;
-    tmp(output_length-1 downto x'length) := (others => x(x'length-1));
-    return tmp;
-  end f_sign_extend;
-
-  impure function f_pps_period return integer is
-  begin
-    if g_simulation then
-      return g_sim_pps_period;
-    else
-      return 125000000;
-    end if;
-  end f_pps_period;
-
-  -- 125 MHz WR Reference (from mezzanine's PLL)
-  signal clk_wr_ref, clk_wr_ref_pllin : std_logic;
-  -- Cleaned up VCXO PLL output
-  signal clk_dds_synth                : std_logic;
-  signal clk_rf_in                    : std_logic;
-
-  signal pllout_clk_fb_pllref, pllout_clk_wr_ref : std_logic;
-  -- 500 MHz PHY serial clock for the DAC
-  signal clk_dds_phy                             : std_logic;
-  signal sample_p                                : std_logic;
-  signal presc_counter                           : unsigned(7 downto 0);
-  signal presc_tick                              : std_logic;
-
-  signal sampling_div : unsigned(15 downto 0);
-
-  signal wr_tai    : unsigned(31 downto 0);
-  signal wr_cycles : unsigned(27 downto 0);
-
-  -- PPS pre-delay line (5 - PPS-5 cycles, 0 = the actual PPS pulse)
-  signal wr_pps_prepulse : std_logic_vector(5 downto 0);
-
-  signal clk_dds_locked, fpll_reset : std_logic;
-  signal trig_p_a                   : std_logic;
-  signal pll_sdio_val               : std_logic;
-  signal cic_out_clamp              : std_logic_vector(17 downto 0);
-
-  signal clk_cc, clk_pll_cc : std_logic;
+  component stdc_hostif is
+	 generic(D_DEPTH: positive);
+	 port(
+		-- system signals
+		sys_rst_n_i: in std_logic;
+		clk_sys_i  : in std_logic;
+		clk_125m_i : in std_logic;
+		
+		-- SERDES
+		serdes_clk_i   : in std_logic;
+		serdes_strobe_i: in std_logic;
+		
+		-- Wishbone
+		wb_addr_i: in std_logic_vector(31 downto 0);
+		wb_data_i: in std_logic_vector(31 downto 0);
+		wb_data_o: out std_logic_vector(31 downto 0);
+		wb_cyc_i : in std_logic;
+		wb_sel_i : in std_logic_vector(3 downto 0);
+		wb_stb_i : in std_logic;
+		wb_we_i  : in std_logic;
+		wb_ack_o : out std_logic;
+		wb_stall_o : out std_logic;
+		
+		-- TDC input
+		signal_i: in std_logic;
+		
+		-- 125Mhz tick
+		cycles_i: in std_logic_vector(27 downto 0);
+		
+		-- TDC outputs			
+		strobe_o         : out    std_logic;
+		stdc_data_o       : out    std_logic_vector(31 downto 0);
+		
+		-- ChipScope Signals
+		TRIG_O			: out std_logic_vector(127 downto 0) );
+  end component;
 
   component chipscope_ila
     port (
@@ -312,6 +307,64 @@ architecture behavioral of wr_d3s_core is
     port (
       CONTROL0 : inout std_logic_vector (35 downto 0));
   end component;
+  
+------------------------------------------
+--        SIGNALS DECLARATIONS  
+------------------------------------------
+  signal dac_data_par : std_logic_vector(14 * 4 - 1 downto 0);
+
+  signal synth_tune, synth_tune_d0, synth_tune_d1, synth_tune_bias, synth_acc_in, synth_acc_out, synth_phase_adj : std_logic_vector(42 downto 0);
+  signal synth_tune_load, synth_acc_load                                                                         : std_logic;
+  signal synth_y0, synth_y1, synth_y2, synth_y3                                                                  : std_logic_vector(13 downto 0);
+
+  signal regs_in  : t_dds_in_registers;
+  signal regs_out : t_dds_out_registers;
+
+  signal swrst, swrst_n, rst_n_ref, rst_ref : std_logic;
+
+  signal synth_acc_out_msb : std_logic_vector(7 downto 0);
+
+  signal tune_empty_d0 : std_logic;
+
+  signal adc_data   : std_logic_vector(15 downto 0);
+  signal adc_dvalid : std_logic;
+
+  -- 125 MHz WR Reference (from mezzanine's PLL)
+  signal clk_wr_ref : std_logic;
+  signal clk_wr_ref_pllin : std_logic;
+  -- Cleaned up VCXO PLL output
+  signal clk_dds_synth                : std_logic;
+  signal clk_rf_in                    : std_logic;
+
+  signal pllout_clk_fb_pllref : std_logic;
+  -- 500 MHz PHY serial clock for the DAC
+  signal clk_dds_phy                             : std_logic;
+  signal sample_p                                : std_logic;
+  signal presc_counter                           : unsigned(7 downto 0);
+  signal presc_tick                              : std_logic;
+
+  signal sampling_div : unsigned(15 downto 0);
+
+  signal wr_tai    : unsigned(31 downto 0);
+  signal wr_cycles : unsigned(27 downto 0);
+  
+  -- PPS pre-delay line (5 - PPS-5 cycles, 0 = the actual PPS pulse)
+  signal wr_pps_prepulse : std_logic_vector(5 downto 0);
+
+  signal clk_dds_locked, fpll_reset : std_logic;
+  signal trig_p_a                   : std_logic;
+  signal pll_sdio_val               : std_logic;
+  signal cic_out_clamp              : std_logic_vector(17 downto 0);
+
+  signal clk_cc, clk_pll_cc : std_logic;
+
+  --  Signals for stdc
+  signal pllout_stdc_clk, stdc_serdes_clk, pllout_stdc_fb  : std_logic;    -- CLK for stdc serdes (1GHz)
+  signal pllout_stdc_clkdiv8, stdc_clkdiv8, stdc_serdes_strobe : std_logic;	 -- SERDES strobe
+  signal stdc_strobe: std_logic;
+  signal stdc_data: std_logic_vector(31 downto 0);	
+  signal clk_stdc_locked: std_logic; 
+  
   signal CONTROL : std_logic_vector(35 downto 0);
   signal CLK     : std_logic;
   signal TRIG0   : std_logic_vector(31 downto 0);
@@ -345,9 +398,24 @@ architecture behavioral of wr_d3s_core is
   signal wr_snapshot        : std_logic_vector(27 downto 0);
   signal rf_snapshot_tmp    : std_logic_vector(31 downto 0);
   
+  signal wb_dds_i : t_wishbone_slave_in;
+  signal wb_dds_o : t_wishbone_slave_out;
+	 
+  signal wb_stdc_i : t_wishbone_slave_in;
+  signal wb_stdc_o : t_wishbone_slave_out;
+	 
+  constant c_slave_addr : t_wishbone_address_array(1 downto 0) :=
+	( 	0 =>    x"00000000",
+		1 =>    x"00001000"
+	);
+	 
+  constant c_slave_mask : t_wishbone_address_array(1 downto 0) :=
+	( 	0 =>    x"00001000",
+		1 =>    x"00001000"	 );
+
 begin  -- behavioral
 
-  U_Buf_CLK_WR_Ref : IBUFGDS
+  U_Buf_CLK_WR_Ref : IBUFDS -- IBUFGDS -- attempt E. calvo 16/6/2016
     generic map (
       DIFF_TERM    => true,
       IBUF_LOW_PWR => false  -- Low power (TRUE) vs. performance (FALSE) setting for referenced
@@ -368,7 +436,6 @@ begin  -- behavioral
       I  => rf_clk_p_i,  -- Diff_p buffer input (connect directly to top-level port)
       IB => rf_clk_n_i  -- Diff_n buffer input (connect directly to top-level port)
       );
-
 
   U_Buf_CLK_DDS : IBUFGDS
     generic map (
@@ -400,31 +467,88 @@ begin  -- behavioral
       DIVCLK_DIVIDE      => 1,
       CLKFBOUT_MULT      => 8,
       CLKFBOUT_PHASE     => 0.000,
+--      CLKOUT0_DIVIDE     => 1,          -- 1000 MHz
+--      CLKOUT0_PHASE      => 0.000,
+--      CLKOUT0_DUTY_CYCLE => 0.500,
       CLKOUT0_DIVIDE     => 2,          -- 500 MHz
       CLKOUT0_PHASE      => 0.000,
       CLKOUT0_DUTY_CYCLE => 0.500,
-      CLKOUT1_DIVIDE     => 8,          -- 125 MHz
+--      CLKOUT2_DIVIDE     => 8,          -- 125 MHz
+--      CLKOUT2_PHASE      => 0.000,
+--      CLKOUT2_DUTY_CYCLE => 0.500,
+      CLKOUT1_DIVIDE     => 6,          -- 166.67 MHz  --200 MHz
       CLKOUT1_PHASE      => 0.000,
       CLKOUT1_DUTY_CYCLE => 0.500,
-      CLKOUT2_DIVIDE     => 6,          -- 200 MHz
-      CLKOUT2_PHASE      => 0.000,
-      CLKOUT2_DUTY_CYCLE => 0.500,
       CLKIN_PERIOD       => 8.0,
       REF_JITTER         => 0.016)
     port map (
       CLKFBOUT => pllout_clk_fb_pllref,
-      CLKOUT1  => pllout_clk_wr_ref,
+--      CLKOUT0  => pllout_stdc_clk,
       CLKOUT0  => clk_dds_phy,
-      CLKOUT2  => clk_pll_cc,
+--      CLKOUT2  => pllout_stdc_clkdiv8,
+      CLKOUT1  => clk_pll_cc,
+      CLKOUT2  => open,
       CLKOUT3  => open,
-      CLKOUT4  => open,
+		CLKOUT4  => open,
       CLKOUT5  => open,
       LOCKED   => clk_dds_locked,
       RST      => fpll_reset,
       CLKFBIN  => pllout_clk_fb_pllref,
-      CLKIN    => clk_wr_ref_pllin);
+      CLKIN    => clk_125m_pllref_i); -- clk_wr_ref_pllin);
 
+  cmp_stdc_clk_pll : PLL_BASE
+    generic map (
+      BANDWIDTH          => "OPTIMIZED",
+      CLK_FEEDBACK       => "CLKFBOUT",
+      COMPENSATION       => "INTERNAL",
+      DIVCLK_DIVIDE      => 1,
+      CLKFBOUT_MULT      => 8,
+      CLKFBOUT_PHASE     => 0.000,
+      CLKOUT0_DIVIDE     => 1,          -- 1000 MHz
+      CLKOUT0_PHASE      => 0.000,
+      CLKOUT0_DUTY_CYCLE => 0.500,
+--      CLKOUT1_DIVIDE     => 2,          -- 500 MHz
+--      CLKOUT1_PHASE      => 0.000,
+--      CLKOUT1_DUTY_CYCLE => 0.500,
+      CLKOUT1_DIVIDE     => 8,          -- 125 MHz
+      CLKOUT1_PHASE      => 0.000,
+      CLKOUT1_DUTY_CYCLE => 0.500,
+--      CLKOUT3_DIVIDE     => 6,          -- 166.67 MHz  --200 MHz
+--      CLKOUT3_PHASE      => 0.000,
+--      CLKOUT3_DUTY_CYCLE => 0.500,
+      CLKIN_PERIOD       => 8.0,
+      REF_JITTER         => 0.016)
+    port map (
+      CLKFBOUT => pllout_stdc_fb,
+      CLKOUT0  => pllout_stdc_clk,
+--      CLKOUT1  => clk_dds_phy,
+      CLKOUT1  => pllout_stdc_clkdiv8,
+--      CLKOUT3  => clk_pll_cc,
+      CLKOUT2  => open,
+      CLKOUT3  => open,
+		CLKOUT4  => open,
+      CLKOUT5  => open,
+      LOCKED   => clk_stdc_locked,
+      RST      => fpll_reset,
+      CLKFBIN  => pllout_stdc_fb,
+      CLKIN    => clk_125m_pllref_i); -- clk_wr_ref_pllin);
 
+cmp_dds_ref_buf : BUFG
+    port map (
+      O => stdc_clkdiv8,
+      I => pllout_stdc_clkdiv8); 
+  
+  cmp_serdes_clk_buf : BUFPLL
+     generic map (
+	   DIVIDE	=> 8)
+	 port map (
+      PLLIN			 => pllout_stdc_clk,     --  from PLL (CLKOUT0, CLKOUT1) 
+      GCLK  		 => stdc_clkdiv8,        --  from BUFG or GCLK
+      IOCLK 		 => stdc_serdes_clk,		 --  Connects to IOSERDES2(CLK0),BUFIO2FB(I),or IODELAY2 IOCLK0, IOCLK1)
+      LOCK 			 => open,
+	   LOCKED 		 => clk_stdc_locked,      -- LOCKED signal from PLL
+	   SERDESSTROBE => stdc_serdes_strobe);  --  used to drive IOSERDES2(IOCE)
+		
   --cmp_pulse_output_pll : PLL_BASE
   --  generic map (
   --    BANDWIDTH          => "OPTIMIZED",
@@ -506,21 +630,16 @@ begin  -- behavioral
 
   regs_in.gpior_serdes_pll_locked_i <= clk_dds_locked;
 
-  cmp_dds_ref_buf : BUFG
-    port map (
-      O => clk_wr_ref,
-      I => pllout_clk_wr_ref);
-
   cmp_cc_buf : BUFG
     port map (
       O => clk_cc,
       I => clk_pll_cc);
 
-  clk_wr_o <= clk_wr_ref;
+  clk_wr_o <= clk_125m_pllref_i; -- clk_wr_ref;  -- Eva 2016/06/20
 
   U_Ref_Reset_SC : gc_sync_ffs
     port map (
-      clk_i    => clk_wr_ref,
+      clk_i    => clk_125m_pllref_i, -- clk_wr_ref,  -- Eva 2016/06/20
       rst_n_i  => '1',
       data_i   => swrst_n,
       synced_o => rst_n_ref);
@@ -529,26 +648,70 @@ begin  -- behavioral
     port map (
       rst_n_i    => rst_n_i,
       clk_sys_i  => clk_sys_i,
-      wb_adr_i   => slave_i.adr(6 downto 2),
-      wb_dat_i   => slave_i.dat,
-      wb_dat_o   => slave_o.dat,
-      wb_cyc_i   => slave_i.cyc,
-      wb_sel_i   => slave_i.sel,
-      wb_stb_i   => slave_i.stb,
-      wb_we_i    => slave_i.we,
-      wb_ack_o   => slave_o.ack,
-      wb_stall_o => slave_o.stall,
-      clk_ref_i  => clk_wr_ref,
+      wb_adr_i   => wb_dds_i.adr(6 downto 2),
+      wb_dat_i   => wb_dds_i.dat,
+      wb_dat_o   => wb_dds_o.dat,
+      wb_cyc_i   => wb_dds_i.cyc,
+      wb_sel_i   => wb_dds_i.sel,
+      wb_stb_i   => wb_dds_i.stb,
+      wb_we_i    => wb_dds_i.we,
+      wb_ack_o   => wb_dds_o.ack,
+      wb_stall_o => wb_dds_o.stall,
+      clk_ref_i  => clk_125m_pllref_i, -- clk_wr_ref,  -- Eva 2016/06/20
       clk_dds_i  => clk_dds_synth,
       regs_i     => regs_in,
       regs_o     => regs_out);
 
-  slave_o.err <= '0';
-  slave_o.rty <= '0';
+  wb_dds_o.err <= '0';
+  wb_dds_o.rty <= '0';
 
-  p_copy_wr_timing : process(clk_wr_ref)
+  	xwb_crossbar_1 : xwb_crossbar
+    generic map (
+      g_num_masters => 1,
+      g_num_slaves  => 2,
+      g_registered  => true,
+      g_address     => c_slave_addr,
+      g_mask        => c_slave_mask)
+    port map (
+      clk_sys_i   => clk_sys_i,
+      rst_n_i     => rst_n_i,
+      slave_i(0)  => slave_i,
+      slave_o(0)  => slave_o,
+      master_o(0) => wb_dds_i, 
+      master_o(1) => wb_stdc_i,
+		master_i(0) => wb_dds_o, 
+		master_i(1) => wb_stdc_o  
+		);
+		
+  cmp_stdc : stdc_hostif 
+	 generic map (
+		D_DEPTH   => 4)    -- Length of the fifo storing the event time stamps
+	 port map(
+		sys_rst_n_i			=>	rst_n_i,
+		clk_sys_i			=>	clk_sys_i,       -- 62.5 MHz
+		clk_125m_i			=> clk_125m_pllref_i, --clk_wr_ref,  -- Eva 2016/06/20
+		serdes_clk_i		=>	stdc_serdes_clk,
+		serdes_strobe_i	=>	stdc_serdes_strobe,
+		wb_addr_i			=>	wb_stdc_i.adr,
+		wb_data_i			=>	wb_stdc_i.dat,
+		wb_data_o			=>	wb_stdc_o.dat,
+		wb_cyc_i				=>	wb_stdc_i.cyc,
+		wb_sel_i				=>	wb_stdc_i.sel,
+		wb_stb_i				=>	wb_stdc_i.stb,
+		wb_we_i				=>	wb_stdc_i.we,
+		wb_ack_o				=>	wb_stdc_o.ack,
+		wb_stall_o			=>	wb_stdc_o.stall,
+		signal_i				=>	trig_p_a,
+		cycles_i				=> tm_cycles_i,
+		strobe_o          => stdc_strobe  ,
+		stdc_data_o       => stdc_data  );	
+
+  wb_stdc_o.err <= '0';
+  wb_stdc_o.rty <= '0';
+  
+  p_copy_wr_timing : process(clk_wr_ref)  
   begin
-    if rising_edge(clk_wr_ref) then
+	 if rising_edge(clk_wr_ref) then
       if rst_n_ref = '0' then
         wr_cycles       <= (others => '0');
         wr_tai          <= (others => '0');
@@ -567,9 +730,9 @@ begin  -- behavioral
   end process;
 
 
-  p_sampling_prescaler : process(clk_wr_ref)
+  p_sampling_prescaler : process(clk_wr_ref)  
   begin
-    if rising_edge(clk_wr_ref) then
+	 if rising_edge(clk_wr_ref) then
       if rst_n_ref = '0' then
         presc_counter <= (others => '0');
         presc_tick    <= '0';
@@ -690,9 +853,6 @@ begin  -- behavioral
       y1_o        => synth_y1,
       y2_o        => synth_y2,
       y3_o        => synth_y3);
-
-  
-
 
   U_WR_DAC : gc_serial_dac
     generic map (
