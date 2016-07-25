@@ -1,0 +1,368 @@
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+use work.gencores_pkg.all;
+use work.genram_pkg.all;
+use work.wishbone_pkg.all;
+use work.d3ss_wbgen2_pkg.all;
+
+library UNISIM;
+use UNISIM.vcomponents.all;
+
+entity wr_d3s_adc_slave is
+  port (
+    clk_sys_i   : in std_logic;
+    rst_n_sys_i : in std_logic;
+
+    clk_125m_pllref_i : in std_logic;
+
+    clk_wr_o : out std_logic;
+
+    tm_tai_i             : in  std_logic_vector(39 downto 0);
+    tm_cycles_i          : in  std_logic_vector(27 downto 0);
+    tm_time_valid_i      : in  std_logic;
+    tm_clk_aux_lock_en_o : out std_logic;
+    tm_clk_aux_locked_i  : in  std_logic;
+
+    -- WR reference clock from FMC's PLL (AD9516)
+    wr_ref_clk_n_i : in std_logic;
+    wr_ref_clk_p_i : in std_logic;
+
+    -- System/WR PLL dedicated lines
+    pll_sys_cs_n_o    : out std_logic;
+    pll_sys_ld_i      : in  std_logic;
+    pll_sys_reset_n_o : out std_logic;
+    pll_sys_sync_n_o  : out std_logic;
+
+    -- VCXO PLL dedicated lines
+    pll_vcxo_cs_n_o   : out std_logic;
+    pll_vcxo_sync_n_o : out std_logic;
+    pll_vcxo_status_i : in  std_logic;
+
+    -- SPI bus to both PLL chips
+    pll_sclk_o : out   std_logic;
+    pll_sdio_b : inout std_logic;
+    pll_sdo_i  : in    std_logic;
+
+
+    -- DDS Dac I/F (Maxim)
+    dac_n_o : out std_logic_vector(13 downto 0);
+    dac_p_o : out std_logic_vector(13 downto 0);
+
+    slave_i : in  t_wishbone_slave_in;
+    slave_o : out t_wishbone_slave_out;
+
+    debug_o : out std_logic_vector(3 downto 0)
+    );
+
+end wr_d3s_adc_slave;
+
+architecture rtl of wr_d3s_adc_slave is
+
+  component d3ss_adc_slave_wb is
+    port (
+      rst_n_i    : in  std_logic;
+      clk_sys_i  : in  std_logic;
+      wb_adr_i   : in  std_logic_vector(2 downto 0);
+      wb_dat_i   : in  std_logic_vector(31 downto 0);
+      wb_dat_o   : out std_logic_vector(31 downto 0);
+      wb_cyc_i   : in  std_logic;
+      wb_sel_i   : in  std_logic_vector(3 downto 0);
+      wb_stb_i   : in  std_logic;
+      wb_we_i    : in  std_logic;
+      wb_ack_o   : out std_logic;
+      wb_stall_o : out std_logic;
+      clk_wr_i   : in  std_logic;
+      regs_i     : in  t_d3ss_in_registers;
+      regs_o     : out t_d3ss_out_registers);
+  end component d3ss_adc_slave_wb;
+
+  component d3s_upsample_divide is
+    port (
+
+      clk_i   : in std_logic;
+      rst_n_i : in std_logic;
+
+      phase_i       : in std_logic_vector(13 downto 0);
+      phase_valid_i : in std_logic;
+
+      phase_divided_o       : out std_logic_vector(4*14-1 downto 0);
+      phase_divided_valid_o : out std_logic;
+
+      frev_ts_tai_i   : in std_logic_vector(31 downto 0);
+      frev_ts_nsec_i  : in std_logic_vector(31 downto 0);
+      frev_ts_valid_i : in std_logic;
+      tm_time_valid_i : in std_logic;
+      tm_tai_i        : in std_logic_vector(31 downto 0);
+      tm_cycles_i     : in std_logic_vector(27 downto 0)
+      );
+
+  end component d3s_upsample_divide;
+
+  component d3s_phase_decoder is
+    generic (
+      g_clock_freq : integer := 125000000);
+    port (
+      clk_wr_i         : in  std_logic;
+      rst_n_wr_i       : in  std_logic;
+      r_enable_i       : in  std_logic;
+      r_delay_coarse_i : in  std_logic_vector(15 downto 0);
+      tm_time_valid_i  : in  std_logic;
+      tm_tai_i         : in  std_logic_vector(39 downto 0);
+      tm_cycles_i      : in  std_logic_vector(27 downto 0);
+      fifo_phase_i     : in  std_logic_vector(31 downto 0);
+      fifo_rl_i        : in  std_logic_vector(15 downto 0);
+      fifo_is_rl_i     : in  std_logic;
+      fifo_tstamp_i    : in  std_logic_vector(27 downto 0);
+      fifo_empty_i     : in  std_logic;
+      fifo_rd_o        : out std_logic;
+      phase_o          : out std_logic_vector(13 downto 0);
+      phase_valid_o    : out std_logic);
+  end component d3s_phase_decoder;
+
+  component d3s_lut is
+    port (
+
+      clk_i   : in std_logic;
+      rst_n_i : in std_logic;
+
+      phase_divided_i : in std_logic_vector(4*14-1 downto 0);
+      phase_valid_i   : in std_logic;
+
+      dac_data_par_o : out std_logic_vector(4*14-1 downto 0)
+      );
+  end component d3s_lut;
+
+
+  component max5870_serializer
+    generic (
+      sys_w : integer := 14;
+      dev_w : integer := 56);
+    port (
+      DATA_OUT_FROM_DEVICE : in  std_logic_vector(dev_w-1 downto 0);
+      DATA_OUT_TO_PINS_P   : out std_logic_vector(sys_w-1 downto 0);
+      DATA_OUT_TO_PINS_N   : out std_logic_vector(sys_w-1 downto 0);
+      CLK_IN               : in  std_logic;
+      CLK_DIV_IN           : in  std_logic;
+      LOCKED_IN            : in  std_logic;
+      LOCKED_OUT           : out std_logic;
+      CLK_RESET            : in  std_logic;
+      IO_RESET             : in  std_logic);
+  end component;
+
+
+  constant c_CNX_MASTER_COUNT : integer := 5;
+
+  constant c_cnx_base_addr : t_wishbone_address_array(c_CNX_MASTER_COUNT-1 downto 0) :=
+    (x"00000000",                       -- Base regs
+     x"00000100",                       -- AcqBuf1
+     x"00000200",                       -- AcqBuf2
+     x"00000300",                       -- AcqBuf3
+     x"00000400"                        -- Serdes TDC
+     );
+
+  constant c_cnx_base_mask : t_wishbone_address_array(c_CNX_MASTER_COUNT-1 downto 0) :=
+    (x"00000700",
+     x"00000700",
+     x"00000700",
+     x"00000700",
+     x"00000700"
+     );
+
+  
+  signal clk_wr_ref, clk_wr_ref_pllin            : std_logic;
+  signal pllout_clk_fb_pllref, pllout_clk_wr_ref : std_logic;
+  signal clk_dds_phy                             : std_logic;
+
+
+  signal regs_in  : t_d3ss_in_registers;
+  signal regs_out : t_d3ss_out_registers;
+
+
+  signal cnx_out                                                   : t_wishbone_master_out_array(0 to c_CNX_MASTER_COUNT-1);
+  signal cnx_in                                                    : t_wishbone_master_in_array(0 to c_CNX_MASTER_COUNT-1);
+  signal clk_wr                                                    : std_logic;
+  signal rst_n_wr, rst_wr                                          : std_logic;
+  signal fpll_reset                                                : std_logic;
+  signal clk_dds_locked                               : std_logic;
+
+  subtype t_phase_vec is std_logic_vector(13 downto 0);
+--  type t_phase_array is array(0 to 3) of t_phase_vec;
+
+  signal phase_divided       : std_logic_vector(4*14-1 downto 0);
+  signal phase_divided_valid : std_logic;
+
+  signal phase_dec       : t_phase_vec;
+  signal phase_dec_valid : std_logic;
+
+  signal dac_data_par : std_logic_vector(4 * 14 - 1 downto 0);
+  
+begin
+
+  fpll_reset <= regs_out.rstr_pll_rst_o or (not rst_n_sys_i);
+
+
+  U_Buf_CLK_WR_Ref : IBUFGDS
+    generic map (
+      DIFF_TERM    => true,
+      IBUF_LOW_PWR => false  -- Low power (TRUE) vs. performance (FALSE) setting for referenced
+      )
+    port map (
+      O  => clk_wr_ref_pllin,           -- Buffer output
+      I  => wr_ref_clk_p_i,  -- Diff_p buffer input (connect directly to top-level port)
+      IB => wr_ref_clk_n_i  -- Diff_n buffer input (connect directly to top-level port)
+      );
+
+  cmp_dds_clk_pll : PLL_BASE
+    generic map (
+      BANDWIDTH          => "OPTIMIZED",
+      CLK_FEEDBACK       => "CLKFBOUT",
+      COMPENSATION       => "INTERNAL",
+      DIVCLK_DIVIDE      => 1,
+      CLKFBOUT_MULT      => 8,
+      CLKFBOUT_PHASE     => 0.000,
+      CLKOUT0_DIVIDE     => 2,          -- 500 MHz
+      CLKOUT0_PHASE      => 0.000,
+      CLKOUT0_DUTY_CYCLE => 0.500,
+      CLKOUT1_DIVIDE     => 8,          -- 125 MHz
+      CLKOUT1_PHASE      => 0.000,
+      CLKOUT1_DUTY_CYCLE => 0.500,
+      CLKOUT2_DIVIDE     => 6,          -- 200 MHz
+      CLKOUT2_PHASE      => 0.000,
+      CLKOUT2_DUTY_CYCLE => 0.500,
+      CLKIN_PERIOD       => 8.0,
+      REF_JITTER         => 0.016)
+    port map (
+      CLKFBOUT => pllout_clk_fb_pllref,
+      CLKOUT1  => pllout_clk_wr_ref,
+      CLKOUT0  => clk_dds_phy,
+      CLKOUT2  => open,
+      CLKOUT3  => open,
+      CLKOUT4  => open,
+      CLKOUT5  => open,
+      LOCKED   => clk_dds_locked,
+      RST      => fpll_reset,
+      CLKFBIN  => pllout_clk_fb_pllref,
+      CLKIN    => clk_wr_ref_pllin);
+
+
+  cmp_dds_ref_buf : BUFG
+    port map (
+      O => clk_wr,
+      I => pllout_clk_wr_ref);
+
+
+  U_Sync_Reset : gc_sync_ffs
+    generic map (
+      g_sync_edge => "positive")
+    port map (
+      clk_i    => clk_wr,
+      rst_n_i  => '1',
+      data_i   => (not regs_out.rstr_pll_rst_o) and rst_n_sys_i and clk_dds_locked,
+      synced_o => rst_n_wr);
+
+  rst_wr <= not rst_n_wr;
+  
+  
+  U_Intercon : xwb_crossbar
+    generic map (
+      g_num_masters => 1,
+      g_num_slaves  => c_CNX_MASTER_COUNT,
+      g_registered  => true,
+      g_address     => c_cnx_base_addr,
+      g_mask        => c_cnx_base_mask)
+    port map (
+      clk_sys_i  => clk_sys_i,
+      rst_n_i    => rst_n_sys_i,
+      slave_i(0) => slave_i,
+      slave_o(0) => slave_o,
+      master_i   => cnx_in,
+      master_o   => cnx_out);
+
+
+
+  U_CSR : d3ss_adc_slave_wb
+    port map (
+      rst_n_i    => rst_n_sys_i,
+      clk_sys_i  => clk_sys_i,
+      wb_adr_i   => cnx_out(0).adr(4 downto 2),
+      wb_dat_i   => cnx_out(0).dat,
+      wb_dat_o   => cnx_in(0).dat,
+      wb_cyc_i   => cnx_out(0).cyc,
+      wb_sel_i   => cnx_out(0).sel,
+      wb_stb_i   => cnx_out(0).stb,
+      wb_we_i    => cnx_out(0).we,
+      wb_ack_o   => cnx_in(0).ack,
+      wb_stall_o => cnx_in(0).stall,
+      clk_wr_i   => clk_wr,
+      regs_i     => regs_in,
+      regs_o     => regs_out);
+
+  cnx_in(0).err <= '0';
+  cnx_in(0).rty <= '0';
+
+  U_Phase_Dec : d3s_phase_decoder
+    port map (
+      clk_wr_i         => clk_wr,
+      rst_n_wr_i       => rst_n_wr,
+      r_enable_i       => regs_out.cr_enable_o,
+      r_delay_coarse_i => regs_out.rec_delay_coarse_o,
+      tm_time_valid_i  => tm_time_valid_i,
+      tm_tai_i         => tm_tai_i,
+      tm_cycles_i      => tm_cycles_i,
+      fifo_phase_i     => regs_out.phfifo_rl_phase_o,
+      fifo_rl_i        => regs_out.phfifo_rl_length_o,
+      fifo_is_rl_i     => regs_out.phfifo_is_rl_o,
+      fifo_tstamp_i    => regs_out.phfifo_tstamp_o,
+      fifo_empty_i     => regs_out.phfifo_rd_empty_o,
+      fifo_rd_o        => regs_in.phfifo_rd_req_i,
+      phase_o          => phase_dec,
+      phase_valid_o    => phase_dec_valid);
+
+
+
+  U_Upsampler : d3s_upsample_divide
+    port map (
+      clk_i                 => clk_wr,
+      rst_n_i               => rst_n_wr,
+      phase_i               => phase_dec,
+      phase_valid_i         => phase_dec_valid,
+      phase_divided_o       => phase_divided,
+      phase_divided_valid_o => phase_divided_valid,
+      frev_ts_tai_i         => (others => '0'), --frev_ts_tai, fixme:
+                                                --frev-aligned division
+      frev_ts_nsec_i        => (others => '0'), --frev_ts_nsec,
+      frev_ts_valid_i       => '0', --frev_ts_valid,
+      tm_time_valid_i       => tm_time_valid_i,
+      tm_tai_i              => tm_tai_i(31 downto 0),
+      tm_cycles_i           => tm_cycles_i);
+
+  -- todo: add fine delay stage
+
+  
+  U_LUT : d3s_lut
+    port map (
+      clk_i           => clk_wr,
+      rst_n_i         => rst_n_wr,
+      phase_divided_i => phase_divided,
+      phase_valid_i   => phase_divided_valid,
+      dac_data_par_o  => dac_data_par);
+
+
+
+  U_DAC_Serializer : max5870_serializer
+    port map (
+      DATA_OUT_FROM_DEVICE => dac_data_par,
+      DATA_OUT_TO_PINS_P   => dac_p_o,
+      DATA_OUT_TO_PINS_N   => dac_n_o,
+      CLK_IN               => clk_dds_phy,
+      CLK_DIV_IN           => clk_wr,
+      LOCKED_IN            => clk_dds_locked,
+      LOCKED_OUT           => open,
+      CLK_RESET            => rst_wr,
+      IO_RESET             => rst_wr);
+
+
+
+end rtl;

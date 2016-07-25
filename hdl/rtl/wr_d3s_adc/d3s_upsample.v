@@ -92,19 +92,11 @@ module d3s_upsample_divide
   input 	clk_i, // clk_wr_ref
   input 	rst_n_i,
 
-  input 	phase_valid_i,
-  input [31:0] 	phase_ts_tai_i,
-  input [27:0] 	phase_ts_cycles_i,
   input [13:0] 	phase_i,
-
-  input [27:0] 	rec_delay_cycles_i,
-  input [13:0] 	rec_delay_bias_i,
+  input 	phase_valid_i,
   
-  
-  output [13:0] phase_divided_p0_o,
-  output [13:0] phase_divided_p1_o,
-  output [13:0] phase_divided_p2_o,
-  output [13:0] phase_divided_p3_o,
+  output [4*14-1:0] phase_divided_o,
+  output phase_divided_valid_o,
 
   input [31:0] 	frev_ts_tai_i,
   input [31:0] 	frev_ts_nsec_i,
@@ -114,8 +106,7 @@ module d3s_upsample_divide
   input [31:0] 	tm_tai_i,
   input [27:0] 	tm_cycles_i
   
-  
-  );
+);
 
    reg [31:0] 	t_alias;
    
@@ -407,7 +398,20 @@ module d3s_upsample_divide
 	
      end
 
+   assign phase_divided_o[14*0+:14] = phase_divided0;
+   assign phase_divided_o[14*1+:14] = phase_divided1;
+   assign phase_divided_o[14*2+:14] = phase_divided2;
+   assign phase_divided_o[14*3+:14] = phase_divided3;
+
+   
+
+  // synthesis translate_off
    monitor_phase #(.g_delay(0)) MonDiv( clk_i, phase_divided0, phase_divided1, phase_divided2, phase_divided3 );
+   // synthesis translate_on
+
+   assign   phase_divided_valid_o = 1;
+   
+   
    
    
 

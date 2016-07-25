@@ -115,12 +115,12 @@ architecture rtl of d3s_phase_encoder is
   signal adc_phase_d0     : std_logic_vector(15 downto 0);
   signal flag             : std_logic;
 
-  signal avg_lt                  : std_logic_vector(15+7 downto 0);
+  signal avg_lt, avg_lt_predelay, avg_lt_d                  : std_logic_vector(15+7 downto 0);
   signal avg_lt_valid            : std_logic;
-  signal avg_st_predelay, avg_st : std_logic_vector(15+3 downto 0);
+  signal avg_st_predelay, avg_st, avg_st_d : std_logic_vector(15+3 downto 0);
   signal avg_st_valid            : std_logic;
 
-  signal avg_lt_trunc, avg_st_trunc : std_logic_vector(15 downto 0);
+  --signal avg_lt_trunc, avg_st_trunc : std_logic_vector(15 downto 0);
 
   type t_state is (STARTUP, IDLE, RL_SHORT, RL_LONG);
 
@@ -128,7 +128,7 @@ architecture rtl of d3s_phase_encoder is
   signal rl_integ, rl_phase_ext : unsigned(22 downto 0);
   signal rl_length              : unsigned(15 downto 0);
   signal rl_state               : t_state;
-
+  signal rl_cycles_start : std_logic_vector(27 downto 0);
   signal err_st : signed(22 downto 0);
   signal err_lt : signed(22 downto 0);
   signal err_lt_bound, err_st_bound : std_logic;
@@ -225,9 +225,20 @@ raw_phase_o <= adc_phase;
       clk_i      => clk_i,
       din_i      => std_logic_vector(adc_dphase),
       din_stb_i  => '1',
-      dout_o     => avg_lt,
+      dout_o     => avg_lt_predelay,
       dout_stb_o => avg_lt_valid);
 
+  U_LT_Holdoff_Delay : gc_delay_line
+    generic map (
+      g_delay => 100,
+      g_width => avg_lt'length)
+    port map (
+      clk_i   => clk_i,
+      rst_n_i => rst_n_i,
+      d_i     => avg_lt_predelay,
+      q_o     => avg_lt);
+
+  
   U_Avg_ST : gc_moving_average          -- 8 taps ST average
     generic map (
       g_data_width => 16,
@@ -250,8 +261,8 @@ raw_phase_o <= adc_phase;
       d_i     => avg_st_predelay,
       q_o     => avg_st);
 
-  avg_lt_trunc <= avg_lt (avg_lt'length-1 downto avg_lt'length-16);
-  avg_st_trunc <= avg_st (avg_st'length-1 downto avg_st'length-16);
+  --avg_lt_trunc <= avg_lt (avg_lt'length-1 downto avg_lt'length-16);
+  --avg_st_trunc <= avg_st (avg_st'length-1 downto avg_st'length-16);
 
   U_RunLen_Delay : gc_delay_line
     generic map (
@@ -265,9 +276,8 @@ raw_phase_o <= adc_phase;
 
   rl_phase_ext <= unsigned(rl_phase(13 downto 0) & "000000000");
 
-
-  err_st <= signed(rl_phase_ext - rl_integ - unsigned(avg_st(avg_st'length-3 downto 0) & "000000"));
-  err_lt <= signed(rl_phase_ext - rl_integ - unsigned(avg_lt(avg_lt'length-3 downto 0) & "00"));
+  err_st <= signed(rl_phase_ext - rl_integ - unsigned(avg_st_d(avg_st'length-3 downto 0) & "000000"));
+  err_lt <= signed(rl_phase_ext - rl_integ - unsigned(avg_lt_d(avg_lt'length-3 downto 0) & "00"));
 
   err_lt_bound <= '1' when err_lt > signed(r_min_error_i) and err_lt < signed(r_max_error_i) else '0';
   err_st_bound <= '1' when err_st > signed(r_min_error_i) and err_st < signed(r_max_error_i) else '0';
@@ -280,27 +290,35 @@ raw_phase_o <= adc_phase;
         rl_state <= STARTUP;
         fifo_we_o <= '0';
       else
+
+        
         case (rl_state) is
           when STARTUP =>
             rl_length <= (others => '0');
             rl_integ  <= rl_phase_ext;
-            rl_state  <= IDLE;
+            if(fifo_en_i = '1') then
+              rl_state  <= IDLE;
+            end if;
           when IDLE =>
             
-            fifo_we_o <= '0';
+--            fifo_we_o <= '0';
+            fifo_tstamp_o <= tm_cycles_i;
+            rl_cycles_start <= std_logic_vector(unsigned(tm_cycles_i) + 1);
+            fifo_we_o <= fifo_en_i;
+            fifo_is_rl_o <= '0';
+            fifo_phase_o <= std_logic_vector(resize(rl_phase_ext,32));
+            avg_st_d <= avg_st;
+            avg_lt_d <= avg_lt;
+
             if (err_st_bound = '1') then
               rl_length <= rl_length + 1;
               rl_state  <= RL_SHORT;
-              rl_integ  <= rl_integ + unsigned(avg_st(avg_st'length-3 downto 0) & "000000");
+              rl_integ  <= rl_integ + unsigned(avg_st_d(avg_st'length-3 downto 0) & "000000");
             elsif (err_lt_bound = '1') then
               rl_length <= rl_length + 1;
               rl_state  <= RL_LONG;
-              rl_integ  <= rl_integ + unsigned(avg_lt(avg_lt'length-3 downto 0) & "00");
+              rl_integ  <= rl_integ + unsigned(avg_lt_d(avg_lt'length-3 downto 0) & "00");
             else
-              fifo_we_o <= fifo_en_i;
-              fifo_is_rl_o <= '0';
-              fifo_phase_o <= std_logic_vector(resize(rl_phase_ext,32));
-              fifo_tstamp_o <= tm_cycles_i;
               rl_length <= (others => '0');
               rl_state  <= IDLE;
               rl_integ  <= rl_phase_ext;
@@ -308,16 +326,18 @@ raw_phase_o <= adc_phase;
             
           when RL_SHORT =>
             fifo_we_o <= '0';
+
             if (err_st_bound = '1' and rl_length < unsigned(r_max_run_len_i)) then
               rl_length <= rl_length + 1;
               rl_state  <= RL_SHORT;
-              rl_integ  <= rl_integ + unsigned(avg_st(avg_st'length-3 downto 0) & "000000");
+              rl_integ  <= rl_integ + unsigned(avg_st_d(avg_st'length-3 downto 0) & "000000");
             else
               fifo_we_o <= fifo_en_i;
               fifo_is_rl_o <= '1';
-              fifo_phase_o <= std_logic_vector(resize(unsigned(avg_st),32));
+              fifo_phase_o <= std_logic_vector(resize(unsigned(avg_st_d(avg_st'length-3 downto 0) & "000000"),32));
               fifo_rl_o <= std_logic_vector(rl_length);
-
+              fifo_tstamp_o <= rl_cycles_start;
+              
               rl_length <= (others => '0');
               rl_state  <= IDLE;
               rl_integ  <= rl_phase_ext;
@@ -326,15 +346,17 @@ raw_phase_o <= adc_phase;
 
           when RL_LONG =>
             fifo_we_o <= '0';
+
             if (err_lt_bound = '1' and rl_length < unsigned(r_max_run_len_i)) then
               rl_length <= rl_length + 1;
               rl_state  <= RL_LONG;
-              rl_integ  <= rl_integ + unsigned(avg_lt(avg_lt'length-3 downto 0) & "00");
+              rl_integ  <= rl_integ + unsigned(avg_lt_d(avg_lt'length-3 downto 0) & "00");
             else
               fifo_we_o <= fifo_en_i;
               fifo_is_rl_o <= '1';
-              fifo_phase_o <= std_logic_vector(resize(unsigned(avg_lt),32));
+              fifo_phase_o <= std_logic_vector(resize(unsigned(avg_lt_d(avg_lt'length-3 downto 0) & "00"),32));
               fifo_rl_o <= std_logic_vector(rl_length);
+              fifo_tstamp_o <= rl_cycles_start;
 
               rl_state  <= IDLE;
               rl_length <= (others => '0');

@@ -1,0 +1,841 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<spirit:design xmlns:spirit="http://www.spiritconsortium.org/XMLSchema/SPIRIT/1685-2009" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xilinx="http://www.xilinx.com" >
+   <spirit:vendor>xilinx.com</spirit:vendor>
+   <spirit:library>project</spirit:library>
+   <spirit:name>coregen</spirit:name>
+   <spirit:version>1.0</spirit:version>
+   <spirit:componentInstances>
+      <spirit:componentInstance>
+         <spirit:instanceName>cordic_v4_0</spirit:instanceName>
+         <spirit:componentRef spirit:vendor="xilinx.com" spirit:library="ip" spirit:name="cordic" spirit:version="4.0" />
+         <spirit:configurableElementValues>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.COMPONENT_NAME">cordic_v4_0</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.FUNCTIONAL_SELECTION">Arc_Tan</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.ARCHITECTURAL_CONFIGURATION">Parallel</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.PIPELINING_MODE">Maximum</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.DATA_FORMAT">SignedFraction</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.PHASE_FORMAT">Scaled_Radians</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.INPUT_WIDTH">16</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.REGISTER_INPUTS">true</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.OUTPUT_WIDTH">16</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.REGISTER_OUTPUTS">true</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.ROUND_MODE">Truncate</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.ITERATIONS">0</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.PRECISION">0</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.COARSE_ROTATION">true</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.COMPENSATION_SCALING">No_Scale_Compensation</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.CE">false</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.SCLR">false</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.ND">true</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.RDY">true</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.X_OUT">false</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.Y_OUT">false</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.PHASE_OUTPUT">true</spirit:configurableElementValue>
+         </spirit:configurableElementValues>
+         <spirit:vendorExtensions>
+            <xilinx:instanceProperties xmlns:xilinx="http://www.xilinx.com">
+               <xilinx:projectOptions>
+                  <xilinx:projectName>coregen</xilinx:projectName>
+                  <xilinx:outputDirectory>./</xilinx:outputDirectory>
+                  <xilinx:workingDirectory>./tmp/</xilinx:workingDirectory>
+                  <xilinx:subWorkingDirectory>./tmp/_cg/</xilinx:subWorkingDirectory>
+               </xilinx:projectOptions>
+               <xilinx:part>
+                  <xilinx:device>xc6slx150t</xilinx:device>
+                  <xilinx:deviceFamily>spartan6</xilinx:deviceFamily>
+                  <xilinx:package>fgg900</xilinx:package>
+                  <xilinx:speedGrade>-3</xilinx:speedGrade>
+               </xilinx:part>
+               <xilinx:flowOptions>
+                  <xilinx:busFormat>BusFormatAngleBracketNotRipped</xilinx:busFormat>
+                  <xilinx:designEntry>VHDL</xilinx:designEntry>
+                  <xilinx:asySymbol>true</xilinx:asySymbol>
+                  <xilinx:flowVendor>Other</xilinx:flowVendor>
+                  <xilinx:addPads>false</xilinx:addPads>
+                  <xilinx:removeRPMs>false</xilinx:removeRPMs>
+                  <xilinx:createNDF>false</xilinx:createNDF>
+                  <xilinx:implementationFileType>Ngc</xilinx:implementationFileType>
+                  <xilinx:formalVerification>false</xilinx:formalVerification>
+               </xilinx:flowOptions>
+               <xilinx:simulationOptions>
+                  <xilinx:simulationModel>Behavioral</xilinx:simulationModel>
+                  <xilinx:simulationLanguage>VHDL</xilinx:simulationLanguage>
+                  <xilinx:foundationSym>false</xilinx:foundationSym>
+               </xilinx:simulationOptions>
+               <xilinx:packageInfo>
+                  <xilinx:sourceCoreCreationDate>2013-10-13+18:14</xilinx:sourceCoreCreationDate>
+               </xilinx:packageInfo>
+            </xilinx:instanceProperties>
+         </spirit:vendorExtensions>
+      </spirit:componentInstance>
+      <spirit:componentInstance>
+         <spirit:instanceName>fir_compiler_v5_0</spirit:instanceName>
+         <spirit:componentRef spirit:vendor="xilinx.com" spirit:library="ip" spirit:name="fir_compiler" spirit:version="5.0" />
+         <spirit:configurableElementValues>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.COMPONENT_NAME">fir_compiler_v5_0</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.ALLOW_ROUNDING_APPROXIMATION">false</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.DATA_SIGN">Signed</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.FILTER_SELECTION">1</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.FILTER_TYPE">Single_Rate</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.COEFFICIENT_FILE">no_coe_file_loaded</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.INPUT_BUFFER_TYPE">Automatic</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.PREFERENCE_FOR_OTHER_STORAGE">Automatic</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.GUI_BEHAVIOUR">Coregen</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.HAS_ND">true</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.COEFFICIENT_SETS">1</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.NUMBER_PATHS">1</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.SAMPLE_FREQUENCY">125.0</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.INTERPOLATION_RATE">1</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.QUANTIZATION">Integer_Coefficients</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.DATA_WIDTH">16</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.COEFFICIENT_WIDTH">18</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.HARDWAREOVERSAMPLINGRATE">1</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.CLOCK_FREQUENCY">125.0</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.COEFFICIENT_SIGN">Signed</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.COEFFICIENTSOURCE">Vector</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.COEFFICIENT_BUFFER_TYPE">Automatic</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.FILTER_ARCHITECTURE">Systolic_Multiply_Accumulate</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.REGISTERED_OUTPUT">true</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.DISPLAYRELOADORDER">false</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.RATESPECIFICATION">Frequency_Specification</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.OUTPUT_WIDTH">16</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.COEFFICIENTVECTOR">0,-1,0,-3,0,-7,0,-12,0,-20,0,-31,0,-48,0,-69,0,-99,0,-137,0,-186,0,-248,0,-326,0,-423,0,-542,-1,-685,-1,-859,-1,-1067,-1,-1316,-1,-1613,-1,-1967,-1,-2392,-1,-2904,-1,-3530,-1,-4308,-1,-5300,-1,-6616,0,-8462,0,-11281,0,-16226,0,-27534,0,-83349,0,83349,0,27534,0,16226,0,11281,0,8462,0,6616,1,5300,1,4308,1,3530,1,2904,1,2392,1,1967,1,1613,1,1316,1,1067,1,859,1,685,1,542,0,423,0,326,0,248,0,186,0,137,0,99,0,69,0,48,0,31,0,20,0,12,0,7,0,3,0,1,0</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.PASSBAND_MAX">0.5</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.STOPBAND_MAX">1.0</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.OPTIMIZATION_GOAL">Speed</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.DATA_BUFFER_TYPE">Automatic</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.SAMPLEPERIOD">1</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.RATE_CHANGE_TYPE">Integer</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.COEFFICIENT_STRUCTURE">Inferred</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.COLUMNCONFIG">44</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.INTER_COLUMN_PIPE_LENGTH">4</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.NUMBER_CHANNELS">1</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.CHAN_IN_ADV">0</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.HAS_DATA_VALID">false</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.OUTPUT_BUFFER_TYPE">Automatic</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.PASSBAND_MIN">0.0</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.STOPBAND_MIN">0.5</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.HAS_SCLR">false</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.DATA_FRACTIONAL_BITS">0</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.ZERO_PACK_FACTOR">1</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.COEFFICIENT_FRACTIONAL_BITS">0</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.MULTI_COLUMN_SUPPORT">Disabled</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.COEFFICIENT_RELOAD">false</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.DECIMATION_RATE">1</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.HAS_CE">false</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.SCLR_DETERMINISTIC">false</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.BESTPRECISION">false</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.OUTPUT_ROUNDING_MODE">Non_Symmetric_Rounding_Down</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.USECHAN_IN_ADV">false</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.IPBUFF_MEMTYPE">0</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.INTERP_RATE">1</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.SYMMETRY">1</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.FILTER_TYPE">0</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.NUM_TAPS">129</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.ZERO_PACKING_FACTOR">1</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.COL_PIPE_LEN">4</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.ALLOW_APPROX">0</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.CLOCK_FREQ">125000000</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.NUM_PATHS">1</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.COL_MODE">0</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.C_MEM_INIT_FILE">fir_compiler_v5_0.mif</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.C_LATENCY">71</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.NUM_FILTS">1</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.DATA_WIDTH">16</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.CHAN_SEL_WIDTH">1</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.ROUND_MODE">6</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.C_HAS_SCLR">0</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.OUTPUT_REG">1</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.C_HAS_CE">0</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.DATA_MEMTYPE">0</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.FILTER_ARCH">1</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.SAMPLE_FREQ">125000000</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.DATAPATH_MEMTYPE">0</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.ODD_SYMMETRY">1</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.OUTPUT_WIDTH">16</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.NEG_SYMMETRY">1</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.COEF_TYPE">0</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.COEF_RELOAD">0</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.RATE_CHANGE_TYPE">0</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.NUM_CHANNELS">1</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.C_OPTIMIZATION">0</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.C_HAS_ND">1</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.CHAN_IN_ADV">0</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.DECIM_RATE">1</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.ACCUM_WIDTH">35</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.COL_CONFIG">44</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.COEF_MEMTYPE">0</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.DATA_TYPE">0</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.SCLR_DETERMINISTIC">0</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.COEF_WIDTH">18</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.C_HAS_DATA_VALID">0</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.OPBUFF_MEMTYPE">0</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.FILTER_SEL_WIDTH">1</spirit:configurableElementValue>
+         </spirit:configurableElementValues>
+         <spirit:vendorExtensions>
+            <xilinx:instanceProperties xmlns:xilinx="http://www.xilinx.com">
+               <xilinx:projectOptions>
+                  <xilinx:projectName>coregen</xilinx:projectName>
+                  <xilinx:outputDirectory>./</xilinx:outputDirectory>
+                  <xilinx:workingDirectory>./tmp/</xilinx:workingDirectory>
+                  <xilinx:subWorkingDirectory>./tmp/_cg/</xilinx:subWorkingDirectory>
+               </xilinx:projectOptions>
+               <xilinx:part>
+                  <xilinx:device>xc6slx150t</xilinx:device>
+                  <xilinx:deviceFamily>spartan6</xilinx:deviceFamily>
+                  <xilinx:package>fgg900</xilinx:package>
+                  <xilinx:speedGrade>-3</xilinx:speedGrade>
+               </xilinx:part>
+               <xilinx:flowOptions>
+                  <xilinx:busFormat>BusFormatAngleBracketNotRipped</xilinx:busFormat>
+                  <xilinx:designEntry>VHDL</xilinx:designEntry>
+                  <xilinx:asySymbol>true</xilinx:asySymbol>
+                  <xilinx:flowVendor>Other</xilinx:flowVendor>
+                  <xilinx:addPads>false</xilinx:addPads>
+                  <xilinx:removeRPMs>false</xilinx:removeRPMs>
+                  <xilinx:createNDF>false</xilinx:createNDF>
+                  <xilinx:implementationFileType>Ngc</xilinx:implementationFileType>
+                  <xilinx:formalVerification>false</xilinx:formalVerification>
+               </xilinx:flowOptions>
+               <xilinx:simulationOptions>
+                  <xilinx:simulationModel>Behavioral</xilinx:simulationModel>
+                  <xilinx:simulationLanguage>VHDL</xilinx:simulationLanguage>
+                  <xilinx:foundationSym>false</xilinx:foundationSym>
+               </xilinx:simulationOptions>
+               <xilinx:packageInfo>
+                  <xilinx:sourceCoreCreationDate>2013-10-13+18:46</xilinx:sourceCoreCreationDate>
+               </xilinx:packageInfo>
+            </xilinx:instanceProperties>
+            <xilinx:generationHistory>
+               <xilinx:fileSet>
+                  <xilinx:name>model_parameter_resolution_generator</xilinx:name>
+               </xilinx:fileSet>
+               <xilinx:fileSet>
+                  <xilinx:name>customization_generator</xilinx:name>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:05 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x99929074</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+               </xilinx:fileSet>
+               <xilinx:fileSet>
+                  <xilinx:name>ip_xco_generator</xilinx:name>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0.xco</xilinx:name>
+                     <xilinx:userFileType>xco</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:05 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x573D5A29</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+               </xilinx:fileSet>
+               <xilinx:fileSet>
+                  <xilinx:name>ngc_netlist_generator</xilinx:name>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0.ngc</xilinx:name>
+                     <xilinx:userFileType>ngc</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:58:57 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x5511B25E</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0.vhd</xilinx:name>
+                     <xilinx:userFileType>vhdl</xilinx:userFileType>
+                     <xilinx:userFileType>vhdlSynthesis</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:58:48 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x194FD443</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0.vho</xilinx:name>
+                     <xilinx:userFileType>vho</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:58:48 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x8594C99B</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_0.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x0A114E3B</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_1.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x81F54156</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_10.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x0A114E3B</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_11.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0xD935F83C</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_12.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x0A114E3B</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_13.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x478C212A</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_14.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x0A114E3B</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_15.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x0165D96C</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_16.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x0A114E3B</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_17.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x75BF4DDE</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_18.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x0A114E3B</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_19.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x4779087C</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_2.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x0A114E3B</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_20.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x0A114E3B</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_21.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0xD9C0D16A</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_22.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x0A114E3B</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_23.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x67A8338A</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_24.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x0A114E3B</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_25.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x2A2D5EA4</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_26.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x0A114E3B</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_27.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0xAA48EFC8</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_28.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x0A114E3B</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_29.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x5B899EF9</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_3.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x1A86AB82</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_30.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x81F54156</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_31.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0xA6379ECB</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_32.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x81F54156</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_33.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x6B226BDF</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_34.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x81F54156</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_35.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x205B2567</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_36.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x81F54156</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_37.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0xAE9832A1</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_38.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x81F54156</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_39.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x5BD3A419</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_4.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x0A114E3B</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_40.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x81F54156</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_41.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0xF0FE92BD</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_42.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x81F54156</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_43.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x60B18214</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_44.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x81F54156</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_45.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x6E566AC5</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_46.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x81F54156</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_47.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0xAAACE7F0</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_48.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x81F54156</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_49.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0xAC831CDA</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_5.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x9BA3CEA5</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_50.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x81F54156</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_51.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x3260FF2C</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_52.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x81F54156</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_53.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x27340A06</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_54.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x0A114E3B</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_55.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x418D247F</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_56.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x0A114E3B</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_57.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x6E5E6550</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_58.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x0A114E3B</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_59.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0xE7571BB4</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_6.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x0A114E3B</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_60.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x0A114E3B</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_61.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x8FEF51EC</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_62.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x0A114E3B</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_63.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x51889417</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_64.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x0A114E3B</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_7.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0xA8255F4C</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_8.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x0A114E3B</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0COEFF_auto0_9.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0xEAB369D5</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0filt_decode_rom.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:57:26 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x010E6B9C</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+               </xilinx:fileSet>
+               <xilinx:fileSet>
+                  <xilinx:name>instantiation_template_generator</xilinx:name>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0.vho</xilinx:name>
+                     <xilinx:userFileType>vho</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:58:57 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x8594C99B</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+               </xilinx:fileSet>
+               <xilinx:fileSet>
+                  <xilinx:name>asy_generator</xilinx:name>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0.asy</xilinx:name>
+                     <xilinx:userFileType>asy</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:59:00 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0xA5AD7B1A</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0.mif</xilinx:name>
+                     <xilinx:userFileType>mif</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:59:00 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x99929074</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+               </xilinx:fileSet>
+               <xilinx:fileSet>
+                  <xilinx:name>xmdf_generator</xilinx:name>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0_xmdf.tcl</xilinx:name>
+                     <xilinx:userFileType>tclXmdf</xilinx:userFileType>
+                     <xilinx:userFileType>tcl</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:59:00 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0x5684958B</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+               </xilinx:fileSet>
+               <xilinx:fileSet>
+                  <xilinx:name>ise_generator</xilinx:name>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0.gise</xilinx:name>
+                     <xilinx:userFileType>ignore</xilinx:userFileType>
+                     <xilinx:userFileType>gise</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:59:02 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0xFACC6642</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0.xise</xilinx:name>
+                     <xilinx:userFileType>ignore</xilinx:userFileType>
+                     <xilinx:userFileType>xise</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:59:02 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0xC6C45D8D</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+               </xilinx:fileSet>
+               <xilinx:fileSet>
+                  <xilinx:name>deliver_readme_generator</xilinx:name>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0_readme.txt</xilinx:name>
+                     <xilinx:userFileType>ignore</xilinx:userFileType>
+                     <xilinx:userFileType>txtReadme</xilinx:userFileType>
+                     <xilinx:userFileType>txt</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:59:02 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0xB3C667EE</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+               </xilinx:fileSet>
+               <xilinx:fileSet>
+                  <xilinx:name>flist_generator</xilinx:name>
+                  <xilinx:file>
+                     <xilinx:name>./fir_compiler_v5_0_flist.txt</xilinx:name>
+                     <xilinx:userFileType>ignore</xilinx:userFileType>
+                     <xilinx:userFileType>txtFlist</xilinx:userFileType>
+                     <xilinx:userFileType>txt</xilinx:userFileType>
+                     <xilinx:timeStamp>Wed Jan 27 10:59:03 GMT 2016</xilinx:timeStamp>
+                     <xilinx:checkSum>0xC389D0BE</xilinx:checkSum>
+                     <xilinx:generationId>generationID_2090479949</xilinx:generationId>
+                  </xilinx:file>
+               </xilinx:fileSet>
+               <xilinx:fileSet>
+                  <xilinx:name>view_readme_generator</xilinx:name>
+               </xilinx:fileSet>
+            </xilinx:generationHistory>
+         </spirit:vendorExtensions>
+      </spirit:componentInstance>
+   </spirit:componentInstances>
+   <spirit:vendorExtensions>
+      <xilinx:instanceProperties>
+         <xilinx:projectOptions>
+            <xilinx:projectName>coregen</xilinx:projectName>
+            <xilinx:outputDirectory>./</xilinx:outputDirectory>
+            <xilinx:workingDirectory>./tmp/</xilinx:workingDirectory>
+            <xilinx:subWorkingDirectory>./tmp/_cg/</xilinx:subWorkingDirectory>
+         </xilinx:projectOptions>
+         <xilinx:part>
+            <xilinx:device>xc6slx150t</xilinx:device>
+            <xilinx:deviceFamily>spartan6</xilinx:deviceFamily>
+            <xilinx:package>fgg900</xilinx:package>
+            <xilinx:speedGrade>-3</xilinx:speedGrade>
+         </xilinx:part>
+         <xilinx:flowOptions>
+            <xilinx:busFormat>BusFormatAngleBracketNotRipped</xilinx:busFormat>
+            <xilinx:designEntry>VHDL</xilinx:designEntry>
+            <xilinx:asySymbol>true</xilinx:asySymbol>
+            <xilinx:flowVendor>Other</xilinx:flowVendor>
+            <xilinx:addPads>false</xilinx:addPads>
+            <xilinx:removeRPMs>false</xilinx:removeRPMs>
+            <xilinx:createNDF>false</xilinx:createNDF>
+            <xilinx:implementationFileType>Ngc</xilinx:implementationFileType>
+            <xilinx:formalVerification>false</xilinx:formalVerification>
+         </xilinx:flowOptions>
+         <xilinx:simulationOptions>
+            <xilinx:simulationModel>Behavioral</xilinx:simulationModel>
+            <xilinx:simulationLanguage>VHDL</xilinx:simulationLanguage>
+            <xilinx:foundationSym>false</xilinx:foundationSym>
+         </xilinx:simulationOptions>
+      </xilinx:instanceProperties>
+   </spirit:vendorExtensions>
+</spirit:design>
+

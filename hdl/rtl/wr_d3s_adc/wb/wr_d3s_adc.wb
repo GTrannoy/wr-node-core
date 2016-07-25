@@ -1,14 +1,14 @@
 -- -*- Mode: LUA; tab-width: 2 -*-
 
 peripheral {
-    name = "WR D3S WB";
+	 name = "WR D3S WB (master)";
    prefix="d3s";
 
 	 hdl_entity="d3s_adc_wb";
 	 
 
 	 fifo_reg {
-			size = 256; -- or more. We'll see :)
+			size = 16384; -- or more. We'll see :)
 			direction = CORE_TO_BUS;
 			prefix = "adc";
 			name = "ADC Data FIFO";
