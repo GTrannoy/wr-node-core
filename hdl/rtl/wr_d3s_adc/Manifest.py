@@ -18,7 +18,8 @@ files=[	"d3s_phase_encoder.vhd",
 	"dc_block/dc_block.vhd",
 	"dc_block/MovingAvg.vhd",
        "dc_block/vector_fifo.vhd",
-       "d3s_upsample.v"];
+       "d3s_upsample.v",
+       "d3s_lut.v"];
 
 
 

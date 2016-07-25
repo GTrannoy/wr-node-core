@@ -52,6 +52,7 @@ architecture behavioral of d3s_phase_decoder is
   signal s2_rl                   : unsigned(15 downto 0);
   signal s3_ts_match, s3_ts_miss : std_logic;
 
+  
   signal s3_valid  : std_logic;
   signal s3_phase  : unsigned(22 downto 0);
   signal s3_dphase : unsigned(22 downto 0);
@@ -128,30 +129,7 @@ begin
     end if;
   end process;
 
-  --s2_valid_comb <= '1' when f_time_in_advance(s1_tstamp, unsigned(tm_cycles_i)) else '0';
 
-  --p_stage2 : process(clk_wr_i)
-  --begin
-  --  if rising_edge(clk_wr_i) then
-  --    if rst_n_wr_i = '0' then
-  --      s2_valid <= '0';
-  --    else
-  --      if stall = '0' then
-  --        if s1_valid = '1' then
-  --          -- fixme: condition for overflow
-
-  --          s2_is_rl  <= s1_is_rl;
-  --          s2_rl     <= s1_rl;
-  --          s2_phase  <= s1_phase;
-  --          s2_tstamp <= s1_tstamp;
-  --          s2_valid  <= s1_valid;
-  --        else
-  --          s2_valid <= '0';
-  --        end if;
-  --      end if;
-  --    end if;
-  --  end if;
-  --end process;
 
   process(fifo_tstamp_i, tm_cycles_adj1)
   begin
@@ -172,6 +150,8 @@ begin
     if rising_edge(clk_wr_i) then
       if rst_n_wr_i = '0' or r_enable_i = '0' then
         s3_state  <= IDLE;
+        s3_phase <= (others => '0');
+        s3_valid <= '0';
         got_fixup <= '0';
       else
         case s3_state is
@@ -184,6 +164,7 @@ begin
 
                 if fifo_is_rl_i = '0' then
                   s3_phase  <= unsigned(fifo_phase_i(22 downto 0));
+                  s3_valid <= '1';
 --                  got_fixup <= '1';
                 else
   --                if (got_fixup = '1') then
@@ -244,6 +225,9 @@ begin
   fifo_rd_o <= fifo_rd;
 
 
+  phase_o <= std_logic_vector(s3_phase(22 downto 22 - 13));
+  phase_valid_o <= s3_valid;
+  
 end behavioral;
 
 

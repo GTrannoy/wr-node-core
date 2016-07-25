@@ -5,7 +5,147 @@ peripheral {
    prefix="d3ss";
 
 	 hdl_entity="d3ss_adc_slave_wb";
-	 
+
+	  reg {
+      name = "Reset Register";
+      prefix = "RSTR";
+      field {
+         name = "FPGA REF/Serdes PLL Reset";
+         prefix = "PLL_RST";
+				 description = "write 1: resets the internal PLL producing the DDS DAC serdes clock\
+                        write 0: un-reset";
+         type = BIT;
+         access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+         
+      };
+   };
+
+
+   reg {
+      prefix = "GPIOR";
+      name = "GPIO register";
+
+      field {
+         name = "System PLL CS";
+         prefix = "PLL_SYS_CS_N";
+				 description = "System PLL CS_N line output";
+         type = BIT;
+         access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+      };
+
+      field {
+         name = "System Reset";
+         prefix = "PLL_SYS_RESET_N";
+				 description = "System PLL RESET_N line output";
+         type = BIT;
+         access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+      };
+
+      field {
+         name = "PLL SCLK (shared)";
+         prefix = "PLL_SCLK";
+				 description = "System/VCXO PLL SPI clock output";
+         type = BIT;
+         access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+      };
+
+      field {
+         name = "PLL SDIO (shared)";
+         prefix = "PLL_SDIO";
+				 description = "System/VCXO PLL SPI data input/output";
+         type = BIT;
+         access_bus = READ_WRITE;
+         access_dev = READ_WRITE;
+         load = LOAD_EXT;
+      };
+
+      field {
+         name = "PLL SDIO direction (shared)";
+         prefix = "PLL_SDIO_DIR";
+				 description = "System/VCXO PLL SPI data line direction (1 = FPGA output)";
+         type = BIT;
+         access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+      };
+
+      field {
+         name = "VCXO PLL Reset";
+         prefix = "PLL_VCXO_RESET_N";
+				 description = "VCXO PLL SPI RESET_N line";
+         type = BIT;
+         access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+      };
+
+			field {
+         name = "VCXO PLL Chip Select";
+         prefix = "PLL_VCXO_CS_N";
+				 description = "VCXO PLL SPI CS_N line";
+         type = BIT;
+         access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+      };
+
+      field {
+         name = "VCXO PLL SDO";
+         prefix = "PLL_VCXO_SDO";
+				 description = "unused";
+
+         type = BIT;
+         access_bus = READ_ONLY;
+         access_dev = WRITE_ONLY;
+      };
+
+      field {
+         name = "ADF4002 Chip Enable";
+         prefix = "ADF_CE";
+         type = BIT;
+         access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+
+      };
+
+      field {
+         name = "ADF4002 Clock";
+         prefix = "ADF_CLK";
+         type = BIT;
+         access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+
+      };
+
+      field {
+         name = "ADF4002 Latch Enable";
+         prefix = "ADF_LE";
+         type = BIT;
+         access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+
+      };
+
+      field {
+         name = "ADF4002 Data";
+         prefix = "ADF_DATA";
+         type = BIT;
+         access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+      };
+
+			field {
+         name = "Serdes PLL locked";
+         prefix = "SERDES_PLL_LOCKED";
+				 description = "read 1: FPGA internal PLL for deriving 500 MHz DAC serdes clock is locked.";
+
+         type = BIT;
+         access_bus = READ_ONLY;
+         access_dev = WRITE_ONLY;
+      };
+   };
+
 
 	 fifo_reg {
 			size = 16384; -- or more. We'll see :)

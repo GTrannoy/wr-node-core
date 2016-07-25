@@ -295,22 +295,24 @@ DUT (
      );
 
 
-      wr_d3s_adc_slave
-     
-	DUT_S (
-	  .rst_n_sys_i(rst_n),
-	  .clk_sys_i (clk_wr),
+   wr_d3s_adc_slave
+      
+     DUT_S (
+	    .rst_n_sys_i(rst_n),
+	    .clk_sys_i (clk_wr),
 
-     .tm_cycles_i(tm_nsec[30:3]),
-	       
+	    .tm_time_valid_i(1'b1),
+	    .tm_tai_i(tm_tai),
+	    .tm_cycles_i(tm_nsec[30:3]),
+     
 	    .wr_ref_clk_p_i (clk_wr),
 	    .wr_ref_clk_n_i (~clk_wr),
 
-	  .slave_i(Host2.master.out),
-	  .slave_o(Host2.master.in)
+	    .slave_i(Host2.master.out),
+	    .slave_o(Host2.master.in)
 
- 
-     );
+     
+	    );
 
 /* -----\/----- EXCLUDED -----\/-----
 
@@ -483,9 +485,16 @@ endclass // Decompressor
    initial begin
       CBusAccessor acc_slave = Host2.get_accessor();
 
+      $display("Init slave!");
+      
       #10us;
+      acc_slave.write(`ADDR_D3SS_RSTR, 'hffffffff); // reset
+      acc_slave.write(`ADDR_D3SS_RSTR, 'h0); // un-reset
+
       acc_slave.write(`ADDR_D3SS_REC_DELAY_COARSE, (200000/8)); // 20us
       acc_slave.write(`ADDR_D3SS_CR, `D3SS_CR_ENABLE);
+
+
 
       forever begin
 	 uint64_t fifo_stat;
@@ -521,6 +530,12 @@ endclass // Decompressor
 	#200us;
 	for(i=0;i<ph_rec.samples.size();i++) begin
 	  err = ph_unc.samples[i] - ph_rec.samples[i];
+
+	   if(err < -8200000 ) // wrap-around
+	     err += (1<<23);
+	   if(err > 8200000 ) // wrap-around
+	     err -= (1<<23);
+	
 	   
 	  $display("%d %d %d %d", i, ph_unc.samples[i], ph_rec.samples[i], err);
 	   if((err > 0 ? err : -err) > max_err)
