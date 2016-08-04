@@ -154,33 +154,33 @@ architecture rtl of wr_d3s_adc is
 		D_DEPTH: positive
 	);
 	port(
-		sys_rst_n_i: in std_logic;
-		clk_sys_i: in std_logic;
-    clk_125m_i: in std_logic;
+		sys_rst_n_i     : in std_logic;
+		clk_sys_i       : in std_logic;
+      clk_125m_i      : in std_logic;
 		
-		serdes_clk_i: in std_logic;
-		serdes_strobe_i: in std_logic;
+		serdes_clk_i    : in std_logic;
+		serdes_strobe_i : in std_logic;
 		
-		wb_addr_i: in std_logic_vector(31 downto 0);
-		wb_data_i: in std_logic_vector(31 downto 0);
-		wb_data_o: out std_logic_vector(31 downto 0);
-		wb_cyc_i: in std_logic;
-		wb_sel_i: in std_logic_vector(3 downto 0);
-		wb_stb_i: in std_logic;
-		wb_we_i: in std_logic;
-		wb_ack_o: out std_logic;
-		wb_stall_o: out std_logic;
+		wb_addr_i       : in std_logic_vector(31 downto 0);
+		wb_data_i       : in std_logic_vector(31 downto 0);
+		wb_data_o       : out std_logic_vector(31 downto 0);
+		wb_cyc_i        : in std_logic;
+		wb_sel_i        : in std_logic_vector(3 downto 0);
+		wb_stb_i        : in std_logic;
+		wb_we_i         : in std_logic;
+		wb_ack_o        : out std_logic;
+		wb_stall_o      : out std_logic;
 		
-		signal_i: in std_logic;
+		stdc_input_i    : in std_logic;
 
-		cycles_i: in std_logic_vector(27 downto 0);
+		cycles_i        : in std_logic_vector(27 downto 0);
 		
 		-- TDC outputs			
-		strobe_o         : out    std_logic;
-		stdc_data_o       : out    std_logic_vector(31 downto 0);
+		strobe_o        : out    std_logic;
+		stdc_data_o     : out    std_logic_vector(31 downto 0);
 		
 		-- ChipScope Signals
-		TRIG_O				: out std_logic_vector(127 downto 0)
+		TRIG_O			 : out std_logic_vector(127 downto 0)
 	);
   end component;
 
@@ -613,7 +613,7 @@ begin
       wb_we_i         => cnx_out(4).we,
       wb_ack_o        => cnx_in(4).ack,
       wb_stall_o      => cnx_in(4).stall,
-      signal_i        => ext_trigger,
+      stdc_input_i    => ext_trigger,
       cycles_i        => tm_cycles_i,
       strobe_o        => stdc_strobe,
       stdc_data_o     => stdc_data,

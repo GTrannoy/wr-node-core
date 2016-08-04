@@ -1,0 +1,263 @@
+-------------------------------------------------------------------------------
+-- Title      : Revolution tick generator  
+-- Project    : RF DDS Distribution over WR
+-------------------------------------------------------------------------------
+-- File       : Trev_Gen.vhd
+-- Author     : E. Calvo
+-- Company    : CERN BE-CO-HT
+-- Platform   : FPGA-generic
+-- Standard   : VHDL'93
+-------------------------------------------------------------------------------
+-- Description: 
+--
+-- This block derives Revolution ticks from the  Bunch clock ticks.
+-- Revolution ticks are time stamped in the WR Master node with a resolution
+-- of 1ns and sent in frames to the WR slave. The following GW is implemented 
+-- at the slave node. It is assumend that data contained in these frames
+-- has been recovered and they are feed into these module (Tstamp2_i and Tstamp1_i).
+-- It is assumed also that the Bunch clock has been obtained using a 
+-- DDS technique, and that it has been compensated for the Beam time of 
+-- flight effect already.
+--
+-------------------------------------------------------------------------------
+--
+-- Copyright (c) 2016 CERN
+--
+-- This source file is free software; you can redistribute it   
+-- and/or modify it under the terms of the GNU Lesser General   
+-- Public License as published by the Free Software Foundation;
+-- either version 2.1 of the License, or (at your option) any
+-- later version.                                               
+--
+-- This source is distributed in the hope that it will be
+-- useful, but WITHOUT ANY WARRANTY; without even the implied
+-- warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+-- PURPOSE.  See the GNU Lesser General Public License for more
+-- details.
+--
+-- You should have received a copy of the GNU Lesser General
+-- Public License along with this source; if not, download it
+-- from http://www.gnu.org/licenses/lgpl-2.1.html
+--
+-------------------------------------------------------------------------------
+-- Revisions  :
+-- Date        Version  Author          Description
+-- 2016-06-15  0.1      ecalvo          First version, creation.
+-------------------------------------------------------------------------------
+
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+library work;
+
+entity Trev_Gen is
+    port ( 
+       clk_sys_i  :  in std_logic;   
+       rst_n_i    :  in std_logic;
+       -- 40 MHz. Assumed to be already synchronous to the beam
+       B_clk_i    :  in std_logic;
+       -- current WR cycle at the slave node
+       WRcyc_i    :  in unsigned(27 downto 0);  
+       -- Revolution clock that should be generated
+       Rev_clk_o  :  out std_logic ;
+       
+		 --  Wishbone ports 
+       wb_next_tick_i    :  in unsigned(30 downto 0);  -- Time stamp of expected next tick
+		 wb_Trev_i         :  in unsigned(30 downto 0);  -- last Trev update 
+		 wb_strobe_i_p     :  in std_logic;   -- pulse to validate previous data
+       -- Offset to open the gate before expected Trev tick [in WR cycles]  
+		 wb_ctrl_gmargin_i :  in unsigned(1 downto 0);   
+       wb_ctrl_gwidth_i  :  in unsigned(1 downto 0) );  -- Gate width [in # WrCycles]       
+end Trev_Gen;
+
+Architecture RTL of Trev_Gen is
+
+  function f_resize_unsg (x : unsigned; len : integer) return unsigned is
+    variable tmp : unsigned(len-1 downto 0);
+  begin
+    if(len > x'length) then
+      tmp(x'length-1 downto 0)   := x;
+      tmp(len-1 downto x'length) := (others => '0');
+    elsif(len < x'length) then
+      tmp := x(len-1 downto 0);
+    else
+      tmp := x;
+    end if;
+    return tmp;
+  end f_resize_unsg;
+  
+--  subtype timestamp_ns is unsigned(30 downto 0);
+--  function gate_start_ns(a:unsigned(27 downto 0); b: unsigned(1 downto 0)) 
+--    return timestamp_ns is
+--      variable tmp: unsigned(30 downto 0);
+--      variable sub: unsigned(27 downto 0);
+--      variable sub_slv: std_logic_vector(27 downto 0);
+--    -- unsigned((std_logic_vector(WRcyc_i - tof_ctrl_gmargin_i))<3,31))
+--    begin
+--      sub:= a-b;
+--	   sub_slv := (std_logic_vector(sub)) & "000";
+--	   tmp := to_unsigned(sub_slv,31);
+--    return tmp;
+--  end function;
+  
+  -- MAX value of WRcyc
+  --constant MAX_WRcyc_c : unsigned(27 downto 0) := to_unsigned(124999999, 28); 
+  constant MAX_WRcyc_ns_c : unsigned(30 downto 0) := to_unsigned(999999992, 31); 
+  -- 124999999 <3
+  
+  type State_type IS (Idle, Calc_Trev, Check_Trev, Calculate_Next_Trev_Tick, Wait_Trev_Tick, Gate_opened);
+  signal State : State_Type;      
+  
+  signal s_Tstamp2_u_reg, s_Tstamp1_u_reg : unsigned(30 downto 0) ;
+  signal s_Trev, s_Trev_tmp: unsigned(30 downto 0) ;
+  signal s_Ttarget : unsigned(31 downto 0);
+  signal s_Tacc: unsigned(31 downto 0) ;
+  signal BclkGate: std_logic;
+  
+  begin 
+
+  proc_FSM_TrevGen: process (clk_sys_i)
+    begin
+  
+    if rising_edge(clk_sys_i) then
+        if (rst_n_i = '0') then
+            State <= Idle;
+        else
+            case State is
+				
+                when Idle =>
+                    if (strobe_i_p = '1') then
+                        State <= Calc_Trev; 
+                    end if;
+						  
+					 when Calc_Trev =>	  
+					     State <= Check_Trev;
+						  
+                when Check_Trev =>
+                    if (s_Trev_tmp > tof_mintrev_i) and (s_Trev_tmp < tof_maxtrev_i) then
+                        State <= Calculate_Next_Trev_Tick;
+						  else 
+								State <= Idle;
+						  end if;
+						  
+                when Calculate_Next_Trev_Tick =>
+                    if (s_Ttarget /= (s_Ttarget'range => '0')) then
+                        State <= Wait_Trev_Tick; 
+                    end if;
+						  
+                when Wait_Trev_Tick =>
+                    if (WRcyc_i >= (s_Ttarget - tof_ctrl_gmargin_i)) then
+                        State <= Gate_opened;
+                    end if;
+						  
+                when Gate_opened =>
+                    if (WRcyc_i > (s_Ttarget - tof_ctrl_gwidth_i)) then
+                        State <= Idle;
+                    end if;
+					when others =>
+                    State <= Idle;
+            end case;
+        end if;
+    end if;
+  end process;
+
+  proc_Out_TrevGen: process (clk_sys_i)
+    begin
+  
+    if rising_edge(clk_sys_i) then
+  
+        if (rst_n_i = '0') then
+            s_Tstamp2_u_reg <= (others => '0');
+            s_Tstamp1_u_reg <= (others => '0');
+            s_Trev_tmp      <= (others => '0');
+				s_Trev          <= (others => '0');
+				s_Tacc          <= (others => '0');
+				s_Ttarget       <= (others => '0');
+				BclkGate        <= '0';
+            
+        else
+            case State is
+                
+					 when Idle =>  
+                    BclkGate   <= '0';  -- Gate closed
+                    s_Tacc     <= (others => '0');  -- Init Tacc
+                    s_Trev_tmp <= (others => '0');
+                    
+						  if (en = '1') then
+						     s_Ttarget  <= WRcyc_i + s_Trev;
+						  end if;
+						  
+						  if (strobe_i_p = '1') then 
+                    --Register input data
+                       s_Tstamp2_u_reg <= unsigned(Tstamp2_i);
+                       s_Tstamp1_u_reg <= unsigned(Tstamp1_i);
+                    end if;
+                
+					 when Calc_Trev => -- Calculate Trev with new Tstamps
+					     if (s_Tstamp2_u_reg > s_Tstamp1_u_reg) then
+                      s_Trev_tmp <= unsigned(Tstamp2_i)-unsigned(Tstamp1_i);
+                    else  -- WRcyc cross 0 between Tstamp2 and Tstamp1
+                      s_Trev_tmp <= unsigned(Tstamp2_i)-unsigned(Tstamp1_i) 
+                                + MAX_WRcyc_ns_c;
+                    end if;
+						  
+                when Check_Trev =>
+                    if (s_Trev_tmp > tof_mintrev_i) and (s_Trev_tmp < tof_maxtrev_i) then
+                    -- If current Trev seems a valid qty, update the value,
+                        s_Trev <= s_Trev_tmp;
+                    end if;
+                     
+                when Calculate_Next_Trev_Tick =>
+                -- since expected latency ~ Trev*4 (for SPS), FSM should not be 
+                -- in this state much longer than ~6 wr_clk.
+                    
+                    if s_Tacc = (s_Tacc'range => '0') then
+                        s_Tacc <= s_Tstamp2_u_reg + S_Trev;
+                    elsif (s_Tacc  <= s_Tstamp2_u_reg + tof_ctrl_wrltcy_i ) then
+                    -- I should add Trev till Tacc> Tstamp2+latency
+                        s_Tacc <= s_Tacc + s_Trev;
+                    elsif  (s_Tacc > MAX_WRcyc_ns_c) then
+                    -- Correct overflow if it happened
+                        s_Tacc <= s_Tacc - MAX_WRcyc_ns_c;
+                    elsif (s_Tacc > (WRcyc_i - tof_ctrl_gmargin_i)) then  -- do not foget to <3
+                    -- elsif(s_Tacc > gate_start_ns(WRcyc_i,tof_ctrl_gmargin_i)) then
+						  -- If we are not too late already
+                        s_Ttarget <= s_Tacc;
+                    else 
+                    -- If we are late, let's try with the following Trev tick
+                        s_Ttarget <= s_Tacc + s_Trev;
+                    end if;
+
+            when Wait_Trev_Tick =>	   
+                  -- do nothing, just wait
+                
+            when Gate_opened =>
+                  BclkGate <= '1';
+						
+            
+				end case;
+	     end if;
+    end if;
+  end process;
+  
+  s_Rev_clk <= BclkGate and B_clk_i;
+  Rev_clk_o <= s_Rev_clk;
+  
+  proc_Trev_edgeDetector: process (clk_sys_i)
+     begin
+        if rising_edge(clk_sys_i) then
+           if (rst_n_i = '0') then
+			     en <= '0';
+				  s_Rev_clk_d1 <='0';
+				  s_Rev_clk_d2 <='0';
+			  else
+			     s_Rev_clk_d1 <= s_Rev_clk;
+				  s_Rev_clk_d2 <= s_Rev_clk_d1;
+			  end if;
+		  end if;
+     end process;
+	  
+  en <= not(s_Rev_clk_d1) and s_Rev_clk_d2;
+
+end architecture;

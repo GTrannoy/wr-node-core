@@ -5,11 +5,11 @@ syn_device="xc6slx150t"
 action = "simulation"
 target = "xilinx"
 fetchto = "../../ip_cores"
-include_dirs=["../../sim", "../include", "../include/vme64x_bfm"]
+include_dirs = ["../../sim", "../include", "../include/vme64x_bfm" ]
 
-vcom_opt="-mixedsvvh l"
+vcom_opt = "-mixedsvvh l -2008"
 
 files = [ "main.sv" ]
 
-modules = { "local" :  [ "../../rtl" ] }
+modules = { "local" :  [ "../../rtl", "../../rtl/TrevGen" ] }
 

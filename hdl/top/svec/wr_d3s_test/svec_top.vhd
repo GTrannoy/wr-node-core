@@ -6,7 +6,6 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2016-06-17
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -56,26 +55,35 @@ entity svec_top is
   port (
     rst_n_a_i : in std_logic;
 
-    -------------------------------------------------------------------------
+    ----------------------------------------
     --  Clock controls
-    -------------------------------------------------------------------------
-    clk_20m_vcxo_i : in std_logic;      -- 20MHz VCXO clock
+    ----------------------------------------
+    clk_20m_vcxo_i : in std_logic;       -- 20MHz VCXO clock
 
     clk_125m_pllref_p_i : in std_logic;  -- 125 MHz PLL reference
     clk_125m_pllref_n_i : in std_logic;
 
-    clk_125m_gtp_p_i : in std_logic;    -- 125 MHz PLL reference
+    clk_125m_gtp_p_i : in std_logic;     -- 125 MHz PLL reference
     clk_125m_gtp_n_i : in std_logic;
     
-    -------------------------------------------------------------------------    
+    ----------------------------------------    
     -- SVEC Front panel LEDs
-    -------------------------------------------------------------------------
+    ----------------------------------------
 
     fp_led_line_oen_o : out std_logic_vector(1 downto 0);
     fp_led_line_o     : out std_logic_vector(1 downto 0);
     fp_led_column_o   : out std_logic_vector(3 downto 0);
+    
+	 dbg_led0_o : out std_logic;
+    dbg_led1_o : out std_logic;
+    dbg_led2_o : out std_logic;
+    dbg_led3_o : out std_logic;
 
-    fp_gpio1_a2b_o  : out std_logic;
+    ----------------------------------------    
+    -- SVEC GPIO
+    ----------------------------------------
+    
+	 fp_gpio1_a2b_o  : out std_logic;
     fp_gpio2_a2b_o  : out std_logic;
     fp_gpio34_a2b_o : out std_logic;
 
@@ -84,20 +92,15 @@ entity svec_top is
     fp_gpio3_b : inout std_logic;
     fp_gpio4_b : inout std_logic;
 
-    dbg_led0_o : out std_logic;
-    dbg_led1_o : out std_logic;
-    dbg_led2_o : out std_logic;
-    dbg_led3_o : out std_logic;
-
     ----------------------------------------
     --  Carrier I2C EEPROM
     ----------------------------------------
     carrier_scl_b : inout std_logic;
     carrier_sda_b : inout std_logic;
 
-    -------------------------------------------------------------------------
+    ----------------------------------------
     -- VME Interface pins
-    -------------------------------------------------------------------------
+    ----------------------------------------
 
     VME_AS_n_i     : in    std_logic;
     VME_RST_n_i    : in    std_logic;
@@ -109,7 +112,6 @@ entity svec_top is
     VME_DTACK_n_o  : inout std_logic;
     VME_RETRY_n_o  : out   std_logic;
     VME_RETRY_OE_o : out   std_logic;
-
     VME_LWORD_n_b   : inout std_logic;
     VME_ADDR_b      : inout std_logic_vector(31 downto 1);
     VME_DATA_b      : inout std_logic_vector(31 downto 0);
@@ -143,7 +145,7 @@ entity svec_top is
     sfp_los_i         : in    std_logic := '0';
 
     ----------------------------------------
-    --  Clock controls
+    --  PLLs 
     ----------------------------------------
     pll20dac_din_o    : out std_logic;
     pll20dac_sclk_o   : out std_logic;
@@ -313,23 +315,31 @@ architecture rtl of svec_top is
       wr_dac_sync_n_o      : out   std_logic;
       slave_i              : in    t_wishbone_slave_in;
       slave_o              : out   t_wishbone_slave_out;
-      debug_o : out std_logic_vector(3 downto 0));
+      
+		-- For debugging the design
+		debug_o              : out std_logic_vector(3 downto 0)  ;
+      
+		Rev_clk_o            : out std_logic;   -- Trev clock
+--	-- For testing temporally routed to the top
+      Trev_i               : in std_logic;  
+      B_clk_i              : in std_logic  -- 40MHz clock
+		);
   end component wr_d3s_core;
 
-  component chipscope_ila
-    port (
-      CONTROL : inout std_logic_vector(35 downto 0);
-      CLK     : in    std_logic;
-      TRIG0   : in    std_logic_vector(31 downto 0);
-      TRIG1   : in    std_logic_vector(31 downto 0);
-      TRIG2   : in    std_logic_vector(31 downto 0);
-      TRIG3   : in    std_logic_vector(31 downto 0));
-  end component;
-
-  component chipscope_icon
-    port (
-      CONTROL0 : inout std_logic_vector (35 downto 0));
-  end component;
+--  component chipscope_ila
+--    port (
+--      CONTROL : inout std_logic_vector(35 downto 0);
+--      CLK     : in    std_logic;
+--      TRIG0   : in    std_logic_vector(31 downto 0);
+--      TRIG1   : in    std_logic_vector(31 downto 0);
+--      TRIG2   : in    std_logic_vector(31 downto 0);
+--      TRIG3   : in    std_logic_vector(31 downto 0));
+--  end component;
+--
+--  component chipscope_icon
+--    port (
+--      CONTROL0 : inout std_logic_vector (35 downto 0));
+--  end component;
 
 ----------------------------------------
 --           Constants
@@ -426,43 +436,45 @@ architecture rtl of svec_top is
 
   signal fmc0_clk_wr : std_logic;
 
-  signal debug : std_logic_vector(3 downto 0);
+  signal s_debug : std_logic_vector(3 downto 0);
 
   signal fmc_wb_muxed_out : t_wishbone_master_out;
   signal fmc_wb_muxed_in  : t_wishbone_master_in;
 
   signal clk_125m_pllref : std_logic;
 
+  signal s_Rev_clk_o, s_Trev_i, s_B_clk_i  : std_logic;
+  
 begin
 
-  --chipscope_icon_1: chipscope_icon
-  --  port map (
-  --    CONTROL0 => CONTROL);
+--  chipscope_icon_1: chipscope_icon
+--    port map (
+--      CONTROL0 => CONTROL);
 
-  --chipscope_ila_1: chipscope_ila
-  --  port map (
-  --    CONTROL => CONTROL,
-  --    CLK     => clk_sys,
-  --    TRIG0   => TRIG(31 downto 0),
-  --    TRIG1   => TRIG(63 downto 32),
-  --    TRIG2   => TRIG(95 downto 64),
-  --    TRIG3   => TRIG(127 downto 96));
+--  chipscope_ila_1: chipscope_ila
+--  port map (
+--    CONTROL => CONTROL,
+--    CLK     => clk_sys,
+--    TRIG0   => TRIG(31 downto 0),
+--    TRIG1   => TRIG(63 downto 32),
+--    TRIG2   => TRIG(95 downto 64),
+--    TRIG3   => TRIG(127 downto 96));
 
-  TRIG(0) <= fmc0_pll_sclk_o;
-  trig(1) <= fmc0_pll_sdio_b;
-  trig(2) <= fmc0_pll_sdo_i;
-
-
-  -- System/WR PLL dedicated lines
-  trig(3) <=  fmc0_pll_sys_ld_i      ;
-  trig(4) <=    fmc0_pll_sys_reset_n_o ;
-  trig(5) <=    fmc0_pll_sys_cs_n_o    ;
-  trig(6) <=    fmc0_pll_sys_sync_n_o  ;
-
-  -- VCXO PLL dedicated lines
-  trig(7) <=    fmc0_pll_vcxo_cs_n_o   ;
-  trig(8) <=    fmc0_pll_vcxo_sync_n_o ;
-  trig(9) <=    fmc0_pll_vcxo_status_i ;
+--  TRIG(0) <=  fmc0_pll_sclk_o;
+--  trig(1) <=  fmc0_pll_sdio_b;
+--  trig(2) <=  fmc0_pll_sdo_i;
+--
+--
+--  -- System/WR PLL dedicated lines
+--  trig(3) <=  fmc0_pll_sys_ld_i      ;
+--  trig(4) <=  fmc0_pll_sys_reset_n_o ;
+--  trig(5) <=  fmc0_pll_sys_cs_n_o    ;
+--  trig(6) <=  fmc0_pll_sys_sync_n_o  ;
+--
+--  -- VCXO PLL dedicated lines
+--  trig(7) <=  fmc0_pll_vcxo_cs_n_o   ;
+--  trig(8) <=  fmc0_pll_vcxo_sync_n_o ;
+--  trig(9) <=  fmc0_pll_vcxo_status_i ;
   
   U_Node_Template : svec_node_template
     generic map (
@@ -487,14 +499,16 @@ begin
       fp_led_line_oen_o   => fp_led_line_oen_o,
       fp_led_line_o       => fp_led_line_o,
       fp_led_column_o     => fp_led_column_o,
-      fp_gpio1_a2b_o      => fp_gpio1_a2b_o,
+      -- GPIO
+		fp_gpio1_a2b_o      => fp_gpio1_a2b_o,
       fp_gpio2_a2b_o      => fp_gpio2_a2b_o,
       fp_gpio34_a2b_o     => fp_gpio34_a2b_o,
-      --fp_gpio1_b          => fp_gpio1_b,
-      --fp_gpio2_b          => fp_gpio2_b,
-      --fp_gpio3_b          => fp_gpio3_b,
-      --fp_gpio4_b          => fp_gpio4_b,
-      VME_AS_n_i          => VME_AS_n_i,
+--      fp_gpio1_b          => fp_gpio1_b,
+--      fp_gpio2_b          => fp_gpio2_b,
+--      fp_gpio3_b          => fp_gpio3_b,
+--      fp_gpio4_b          => fp_gpio4_b,
+      -- VME
+		VME_AS_n_i          => VME_AS_n_i,
       VME_RST_n_i         => VME_RST_n_i,
       VME_WRITE_n_i       => VME_WRITE_n_i,
       VME_AM_i            => VME_AM_i,
@@ -517,7 +531,8 @@ begin
       VME_DATA_OE_N_o     => VME_DATA_OE_N_o,
       VME_ADDR_DIR_o      => VME_ADDR_DIR_o,
       VME_ADDR_OE_N_o     => VME_ADDR_OE_N_o,
-      sfp_txp_o           => sfp_txp_o,
+      -- SFP
+		sfp_txp_o           => sfp_txp_o,
       sfp_txn_o           => sfp_txn_o,
       sfp_rxp_i           => sfp_rxp_i,
       sfp_rxn_i           => sfp_rxn_i,
@@ -528,7 +543,8 @@ begin
       sfp_tx_fault_i      => sfp_tx_fault_i,
       sfp_tx_disable_o    => sfp_tx_disable_o,
       sfp_los_i           => sfp_los_i,
-      pll20dac_din_o      => pll20dac_din_o,
+      -- PLLs
+		pll20dac_din_o      => pll20dac_din_o,
       pll20dac_sclk_o     => pll20dac_sclk_o,
       pll20dac_sync_n_o   => pll20dac_sync_n_o,
       pll25dac_din_o      => pll25dac_din_o,
@@ -599,8 +615,10 @@ begin
       clk_sys_i            => clk_sys,  -- 62.5MHz
       clk_wr_o             => fmc0_clk_wr,
       clk_125m_pllref_i    => clk_125m_pllref,
-      rst_n_i              => rst_n,
-      tm_time_valid_i      => tm_time_valid,
+      
+		rst_n_i              => rst_n,
+      
+		tm_time_valid_i      => tm_time_valid,
 	   tm_clk_aux_lock_en_o => tm_clk_aux_lock_en(0),
       tm_clk_aux_locked_i  => tm_clk_aux_locked(0),
       tm_cycles_i          => tm_cycles,
@@ -650,18 +668,30 @@ begin
       trig_p_i             => fmc0_trig_p_i,
       trig_n_i             => fmc0_trig_n_i,
       onewire_b            => fmc0_onewire_b,
-      wr_dac_sync_n_o => fmc0_wr_dac_sync_n_o,
-      wr_dac_din_o => fmc0_wr_dac_din_o,
-      wr_dac_sclk_o => fmc0_wr_dac_sclk_o,
+      wr_dac_sync_n_o      => fmc0_wr_dac_sync_n_o,
+      wr_dac_din_o         => fmc0_wr_dac_din_o,
+      wr_dac_sclk_o        => fmc0_wr_dac_sclk_o,
       slave_i              => fmc_wb_muxed_out,
       slave_o              => fmc_wb_muxed_in,
-      debug_o => debug);
+      
+      debug_o              => s_debug ,
+      Rev_clk_o            => s_Rev_clk_o,  -- Should come out from a SVEC front-panel conn.
+		
+   -- For testbench, temporaries
+      Trev_i               =>  s_Trev_i,  -- Should come in from a SVEC front-panel conn.
+      B_clk_i              =>  s_B_clk_i
+     );
 
-  fp_gpio1_b <= debug(0);
-  fp_gpio2_b <= debug(1);
-  fp_gpio3_b <= debug(2);
-  fp_gpio4_b <= debug(3);
-  
+--  fp_gpio1_b <= s_debug(0);
+--  fp_gpio2_b <= s_debug(1);
+--  fp_gpio3_b <= s_debug(2);
+--  fp_gpio4_b <= s_debug(3);
+
+    fp_gpio1_b <= s_Trev_i;
+	 fp_gpio2_b <= s_B_clk_i;
+	 fp_gpio3_b <= s_Rev_clk_o;
+	 fp_gpio4_b <= '0'; -- unused.
+	 
 end rtl;
 
 

@@ -1,0 +1,72 @@
+-- -*- Mode: LUA; tab-width: 2 -*-
+
+peripheral {
+   name = "TrevGen";
+   hdl_entity = "TrevGen_wb_slave";
+   prefix = "TrevGen";
+   description ="This wishbone interface allows to update the Trev period and next Trev tick time stamp with data received from the WR frames. And monitor the values caclulated locally at the rx node between WR frames.";
+
+   reg {
+		      prefix= "RM_Next_Tick";
+         	name = "Remote next Trev tick time Stamp";
+          description = "Estimated time stamp of the next Trev Tick calculated from the last update received from the WR frames.It is coded as <27b MSB WRcyc>.<3b LSB offset[in ns] within the WRcyc>";
+                
+          field {
+                    name = "RM_NextTick";
+                    type = SLV;
+                    size = 32;
+                    acces_dev = READ_ONLY;
+                    access_bus = READ_WRITE;
+                };
+       };
+   reg {
+		      prefix= "LC_Next_Tick";
+         	name = "LC_NextTick";
+          description = "Estimated time stamp of the next Trev Tick calculated locally at the rx node between WR frames. It is coded as <27b MSB WRcyc>.<3b LSB offset[in ns] within the WRcyc>";
+          field {
+                    name = "LC_NextTick";
+                    type = SLV;
+                    size = 32;
+				            access_bus = READ_ONLY;
+                    access_dev = WRITE_ONLY;
+                };
+       };
+   reg {
+		      prefix = "RM_Trev";
+          name = "RM_Trev";
+          description = "Last update of the Trev period [in ns]";
+          field {
+                    name = "RM_Trev";
+                    type = SLV;
+                    size = 32;
+                    acces_dev = READ_ONLY;
+                    access_bus = READ_WRITE;
+                };
+          
+
+       };
+   reg {
+		      prefix = "LC_Trev";
+          name = "LC_Trev";
+          description = "Trev period [in ns] calculated at the rx node between WR links";
+          field {
+                    name = "LC_Trev";
+                    type = SLV;
+                    size = 32;
+                    access_bus = READ_ONLY;
+                    access_dev = WRITE_ONLY;
+                };
+        };
+   reg {
+		      prefix = "Strobe_p";
+          name = "Strobe_p";
+          description = "Strobe to indicate RM_Trev and RM_Next_Tick contain valid data";
+          field {
+                    name = "Strobe_p";
+                    type = MONOSTABLE;
+                    acces_dev = READ_ONLY;
+                    access_bus = WRITE_ONLY;
+                };
+       };
+  };
+

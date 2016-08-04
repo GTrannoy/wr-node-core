@@ -11,34 +11,34 @@ entity stdc_hostif is
 	);
 	port(
 		-- system signals
-		sys_rst_n_i: in std_logic;
-		clk_sys_i: in std_logic;
-		clk_125m_i: in std_logic;
+		sys_rst_n_i    : in std_logic;
+		clk_sys_i      : in std_logic;
+		clk_125m_i     : in std_logic;
 		
 		-- SERDES
-		serdes_clk_i: in std_logic;
+		serdes_clk_i   : in std_logic;
 		serdes_strobe_i: in std_logic;
 		
 		-- Wishbone
-		wb_addr_i: in std_logic_vector(31 downto 0);
-		wb_data_i: in std_logic_vector(31 downto 0);
-		wb_data_o: out std_logic_vector(31 downto 0);
-		wb_cyc_i: in std_logic;
-		wb_sel_i: in std_logic_vector(3 downto 0);
-		wb_stb_i: in std_logic;
-		wb_we_i: in std_logic;
-		wb_ack_o: out std_logic;
-		wb_stall_o : out std_logic;
+		wb_addr_i      : in std_logic_vector(31 downto 0);
+		wb_data_i      : in std_logic_vector(31 downto 0);
+		wb_data_o      : out std_logic_vector(31 downto 0);
+		wb_cyc_i       : in std_logic;
+		wb_sel_i       : in std_logic_vector(3 downto 0);
+		wb_stb_i       : in std_logic;
+		wb_we_i        : in std_logic;
+		wb_ack_o       : out std_logic;
+		wb_stall_o     : out std_logic;
 		
 		-- TDC input
-		signal_i: in std_logic;
+		stdc_input_i   : in std_logic;
 		
 		-- 125Mhz tick
-		cycles_i: in std_logic_vector(27 downto 0);
+		cycles_i       : in std_logic_vector(27 downto 0);
 		
 		-- TDC outputs			
-		strobe_o         : out    std_logic;
-		stdc_data_o       : out    std_logic_vector(31 downto 0);
+		strobe_o       : out    std_logic;
+		stdc_data_o    : out    std_logic_vector(31 downto 0);
 		
 		-- ChipScope Signals
 		TRIG_O			: out std_logic_vector(127 downto 0)
@@ -49,34 +49,34 @@ architecture rtl of stdc_hostif is
 
 	component stdc is
 	port(
-		sys_clk_i: in std_logic;
-		sys_rst_n_i: in std_logic;		
-		serdes_clk_i: in std_logic;
-		serdes_strobe_i: in std_logic;		
-		signal_i: in std_logic;
-		detect_o: out std_logic;
-		polarity_o: out std_logic;
-		timestamp_8th_o: out std_logic_vector(2 downto 0)
+		sys_clk_i       : in std_logic;
+		sys_rst_n_i     : in std_logic;		
+		serdes_clk_i    : in std_logic;
+		serdes_strobe_i : in std_logic;		
+		stdc_input_i    : in std_logic;
+		detect_o        : out std_logic;
+		polarity_o      : out std_logic;
+		timestamp_8th_o : out std_logic_vector(2 downto 0)
 	);
-        end component;
+   end component;
         
-        component stdc_fifo is
+   component stdc_fifo is
 	generic(
 		D_DEPTH: positive;
 		D_WIDTH: positive
 	);
 	port(
-		sys_clk_i: in std_logic;
+		sys_clk_i  : in std_logic;
 		
-		clear_i: in std_logic;
+		clear_i    : in std_logic;
 		
-		full_o: out std_logic;
-		we_i: in std_logic;
-		data_i: in std_logic_vector(D_WIDTH-1 downto 0);
+		full_o     : out std_logic;
+		we_i       : in std_logic;
+		data_i     : in std_logic_vector(D_WIDTH-1 downto 0);
 		
-		empty_o: out std_logic;
-		re_i: in std_logic;
-		data_o: out std_logic_vector(D_WIDTH-1 downto 0)
+		empty_o    : out std_logic;
+		re_i       : in std_logic;
+		data_o     : out std_logic_vector(D_WIDTH-1 downto 0)
 	);
         end component;
 
@@ -158,7 +158,7 @@ begin
 	TRIG_O(59 downto 32) <= fifo_do(27 downto 0) ;
 	
 	TRIG_O(60) <= fifo_re ;
-	TRIG_O(61) <= signal_i ;
+	TRIG_O(61) <= stdc_input_i ;
 	TRIG_O(62) <= signal_reg ;
 	TRIG_O(63) <= signal_reg2 ;
    TRIG_O(64) <= en ;
@@ -183,7 +183,7 @@ begin
 			sys_rst_n_i 	 => sys_rst_n_i,
 			serdes_clk_i 	 => serdes_clk_i,
 			serdes_strobe_i => serdes_strobe_i,
-			signal_i 		 => signal_i,
+			stdc_input_i 	 => stdc_input_i,
 			detect_o 		 => detect,
 			polarity_o 		 => polarity,
 			timestamp_8th_o => timestamp_8th
@@ -266,30 +266,20 @@ begin
    begin
        if sys_rst_n_i = '0' then
           signal_reg  <= '0' ;
-			 signal_reg2  <= '0' ;
+			 signal_reg2 <= '0' ;
 			 cycles_reg  <= (cycles_reg'range => '0') ;
 			 
        elsif rising_edge(clk_125m_i) then
-          signal_reg  <= signal_i ;
-			 signal_reg2  <= signal_reg ;
+          signal_reg  <= stdc_input_i ;
+			 signal_reg2 <= signal_reg ;
 			 if en = '1' then
-             cycles_reg <= cycles_i ; -- dbg_cycles_slv; --(dbg_cycles_slv only used for simulation)
+             cycles_reg <= cycles_i ; 
           end if;
        end if;
   end process;
 
   en <= signal_reg xor signal_reg2 ;  --  Edge detector
 	
-	
---  ********* For debugging only. Remove later!!
---  p_debugging_counter: process(sys_rst_n_i, clk_125m_i)
---  begin
---    if sys_rst_n_i = '0' then
---      dbg_cycles_slv <= (dbg_cycles_slv'range => '0');
---    elsif rising_edge(clk_125m_i) then
---      dbg_cycles_slv <= std_logic_vector(unsigned(dbg_cycles_slv)+1); 
---    end if;
---  end process;
 		
 		
 end architecture;

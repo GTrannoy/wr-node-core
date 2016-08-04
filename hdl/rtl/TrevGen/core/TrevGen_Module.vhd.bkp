@@ -1,0 +1,161 @@
+-------------------------------------------------------------------------------
+-- Title      : Revolution tick generator  
+-- Project    : RF DDS Distribution over WR
+-------------------------------------------------------------------------------
+-- File       : Trev_Gen_Module.vhd
+-- Author     : E. Calvo
+-- Company    : CERN BE-CO-HT
+-- Platform   : FPGA-generic
+-- Standard   : VHDL'93
+-------------------------------------------------------------------------------
+-- Description: 
+--
+-- This block derives Revolution ticks from the  Bunch clock ticks.
+-- Revolution ticks are time stamped in the WR Master node with a resolution
+-- of 1ns and sent in frames to the WR slave. The following GW is implemented 
+-- at the slave node. It is assumend that data contained in these frames
+-- has been recovered and they are feed into these module (Tstamp2_i and Tstamp1_i).
+-- It is assumed also that the Bunch clock has been obtained using a 
+-- DDS technique, and that it has been compensated for the Beam time of 
+-- flight effect already.
+--
+-------------------------------------------------------------------------------
+--
+-- Copyright (c) 2016 CERN
+--
+-- This source file is free software; you can redistribute it   
+-- and/or modify it under the terms of the GNU Lesser General   
+-- Public License as published by the Free Software Foundation;
+-- either version 2.1 of the License, or (at your option) any
+-- later version.                                               
+--
+-- This source is distributed in the hope that it will be
+-- useful, but WITHOUT ANY WARRANTY; without even the implied
+-- warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+-- PURPOSE.  See the GNU Lesser General Public License for more
+-- details.
+--
+-- You should have received a copy of the GNU Lesser General
+-- Public License along with this source; if not, download it
+-- from http://www.gnu.org/licenses/lgpl-2.1.html
+--
+-------------------------------------------------------------------------------
+-- Revisions  :
+-- Date        Version  Author          Description
+-- 2016-06-15  0.1      ecalvo          First version, creation.
+-------------------------------------------------------------------------------
+
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+library work;
+
+entity TrevGen_Module is
+    port(
+        -- System signals
+        sys_clk_i  :  in std_logic;  
+        rst_n_i    :  in std_logic;
+        -- Trev module signals
+        Tstamp2_i  :  in std_logic_vector(30 downto 0);     
+        Tstamp1_i  :  in std_logic_vector(30 downto 0);      
+        strobe_i_p :  in std_logic;
+        B_clk_i    :  in std_logic; 
+        WRcyc_i    :  in unsigned(27 downto 0); 
+        Rev_clk_o  :  out std_logic ;
+        -- Wishbone interface
+        wb_addr_i  : in std_logic_vector(1 downto 0);
+        wb_data_i  : in std_logic_vector(31 downto 0);
+        wb_data_o  : out std_logic_vector(31 downto 0);
+        wb_cyc_i   : in std_logic;
+        wb_sel_i   : in std_logic_vector(3 downto 0);
+        wb_stb_i   : in std_logic;
+        wb_we_i    : in std_logic;
+        wb_ack_o   : out std_logic;
+        wb_stall_o : out std_logic );
+end entity TrevGen_Module;
+
+architecture rtl of TrevGen_Module is
+
+  component TrevGen_wb_slave is
+       port (rst_n_i            : in     std_logic;
+             sys_clk_i          : in     std_logic;
+             wb_adr_i           : in     std_logic_vector(1 downto 0);
+             wb_dat_i           : in     std_logic_vector(31 downto 0);
+             wb_dat_o           : out    std_logic_vector(31 downto 0);
+             wb_cyc_i           : in     std_logic;
+             wb_sel_i           : in     std_logic_vector(3 downto 0);
+             wb_stb_i           : in     std_logic;
+             wb_we_i            : in     std_logic;
+             wb_ack_o           : out    std_logic;
+             wb_stall_o         : out    std_logic;
+             --  Wishbone ports
+             tof_mintrev_o      : out    unsigned(30 downto 0);
+             tof_maxtrev_o      : out    unsigned(30 downto 0);
+             tof_ctrl_wrltcy_o  : out    unsigned(19 downto 0);
+             tof_ctrl_gmargin_o : out    unsigned(1 downto 0);
+             tof_ctrl_gwidth_o  : out    unsigned(1 downto 0) );
+  end component;
+ 
+  component Trev_Gen is
+       port ( sys_clk_i  :  in std_logic;   
+              rst_n_i    :  in std_logic;
+              Tstamp2_i  :  in std_logic_vector(30 downto 0);    
+              Tstamp1_i  :  in std_logic_vector(30 downto 0);  
+              strobe_i_p :  in std_logic; 
+              B_clk_i    :  in std_logic;
+              WRcyc_i    :  in unsigned(27 downto 0);  
+              Rev_clk_o  :  out std_logic;
+              --  Wishbone ports 
+              tof_mintrev_i      :  in unsigned(30 downto 0);
+              tof_maxtrev_i      :  in unsigned(30 downto 0);
+              tof_ctrl_wrltcy_i  :  in unsigned(19 downto 0);
+              tof_ctrl_gmargin_i :  in unsigned(1 downto 0);
+              tof_ctrl_gwidth_i  :  in unsigned(1 downto 0)  ); 
+   end component;
+
+--  signal regs_i: t_TOF_in_registers;
+--  signal regs_o: t_TOF_out_registers;
+
+  signal tof_mintrev, tof_maxtrev   :  unsigned(30 downto 0);
+  signal tof_ctrl_wrltcy  :  unsigned(19 downto 0);
+  signal tof_ctrl_gmargin :  unsigned(1 downto 0);
+  signal tof_ctrl_gwidth  :  unsigned(1 downto 0);
+
+  begin
+
+    cmp_TrevGen : Trev_Gen port map(
+        sys_clk_i  =>  sys_clk_i,  
+        rst_n_i     =>  rst_n_i,
+		  Tstamp2_i  =>  Tstamp2_i,  
+        Tstamp1_i  =>  Tstamp2_i,  
+        strobe_i_p =>  strobe_i_p,    
+		  B_clk_i    =>  B_clk_i,
+        WRcyc_i    =>  WRcyc_i,  
+        Rev_clk_o  =>  Rev_clk_o, 
+        tof_mintrev_i      =>  tof_mintrev,
+        tof_maxtrev_i      =>  tof_maxtrev,
+        tof_ctrl_wrltcy_i  =>  tof_ctrl_wrltcy,
+        tof_ctrl_gmargin_i =>  tof_ctrl_gmargin,
+        tof_ctrl_gwidth_i  =>  tof_ctrl_gwidth);          
+
+    -- instantiate the wb interface generated with wbgen2
+    cmp_TrevGen_wb_slave: TrevGen_wb_slave port map(
+        rst_n_i     =>  rst_n_i,
+        sys_clk_i   =>  sys_clk_i,
+        wb_adr_i    =>  wb_addr_i,
+        wb_dat_i    =>  wb_data_i,
+        wb_dat_o    =>  wb_data_o,
+        wb_cyc_i    =>  wb_cyc_i,
+        wb_sel_i    =>  wb_sel_i,
+        wb_stb_i    =>  wb_stb_i,
+        wb_we_i     =>  wb_we_i,
+        wb_ack_o    =>  wb_ack_o,
+        wb_stall_o  =>  wb_stall_o,
+        tof_mintrev_o      =>  tof_mintrev,
+        tof_maxtrev_o      =>  tof_maxtrev,
+        tof_ctrl_wrltcy_o  =>  tof_ctrl_wrltcy,
+        tof_ctrl_gmargin_o =>  tof_ctrl_gmargin,
+        tof_ctrl_gwidth_o  =>  tof_ctrl_gwidth); 
+
+  end architecture;
