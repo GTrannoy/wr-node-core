@@ -150,6 +150,12 @@ NET "pll25dac_sync_n_o" LOC = P26;
 NET "uart_txd_o" LOC = U27;
 NET "uart_rxd_i" LOC = U25;
 
+#----------------------------------------
+# EEPROM
+#----------------------------------------
+NET "scl_afpga_b" LOC = AC29;
+NET "sda_afpga_b" LOC = AA30;
+
 #NET "fp_ledn_o[0]" LOC = AD27;
 #NET "fp_ledn_o[1]" LOC = AD26;
 #NET "fp_ledn_o[2]" LOC = AC28;
@@ -352,10 +358,15 @@ NET "uart_rxd_i" IOSTANDARD = "LVCMOS33";
 
 
 #----------------------------------------
-# 1-wire thermoeter + unique ID
+# 1-wire thermometer + unique ID
 #----------------------------------------
 NET "tempid_dq_b" IOSTANDARD = "LVCMOS33";
 
+#----------------------------------------
+# EEPROM
+#----------------------------------------
+NET "scl_afpga_b" IOSTANDARD = "LVCMOS33";
+NET "sda_afpga_b" IOSTANDARD = "LVCMOS33";
 
 NET "fmc0_prsntm2c_n_i" LOC = N30;
 NET "fmc0_scl_b" LOC = P28;

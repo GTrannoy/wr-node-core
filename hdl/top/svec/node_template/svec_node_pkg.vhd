@@ -132,6 +132,8 @@ package svec_node_pkg is
       pll25dac_din_o       : out   std_logic;
       pll25dac_sclk_o      : out   std_logic;
       pll25dac_sync_n_o    : out   std_logic;
+      scl_afpga_b          : inout std_logic;
+      sda_afpga_b          : inout std_logic;
       fmc0_prsntm2c_n_i    : in    std_logic := '1';
       fmc1_prsntm2c_n_i    : in    std_logic := '1';
       tempid_dq_b          : inout std_logic;

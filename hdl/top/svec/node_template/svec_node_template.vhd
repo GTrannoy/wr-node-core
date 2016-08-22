@@ -182,7 +182,10 @@ entity svec_node_template is
     pll25dac_din_o    : out std_logic;
     pll25dac_sclk_o   : out std_logic;
     pll25dac_sync_n_o : out std_logic;
-
+    
+    scl_afpga_b       : inout std_logic;
+    sda_afpga_b       : inout std_logic;
+	 
     fmc0_prsntm2c_n_i : in std_logic;
     fmc1_prsntm2c_n_i : in std_logic;
 
@@ -238,10 +241,10 @@ entity svec_node_template is
     tm_tai_o             : out std_logic_vector(39 downto 0);
     tm_cycles_o          : out std_logic_vector(27 downto 0);
 
-    carrier_scl_b : inout std_logic;
-    carrier_sda_b : inout std_logic;
+    carrier_scl_b        : inout std_logic;
+    carrier_sda_b        : inout std_logic;
 
-    led_state_i: in std_logic_vector(15 downto 0)
+    led_state_i          : in std_logic_vector(15 downto 0)
     );
 
 end svec_node_template;
@@ -638,6 +641,12 @@ begin
   tempid_dq_b   <= '0' when wrc_owr_en(0) = '1' else 'Z';
   wrc_owr_in(0) <= tempid_dq_b;
 
+  -- Tristates for SVEC EEPROM
+  scl_afpga_b <= '0' when wrc_scl_out = '0' else 'Z';
+  sda_afpga_b <= '0' when wrc_sda_out = '0' else 'Z';
+  wrc_scl_in  <= scl_afpga_b;
+  wrc_sda_in  <= sda_afpga_b;
+
   U_WR_CORE : xwr_core
     generic map (
       g_simulation                => f_bool2int(g_simulation),
@@ -682,6 +691,7 @@ begin
       scl_i     => wrc_scl_in,
       sda_o     => wrc_sda_out,
       sda_i     => wrc_sda_in,
+		
       sfp_scl_o => sfp_scl_out,
       sfp_scl_i => sfp_scl_in,
       sfp_sda_o => sfp_sda_out,

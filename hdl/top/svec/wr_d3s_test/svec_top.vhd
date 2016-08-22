@@ -155,7 +155,7 @@ entity svec_top is
     pll25dac_sync_n_o : out std_logic;
 
     ----------------------------------------
-    -- 1-wire thermoeter + unique ID
+    -- 1-wire thermometer + unique ID
     ----------------------------------------
     tempid_dq_b : inout std_logic;
 
@@ -164,6 +164,12 @@ entity svec_top is
     ----------------------------------------
     uart_rxd_i : in  std_logic := '1';
     uart_txd_o : out std_logic ;
+    
+    ----------------------------------------
+    --  EEPROM
+    ----------------------------------------
+    scl_afpga_b       : inout std_logic; 
+    sda_afpga_b       : inout std_logic; 
 
     ----------------------------------------   
     -- Fmc Management 
@@ -229,8 +235,8 @@ entity svec_top is
     fmc0_onewire_b : inout std_logic;
 
     -- WR mezzanine DAC
-    fmc0_wr_dac_sclk_o : out std_logic;
-    fmc0_wr_dac_din_o : out std_logic;
+    fmc0_wr_dac_sclk_o   : out std_logic;
+    fmc0_wr_dac_din_o    : out std_logic;
     fmc0_wr_dac_sync_n_o : out std_logic;
 
     fmc0_scl_b        : inout std_logic;
@@ -244,7 +250,7 @@ end svec_top;
 
 architecture rtl of svec_top is
 ----------------------------------------
---           Functions
+--     FUNCTIONS DECLARATION 
 ----------------------------------------
   function f_int_to_bool (x : integer) return boolean is
   begin
@@ -256,7 +262,7 @@ architecture rtl of svec_top is
   end function;
 
 ----------------------------------------
---           Components
+--     COMPONENTS DECLARATION
 ----------------------------------------
   component wr_d3s_core is
     generic (
@@ -268,7 +274,7 @@ architecture rtl of svec_top is
       clk_125m_pllref_i    : in    std_logic;
       clk_wr_o             : out   std_logic;
       
-		tm_link_up_i         : in    std_logic := '1';
+      tm_link_up_i         : in    std_logic := '1';
       tm_time_valid_i      : in    std_logic;
       tm_tai_i             : in    std_logic_vector(39 downto 0);
       tm_cycles_i          : in    std_logic_vector(27 downto 0);
@@ -277,7 +283,7 @@ architecture rtl of svec_top is
       tm_dac_value_i       : in    std_logic_vector(23 downto 0);
       tm_dac_wr_i          : in    std_logic;
       
-		dac_n_o              : out   std_logic_vector(13 downto 0);
+      dac_n_o              : out   std_logic_vector(13 downto 0);
       dac_p_o              : out   std_logic_vector(13 downto 0);
       wr_ref_clk_n_i       : in    std_logic;
       wr_ref_clk_p_i       : in    std_logic;
@@ -342,7 +348,7 @@ architecture rtl of svec_top is
 --  end component;
 
 ----------------------------------------
---           Constants
+--     CONSTANTS DECLARATION 
 ----------------------------------------
  constant c_D3S_SDB_DEVICE : t_sdb_device := (
     abi_class     => x"0000",              -- undocumented device
@@ -401,7 +407,7 @@ architecture rtl of svec_top is
       cpu_memsizes => (32768, 32768, 0, 0, 0, 0, 0, 0),
       hmq_config   => c_hmq_config,
       rmq_config   => c_rmq_config,
-	  shared_mem_size => 8192
+      shared_mem_size => 8192
       );
 
   constant c_d3s0_sdb_record : t_sdb_record       := f_sdb_embed_device(c_D3S_SDB_DEVICE, x"00010000");
@@ -413,7 +419,7 @@ architecture rtl of svec_top is
     ( 0 =>    x"00000000" );
 
 ----------------------------------------
---           Signals
+--     SIGNALS DECLARATION
 ----------------------------------------
   signal clk_sys : std_logic;
   signal rst_n   : std_logic;
@@ -550,25 +556,31 @@ begin
       pll25dac_din_o      => pll25dac_din_o,
       pll25dac_sclk_o     => pll25dac_sclk_o,
       pll25dac_sync_n_o   => pll25dac_sync_n_o,
-
+      
+      scl_afpga_b         => scl_afpga_b,
+      sda_afpga_b         => sda_afpga_b,
+		
       fmc0_prsntm2c_n_i => fmc0_prsntm2c_n_i,
       fmc1_prsntm2c_n_i => fmc1_prsntm2c_n_i,
 
       tempid_dq_b          => tempid_dq_b,
       uart_rxd_i           => uart_rxd_i,
       uart_txd_o           => uart_txd_o,
+		
       fmc0_clk_aux_i       => fmc0_clk_wr,
       fmc0_host_wb_o       => fmc_host_wb_out(0),
       fmc0_host_wb_i       => fmc_host_wb_in(0),
       fmc0_host_irq_i      => fmc_host_irq(0),
       fmc0_dp_wb_o         => fmc_dp_wb_out(0),
       fmc0_dp_wb_i         => fmc_dp_wb_in(0),
+		
       fmc1_clk_aux_i       => '0',
       fmc1_host_wb_o       => fmc_host_wb_out(1),
       fmc1_host_wb_i       => fmc_host_wb_in(1),
       fmc1_host_irq_i      => fmc_host_irq(1),
       fmc1_dp_wb_o         => fmc_dp_wb_out(1),
       fmc1_dp_wb_i         => fmc_dp_wb_in(1),
+		
       tm_link_up_o         => tm_link_up,
       tm_dac_value_o       => tm_dac_value,
       tm_dac_wr_o          => tm_dac_wr,
@@ -612,14 +624,13 @@ begin
       g_simulation     => g_simulation,
       g_sim_pps_period => 1000)
     port map (
+      rst_n_i              => rst_n,
       clk_sys_i            => clk_sys,  -- 62.5MHz
       clk_wr_o             => fmc0_clk_wr,
       clk_125m_pllref_i    => clk_125m_pllref,
       
-		rst_n_i              => rst_n,
-      
-		tm_time_valid_i      => tm_time_valid,
-	   tm_clk_aux_lock_en_o => tm_clk_aux_lock_en(0),
+      tm_time_valid_i      => tm_time_valid,
+	  tm_clk_aux_lock_en_o => tm_clk_aux_lock_en(0),
       tm_clk_aux_locked_i  => tm_clk_aux_locked(0),
       tm_cycles_i          => tm_cycles,
       tm_link_up_i         => tm_link_up,
