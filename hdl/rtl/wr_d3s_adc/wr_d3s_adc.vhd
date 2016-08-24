@@ -16,11 +16,9 @@ entity wr_d3s_adc is
   generic (
     g_use_fake_data : boolean := false);
   port (
-    clk_sys_i   : in std_logic;
     rst_n_sys_i : in std_logic;
-
+    clk_sys_i   : in std_logic;
     clk_125m_pllref_i: in std_logic;
-
     clk_wr_o : out std_logic;
 
     tm_cycles_i          : in  std_logic_vector(27 downto 0);
@@ -55,8 +53,8 @@ entity wr_d3s_adc is
     adc0_ext_trigger_p_i : in std_logic;
     adc0_ext_trigger_n_i : in std_logic;
 
-    gpio_dac_clr_n_o : out std_logic;   -- offset DACs clear (active low)
-    gpio_si570_oe_o  : out std_logic;  -- Si570 (programmable oscillator) output enable
+--    gpio_dac_clr_n_o : out std_logic;   -- offset DACs clear (active low)
+--    gpio_si570_oe_o  : out std_logic;  -- Si570 (programmable oscillator) output enable
 
     slave_i : in  t_wishbone_slave_in;
     slave_o : out t_wishbone_slave_out;
@@ -149,40 +147,40 @@ architecture rtl of wr_d3s_adc is
         );
   end component adc_serdes;
 
-  component stdc_hostif is
-	generic(
-		D_DEPTH: positive
-	);
-	port(
-		sys_rst_n_i     : in std_logic;
-		clk_sys_i       : in std_logic;
-      clk_125m_i      : in std_logic;
-		
-		serdes_clk_i    : in std_logic;
-		serdes_strobe_i : in std_logic;
-		
-		wb_addr_i       : in std_logic_vector(31 downto 0);
-		wb_data_i       : in std_logic_vector(31 downto 0);
-		wb_data_o       : out std_logic_vector(31 downto 0);
-		wb_cyc_i        : in std_logic;
-		wb_sel_i        : in std_logic_vector(3 downto 0);
-		wb_stb_i        : in std_logic;
-		wb_we_i         : in std_logic;
-		wb_ack_o        : out std_logic;
-		wb_stall_o      : out std_logic;
-		
-		stdc_input_i    : in std_logic;
-
-		cycles_i        : in std_logic_vector(27 downto 0);
-		
-		-- TDC outputs			
-		strobe_o        : out    std_logic;
-		stdc_data_o     : out    std_logic_vector(31 downto 0);
-		
-		-- ChipScope Signals
-		TRIG_O			 : out std_logic_vector(127 downto 0)
-	);
-  end component;
+--  component stdc_hostif is
+--	generic(
+--		D_DEPTH: positive
+--	);
+--	port(
+--		sys_rst_n_i     : in std_logic;
+--		clk_sys_i       : in std_logic;
+--      clk_125m_i      : in std_logic;
+--		
+--		serdes_clk_i    : in std_logic;
+--		serdes_strobe_i : in std_logic;
+--		
+--		wb_addr_i       : in std_logic_vector(31 downto 0);
+--		wb_data_i       : in std_logic_vector(31 downto 0);
+--		wb_data_o       : out std_logic_vector(31 downto 0);
+--		wb_cyc_i        : in std_logic;
+--		wb_sel_i        : in std_logic_vector(3 downto 0);
+--		wb_stb_i        : in std_logic;
+--		wb_we_i         : in std_logic;
+--		wb_ack_o        : out std_logic;
+--		wb_stall_o      : out std_logic;
+--		
+--		stdc_input_i    : in std_logic;
+--
+--		cycles_i        : in std_logic_vector(27 downto 0);
+--		
+--		-- TDC outputs			
+--		strobe_o        : out    std_logic;
+--		stdc_data_o     : out    std_logic_vector(31 downto 0);
+--		
+--		-- ChipScope Signals
+--		TRIG_O			 : out std_logic_vector(127 downto 0)
+--	);
+--  end component;
 
   signal rst_n_wr : std_logic;
 
@@ -595,31 +593,31 @@ begin
   clk_wr_o   <= clk_wr;
 
   ----- Adding the new component: stdc_hostif  ----
-  cmp_stdc : stdc_hostif
-    generic map (
-      D_DEPTH => 4)  -- Length of the fifo storing the event time stamps
-    port map(
-      sys_rst_n_i     => rst_n_sys_i,
-      clk_sys_i       => clk_sys_i,     -- 62.5 MHz
-      clk_125m_i      => clk_wr,        -- 125 MHz
-      serdes_clk_i    => stdc_serdes_clk,  -- 1000 MHz
-      serdes_strobe_i => stdc_serdes_strobe,
-      wb_addr_i       => cnx_out(4).adr,
-      wb_data_i       => cnx_out(4).dat,
-      wb_data_o       => cnx_in(4).dat,
-      wb_cyc_i        => cnx_out(4).cyc,
-      wb_sel_i        => cnx_out(4).sel,
-      wb_stb_i        => cnx_out(4).stb,
-      wb_we_i         => cnx_out(4).we,
-      wb_ack_o        => cnx_in(4).ack,
-      wb_stall_o      => cnx_in(4).stall,
-      stdc_input_i    => ext_trigger,
-      cycles_i        => tm_cycles_i,
-      strobe_o        => stdc_strobe,
-      stdc_data_o     => stdc_data,
-		-- ChipScope Signals
-		TRIG_O			 => TRIG_O
-	);    
+--  cmp_stdc : stdc_hostif
+--    generic map (
+--      D_DEPTH => 4)  -- Length of the fifo storing the event time stamps
+--    port map(
+--      sys_rst_n_i     => rst_n_sys_i,
+--      clk_sys_i       => clk_sys_i,     -- 62.5 MHz
+--      clk_125m_i      => clk_wr,        -- 125 MHz
+--      serdes_clk_i    => stdc_serdes_clk,  -- 1000 MHz
+--      serdes_strobe_i => stdc_serdes_strobe,
+--      wb_addr_i       => cnx_out(4).adr,
+--      wb_data_i       => cnx_out(4).dat,
+--      wb_data_o       => cnx_in(4).dat,
+--      wb_cyc_i        => cnx_out(4).cyc,
+--      wb_sel_i        => cnx_out(4).sel,
+--      wb_stb_i        => cnx_out(4).stb,
+--      wb_we_i         => cnx_out(4).we,
+--      wb_ack_o        => cnx_in(4).ack,
+--      wb_stall_o      => cnx_in(4).stall,
+--      stdc_input_i    => ext_trigger,
+--      cycles_i        => tm_cycles_i,
+--      strobe_o        => stdc_strobe,
+--      stdc_data_o     => stdc_data,
+--		-- ChipScope Signals
+--		TRIG_O			 => TRIG_O
+--	);    
 		
   cnx_in(4).err <= '0';
   cnx_in(4).rty <= '0';

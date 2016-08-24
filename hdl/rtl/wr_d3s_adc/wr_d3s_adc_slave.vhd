@@ -12,38 +12,36 @@ use UNISIM.vcomponents.all;
 
 entity wr_d3s_adc_slave is
   port (
-    clk_sys_i   : in std_logic;
     rst_n_sys_i : in std_logic;
-
+	 clk_sys_i   : in std_logic;
+--    clk_wr_o : out std_logic;
     clk_125m_pllref_i : in std_logic;
-
-    clk_wr_o : out std_logic;
 
     tm_tai_i             : in  std_logic_vector(39 downto 0);
     tm_cycles_i          : in  std_logic_vector(27 downto 0);
     tm_time_valid_i      : in  std_logic;
-    tm_clk_aux_lock_en_o : out std_logic;
-    tm_clk_aux_locked_i  : in  std_logic;
+--    tm_clk_aux_lock_en_o : out std_logic;
+--    tm_clk_aux_locked_i  : in  std_logic;
 
     -- WR reference clock from FMC's PLL (AD9516)
-    wr_ref_clk_n_i : in std_logic;
-    wr_ref_clk_p_i : in std_logic;
+--    wr_ref_clk_n_i : in std_logic;
+--    wr_ref_clk_p_i : in std_logic;
 
     -- System/WR PLL dedicated lines
-    pll_sys_cs_n_o    : out std_logic;
-    pll_sys_ld_i      : in  std_logic;
-    pll_sys_reset_n_o : out std_logic;
-    pll_sys_sync_n_o  : out std_logic;
+--    pll_sys_cs_n_o    : out std_logic;
+--    pll_sys_ld_i      : in  std_logic;
+--    pll_sys_reset_n_o : out std_logic;
+--    pll_sys_sync_n_o  : out std_logic;
 
     -- VCXO PLL dedicated lines
-    pll_vcxo_cs_n_o   : out std_logic;
-    pll_vcxo_sync_n_o : out std_logic;
-    pll_vcxo_status_i : in  std_logic;
+--    pll_vcxo_cs_n_o   : out std_logic;
+--    pll_vcxo_sync_n_o : out std_logic;
+--    pll_vcxo_status_i : in  std_logic;
 
     -- SPI bus to both PLL chips
-    pll_sclk_o : out   std_logic;
-    pll_sdio_b : inout std_logic;
-    pll_sdo_i  : in    std_logic;
+--    pll_sclk_o : out   std_logic;
+--    pll_sdio_b : inout std_logic;
+--    pll_sdo_i  : in    std_logic;
 
 
     -- DDS Dac I/F (Maxim)
@@ -171,7 +169,8 @@ architecture rtl of wr_d3s_adc_slave is
      );
 
   
-  signal clk_wr_ref, clk_wr_ref_pllin            : std_logic;
+  signal clk_wr_ref                              : std_logic;
+--  signal clk_wr_ref_pllin                        : std_logic;
   signal pllout_clk_fb_pllref, pllout_clk_wr_ref : std_logic;
   signal clk_dds_phy                             : std_logic;
 
@@ -203,16 +202,16 @@ begin
   fpll_reset <= regs_out.rstr_pll_rst_o or (not rst_n_sys_i);
 
 
-  U_Buf_CLK_WR_Ref : IBUFGDS
-    generic map (
-      DIFF_TERM    => true,
-      IBUF_LOW_PWR => false  -- Low power (TRUE) vs. performance (FALSE) setting for referenced
-      )
-    port map (
-      O  => clk_wr_ref_pllin,           -- Buffer output
-      I  => wr_ref_clk_p_i,  -- Diff_p buffer input (connect directly to top-level port)
-      IB => wr_ref_clk_n_i  -- Diff_n buffer input (connect directly to top-level port)
-      );
+--  U_Buf_CLK_WR_Ref : IBUFGDS
+--    generic map (
+--      DIFF_TERM    => true,
+--      IBUF_LOW_PWR => false  -- Low power (TRUE) vs. performance (FALSE) setting for referenced
+--      )
+--    port map (
+--      O  => clk_wr_ref_pllin,           -- Buffer output
+--      I  => wr_ref_clk_p_i,  -- Diff_p buffer input (connect directly to top-level port)
+--      IB => wr_ref_clk_n_i  -- Diff_n buffer input (connect directly to top-level port)
+--      );
 
   cmp_dds_clk_pll : PLL_BASE
     generic map (
@@ -244,7 +243,7 @@ begin
       LOCKED   => clk_dds_locked,
       RST      => fpll_reset,
       CLKFBIN  => pllout_clk_fb_pllref,
-      CLKIN    => clk_wr_ref_pllin);
+      CLKIN    => clk_125m_pllref_i); --clk_wr_ref_pllin);
 
 
   cmp_dds_ref_buf : BUFG

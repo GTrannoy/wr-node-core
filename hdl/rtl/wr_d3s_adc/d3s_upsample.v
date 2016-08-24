@@ -169,14 +169,14 @@ module d3s_upsample_divide
      end
 
 
-   parameter real f_alias = 250e6;
-   parameter real f_dds = 500e6;
+   parameter f_alias = 250;
+   parameter f_dds = 500;
    
    always@(posedge clk_i)
      if (!rst_n_i)  begin
 	t_alias_acc <= 0;
 
-	dt_alias_acc <= integer'(4.0 * 16384.0 * f_alias / f_dds) << c_acc_frac_bits;
+	dt_alias_acc <= ((4 * 16384 * f_alias / f_dds) << c_acc_frac_bits);
 
      end else begin
 	if(tm_cycles_i == 0)
