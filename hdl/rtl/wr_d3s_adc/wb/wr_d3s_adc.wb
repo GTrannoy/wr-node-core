@@ -8,7 +8,7 @@ peripheral {
 	 
 
 	 fifo_reg {
-			size = 16384; -- or more. We'll see :)
+			size = 1024; -- or more. We'll see :)
 			direction = CORE_TO_BUS;
 			prefix = "adc";
 			name = "ADC Data FIFO";
@@ -146,6 +146,14 @@ peripheral {
 				 prefix = "TM_TIME_VALID";
 				 name = "TM_TIME_VALID";
 				 description = "when 1, the WR Core is synchronized with the WR network";
+				 type = BIT;
+				 access_dev = WRITE_ONLY;
+				 access_bus = READ_ONLY;
+			};
+      field {
+				 prefix = "TM_LINK";
+				 name = "TM_LINK";
+				 description = "when 1, WR link is up";
 				 type = BIT;
 				 access_dev = WRITE_ONLY;
 				 access_bus = READ_ONLY;
