@@ -269,15 +269,15 @@ architecture rtl of svec_top is
 ------------------------------------------
   component wr_d3s_adc is
     port (
-      clk_sys_i        : in    std_logic;
+      rst_n_sys_i      : in    std_logic;
+		clk_sys_i        : in    std_logic;
       clk_wr_o         : out std_logic;
       clk_125m_pllref_i: in std_logic;
-
-      rst_n_sys_i      : in    std_logic;
-      tm_cycles_i      : in    std_logic_vector(27 downto 0);
-          
-      tm_time_valid_i : in std_logic;
-      tm_clk_aux_lock_en_o : out std_logic;
+   
+      tm_link_up_i      : in std_logic;
+		tm_time_valid_i   : in std_logic;
+      tm_cycles_i       : in    std_logic_vector(27 downto 0);
+		tm_clk_aux_lock_en_o : out std_logic;
       tm_clk_aux_locked_i: in std_logic;
 
       spi_din_i        : in    std_logic;
@@ -313,13 +313,14 @@ architecture rtl of svec_top is
 
   component wr_d3s_adc_slave is
   port (
-		 clk_sys_i         : in std_logic;
 		 rst_n_sys_i       : in std_logic;
+		 clk_sys_i         : in std_logic;
 --		 clk_125m_pllref_i : in std_logic;
 --		 clk_wr_o          : out std_logic;
-		 tm_tai_i             : in  std_logic_vector(39 downto 0);
-		 tm_cycles_i          : in  std_logic_vector(27 downto 0);
+		 tm_link_up_i      : in std_logic;
 		 tm_time_valid_i      : in  std_logic;
+		 tm_tai_i             : in  std_logic_vector(39 downto 0);
+		 tm_cycles_i          : in  std_logic_vector(27 downto 0);	 
 --		 tm_clk_aux_lock_en_o : out std_logic;
 --		 tm_clk_aux_locked_i  : in  std_logic;
 		 -- WR reference clock from FMC's PLL (AD9516)
@@ -460,8 +461,8 @@ architecture rtl of svec_top is
 	  2 => x"00003000");
 
   -- Wishbone slave(s)
-  constant c_FMC_0    : integer := 0;  -- Fmc0 core
-  constant c_FMC_1    : integer := 2;  -- Fmc1 core
+  constant c_FMC_0    : integer := 0;  -- Fmc0: fmc-adc (d3s_adc core)
+  constant c_FMC_1    : integer := 2;  -- Fmc1: fmc-d3s (d3s_adc_slave core)
   constant c_SI57x    : integer := 1;  -- Si570 VCXO Silicon Labs WB interface
   
   constant c_d3s0_sdb_record : t_sdb_record       := f_sdb_embed_device(c_D3S_ADC_SDB_DEVICE, x"00010000");
@@ -656,11 +657,12 @@ begin
       clk_wr_o          => fmc0_clk_wr,
       clk_125m_pllref_i => clk_125m_pllref,
        
-      tm_time_valid_i      => tm_time_valid,
-      tm_clk_aux_lock_en_o => tm_clk_aux_lock_en(0),
-      tm_clk_aux_locked_i  => tm_clk_aux_locked(0),
+      tm_link_up_i         => tm_link_up,
+		tm_time_valid_i      => tm_time_valid,
       tm_cycles_i          => tm_cycles,
-      
+		tm_clk_aux_lock_en_o => tm_clk_aux_lock_en(0),
+      tm_clk_aux_locked_i  => tm_clk_aux_locked(0),
+            
       spi_din_i        => adc0_spi_din_i,
       spi_dout_o       => adc0_spi_dout_o,
       spi_sck_o        => adc0_spi_sck_o,
@@ -692,16 +694,17 @@ begin
 		 rst_n_sys_i         => rst_n,
 		 clk_sys_i           => clk_sys,
 --		 clk_wr_o            => fmc1_clk_wr,
-		 clk_125m_pllref_i   => clk_125m_pllref,
+--		 clk_125m_pllref_i   => clk_125m_pllref,
 		 
+		 tm_link_up_i         => tm_link_up,
 		 tm_tai_i             => tm_tai,
 		 tm_cycles_i          => tm_cycles,
 		 tm_time_valid_i      => tm_time_valid,
 --		 tm_clk_aux_lock_en_o => tm_clk_aux_lock_en(1),
 --		 tm_clk_aux_locked_i  => tm_clk_aux_locked(1),
 		 
---		 wr_ref_clk_n_i       => fmc1_wr_ref_clk_n_i,
---		 wr_ref_clk_p_i       => fmc1_wr_ref_clk_p_i,
+		 wr_ref_clk_n_i       => fmc1_wr_ref_clk_n_i,
+		 wr_ref_clk_p_i       => fmc1_wr_ref_clk_p_i,
 		 
 		 -- System/WR PLL dedicated lines
 --		 pll_sys_cs_n_o       => fmc1_pll_sys_cs_n_o,
@@ -720,8 +723,8 @@ begin
 		 -- DDS Dac I/F (Maxim)
 		 dac_n_o              => fmc1_dac_n_o,
 		 dac_p_o              => fmc1_dac_p_o,
-		 slave_i              => fmc_wb_muxed_out(2),
-		 slave_o              => fmc_wb_muxed_in(2),
+		 slave_i              => fmc_wb_muxed_out(c_FMC_1),
+		 slave_o              => fmc_wb_muxed_in(c_FMC_1),
 		 debug_o              => debug
 		 );  
   
