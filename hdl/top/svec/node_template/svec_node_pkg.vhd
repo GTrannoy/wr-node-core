@@ -167,9 +167,6 @@ package svec_node_pkg is
       tm_tai_o             : out   std_logic_vector(39 downto 0);
       tm_cycles_o          : out   std_logic_vector(27 downto 0);
 
-      carrier_scl_b        : inout std_logic := 'Z';
-      carrier_sda_b        : inout std_logic := 'Z';
-
       led_state_i : in std_logic_vector(15 downto 0) := x"0000"
       );
   end component svec_node_template;

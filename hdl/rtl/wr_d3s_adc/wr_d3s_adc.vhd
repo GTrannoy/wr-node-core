@@ -16,15 +16,14 @@ entity wr_d3s_adc is
   generic (
     g_use_fake_data : boolean := false);
   port (
-    clk_sys_i   : in std_logic;
     rst_n_sys_i : in std_logic;
-
+    clk_sys_i   : in std_logic;
     clk_125m_pllref_i: in std_logic;
-
     clk_wr_o : out std_logic;
 
-    tm_cycles_i          : in  std_logic_vector(27 downto 0);
-    tm_time_valid_i      : in  std_logic;
+    tm_link_up_i         : in std_logic;
+	 tm_time_valid_i      : in  std_logic;
+	 tm_cycles_i          : in  std_logic_vector(27 downto 0);
     tm_clk_aux_lock_en_o : out std_logic;
     tm_clk_aux_locked_i  : in  std_logic;
 
@@ -55,8 +54,8 @@ entity wr_d3s_adc is
     adc0_ext_trigger_p_i : in std_logic;
     adc0_ext_trigger_n_i : in std_logic;
 
-    gpio_dac_clr_n_o : out std_logic;   -- offset DACs clear (active low)
-    gpio_si570_oe_o  : out std_logic;  -- Si570 (programmable oscillator) output enable
+--    gpio_dac_clr_n_o : out std_logic;   -- offset DACs clear (active low)
+--    gpio_si570_oe_o  : out std_logic;  -- Si570 (programmable oscillator) output enable
 
     slave_i : in  t_wishbone_slave_in;
     slave_o : out t_wishbone_slave_out;
@@ -70,7 +69,11 @@ entity wr_d3s_adc is
 end wr_d3s_adc;
 
 architecture rtl of wr_d3s_adc is
-  
+
+------------------------------------------
+--        COMPONENTs DECLARATION  
+------------------------------------------  
+
   component d3s_adc_wb is
     port (
       rst_n_i    : in  std_logic;
@@ -184,6 +187,30 @@ architecture rtl of wr_d3s_adc is
 	);
   end component;
 
+------------------------------------------
+--        CONSTANTS DECLARATION  
+------------------------------------------
+  constant c_CNX_MASTER_COUNT : integer := 5;
+
+  constant c_cnx_base_addr : t_wishbone_address_array(c_CNX_MASTER_COUNT-1 downto 0) :=
+    (x"00000000",                       -- Base regs
+     x"00000100",                       -- AcqBuf1
+     x"00000200",                       -- AcqBuf2
+     x"00000300",                       -- AcqBuf3
+     x"00000400"                        -- Serdes TDC
+     );
+
+  constant c_cnx_base_mask : t_wishbone_address_array(c_CNX_MASTER_COUNT-1 downto 0) :=
+    (x"00000700",
+     x"00000700",
+     x"00000700",
+     x"00000700",
+     x"00000700"
+     );
+	  
+------------------------------------------
+--        SIGNALS DECLARATION  
+------------------------------------------
   signal rst_n_wr : std_logic;
 
   signal regs_in  : t_d3s_in_registers;
@@ -225,25 +252,7 @@ architecture rtl of wr_d3s_adc is
 
   signal scl_out, sda_out : std_logic;
 
-  constant c_CNX_MASTER_COUNT : integer := 5;
-
   signal raw_hp_data, raw_phase : std_logic_vector(15 downto 0);
-
-  constant c_cnx_base_addr : t_wishbone_address_array(c_CNX_MASTER_COUNT-1 downto 0) :=
-    (x"00000000",                       -- Base regs
-     x"00000100",                       -- AcqBuf1
-     x"00000200",                       -- AcqBuf2
-     x"00000300",                       -- AcqBuf3
-     x"00000400"                        -- Serdes TDC
-     );
-
-  constant c_cnx_base_mask : t_wishbone_address_array(c_CNX_MASTER_COUNT-1 downto 0) :=
-    (x"00000700",
-     x"00000700",
-     x"00000700",
-     x"00000700",
-     x"00000700"
-     );
 
   signal cnx_out : t_wishbone_master_out_array(0 to c_CNX_MASTER_COUNT-1);
   signal cnx_in  : t_wishbone_master_in_array(0 to c_CNX_MASTER_COUNT-1);
@@ -266,11 +275,11 @@ begin
       master_i   => cnx_in,
       master_o   => cnx_out);
 
+  regs_in.gpior_tm_link_i       <= tm_link_up_i;
   regs_in.gpior_tm_time_valid_i <= tm_time_valid_i;
   regs_in.gpior_tm_locked_i     <= tm_clk_aux_locked_i;
 
   tm_clk_aux_lock_en_o <= regs_out.gpior_tm_lock_en_o;
-
 
   regs_in.gpior_si57x_scl_i <= si570_scl_b;
   regs_in.gpior_si57x_sda_i <= si570_sda_b;
@@ -333,7 +342,7 @@ begin
 --      );
 
 --        2nd attempt                           
-  cmp_trig_buf : IBUFGDS
+  cmp_trig_buf : IBUFDS
     generic map (
       DIFF_TERM    => true,
       IBUF_LOW_PWR => true  -- Low power (TRUE) vs. performance (FALSE) setting for referenced
@@ -595,34 +604,34 @@ begin
   clk_wr_o   <= clk_wr;
 
   ----- Adding the new component: stdc_hostif  ----
-  cmp_stdc : stdc_hostif
-    generic map (
-      D_DEPTH => 4)  -- Length of the fifo storing the event time stamps
-    port map(
-      sys_rst_n_i     => rst_n_sys_i,
-      clk_sys_i       => clk_sys_i,     -- 62.5 MHz
-      clk_125m_i      => clk_wr,        -- 125 MHz
-      serdes_clk_i    => stdc_serdes_clk,  -- 1000 MHz
-      serdes_strobe_i => stdc_serdes_strobe,
-      wb_addr_i       => cnx_out(4).adr,
-      wb_data_i       => cnx_out(4).dat,
-      wb_data_o       => cnx_in(4).dat,
-      wb_cyc_i        => cnx_out(4).cyc,
-      wb_sel_i        => cnx_out(4).sel,
-      wb_stb_i        => cnx_out(4).stb,
-      wb_we_i         => cnx_out(4).we,
-      wb_ack_o        => cnx_in(4).ack,
-      wb_stall_o      => cnx_in(4).stall,
-      stdc_input_i    => ext_trigger,
-      cycles_i        => tm_cycles_i,
-      strobe_o        => stdc_strobe,
-      stdc_data_o     => stdc_data,
-		-- ChipScope Signals
-		TRIG_O			 => TRIG_O
-	);    
+--  cmp_stdc : stdc_hostif
+--    generic map (
+--      D_DEPTH => 4)  -- Length of the fifo storing the event time stamps
+--    port map(
+--      sys_rst_n_i     => rst_n_sys_i,
+--      clk_sys_i       => clk_sys_i,     -- 62.5 MHz
+--      clk_125m_i      => clk_wr,        -- 125 MHz
+--      serdes_clk_i    => stdc_serdes_clk,  -- 1000 MHz
+--      serdes_strobe_i => stdc_serdes_strobe,
+--      wb_addr_i       => cnx_out(4).adr,
+--      wb_data_i       => cnx_out(4).dat,
+--      wb_data_o       => cnx_in(4).dat,
+--      wb_cyc_i        => cnx_out(4).cyc,
+--      wb_sel_i        => cnx_out(4).sel,
+--      wb_stb_i        => cnx_out(4).stb,
+--      wb_we_i         => cnx_out(4).we,
+--      wb_ack_o        => cnx_in(4).ack,
+--      wb_stall_o      => cnx_in(4).stall,
+--      stdc_input_i    => ext_trigger,
+--      cycles_i        => tm_cycles_i,
+--      strobe_o        => stdc_strobe,
+--      stdc_data_o     => stdc_data,
+--		-- ChipScope Signals
+--		TRIG_O			 => TRIG_O
+--	);    
 		
-  cnx_in(4).err <= '0';
-  cnx_in(4).rty <= '0';
+--  cnx_in(4).err <= '0';
+--  cnx_in(4).rty <= '0';
 
   cmp_stdc_clk_pll : PLL_BASE
     generic map (
@@ -635,7 +644,7 @@ begin
       CLKOUT0_DIVIDE     => 1,          -- 1000 MHz
       CLKOUT0_PHASE      => 0.000,
       CLKOUT0_DUTY_CYCLE => 0.500,
-      CLKOUT1_DIVIDE     => 8, --1,          -- 125 MHz
+      CLKOUT1_DIVIDE     => 8, --1,     -- 125 MHz
       CLKOUT1_PHASE      => 0.000,
       CLKOUT1_DUTY_CYCLE => 0.500,
       CLKIN_PERIOD       => 8.0,

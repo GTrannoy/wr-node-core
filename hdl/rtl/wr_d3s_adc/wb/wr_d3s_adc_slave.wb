@@ -148,7 +148,7 @@ peripheral {
 
 
 	 fifo_reg {
-			size = 16384; -- or more. We'll see :)
+			size = 1024; -- or more. We'll see :)
 			direction = BUS_TO_CORE;
 			prefix = "phfifo";
 			name = "Phase Data FIFO";
