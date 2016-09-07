@@ -211,6 +211,8 @@ module d3s_upsample_divide
    
    reg [3:0] div_start_phase_sel;
    reg 	     div_start_phase_sel_valid;
+   reg [3:0] div_start_phase_sel_d;
+   reg 	     div_start_phase_sel_valid_d;
 
    reg [31:0] frev_ts_adjust_ns_i  = 5000;
 
@@ -272,6 +274,23 @@ module d3s_upsample_divide
    
       else
 	zc_masked <= 0;
+
+   reg [3:0] zc_masked_d, zc_d, zc_d2;
+   reg 	     frev_ts_match_d;
+
+   reg [13:0] phase_up0_s, phase_up1_s, phase_up2_s, phase_up3_s;
+
+   
+   always@(posedge clk_i)
+     begin
+	zc_d <= zc;
+	zc_masked_d <= zc_masked;
+	frev_ts_match_d <= frev_ts_match;
+	phase_up0_s <= phase_up0;
+	phase_up1_s <= phase_up1;
+	phase_up2_s <= phase_up2;
+	phase_up3_s <= phase_up3;
+     end
    
    
    always@(posedge clk_i) begin
@@ -283,17 +302,17 @@ module d3s_upsample_divide
 	 div_start_phase_sel_valid <= 0;
 	 
 	 
-	 if( frev_ts_match && !zc_masked)
+	 if( frev_ts_match_d && !zc_masked_d)
 	   match_pending <= 1;
 	 
 	 
-	 else if(zc_masked)
+	 else if(zc_masked_d)
 	   begin
-	      if(zc_masked[0])
+	      if(zc_masked_d[0])
 		div_start_phase_sel <= 'b1111;
-	      else if (zc_masked[1]) 
+	      else if (zc_masked_d[1]) 
 		div_start_phase_sel <= 'b1110;
-	      else if (zc_masked[2])
+	      else if (zc_masked_d[2])
 		div_start_phase_sel <= 'b1100;
 	      else 
 		div_start_phase_sel <= 'b1000;
@@ -303,7 +322,7 @@ module d3s_upsample_divide
 	   end
 	 
 	 
-	 if(frev_ts_match)
+	 if(frev_ts_match_d)
 	   begin
 	      
 	      
@@ -336,7 +355,7 @@ module d3s_upsample_divide
       reg [31:0] x_mul;      
       begin
 	 x_mul = x * 3277;
-	 f_fast_div_by_5 = x/5;//(x_mul >> 14);
+	 f_fast_div_by_5 = (x_mul >> 14);
       end
    endfunction // f_fast_div_by_5
    
@@ -350,46 +369,93 @@ module d3s_upsample_divide
    reg[13:0] div_bias = 0;
 
 
-   function integer f_count_ones(input [31:0] x, input integer n);
-      integer c,i;
+   function  f_count_ones( input [3:0] x, input [2:0] up_to );
+      reg [2:0] rv;
+      reg [3:0] mask;
       begin
-	 c = 0;
-	 for(i=0;i<n;i=i+1)
-	   if(x[i])
-	     c=c+1;
-	 f_count_ones = c;
+
+	 case (up_to)
+	   0: mask = 'b0000;
+	   1: mask = 'b0001;
+	   2: mask = 'b0011;
+	   3: mask = 'b0111;
+	   4: mask = 'b1111;
+	   default : mask = 'b1111;
+	 endcase // case (up_to)
+	 
+	 case (x & mask)
+	   'h0000: rv = 0;
+	   'h0001: rv = 1;
+	   'h0010: rv = 1;
+	   'h0100: rv = 1;
+	   'h1000: rv = 1;
+	   'h1100: rv = 2;
+	   'h1010: rv = 2;
+	   'h1010: rv = 2;
+	   'h1001: rv = 2;
+	   'h0110: rv = 2;
+	   'h0011: rv = 2;
+	   'h0111: rv = 3;
+	   'h1011: rv = 3;
+	   'h1101: rv = 3;
+	   'h1110: rv = 3;
+	   'h1111: rv = 4;
+	 endcase // case (x)
+	 f_count_ones = rv;
+	 
       end
    endfunction // f_count_ones
+
+   // stage 3: divide/count ones
+
+   reg[13:0] phase_up0_div5;
+   reg[13:0] phase_up1_div5;
+   reg[13:0] phase_up2_div5;
+   reg[13:0] phase_up3_div5;
    
 	 
       
+   always@(posedge clk_i)
+     begin
+	phase_up0_div5 <= f_fast_div_by_5(phase_up0_s);
+	phase_up1_div5 <= f_fast_div_by_5(phase_up1_s);
+	phase_up2_div5 <= f_fast_div_by_5(phase_up2_s);
+	phase_up3_div5 <= f_fast_div_by_5(phase_up3_s);
+
+	div_start_phase_sel_valid_d <= div_start_phase_sel_valid;
+	div_start_phase_sel_d <= div_start_phase_sel;
+	zc_d2 <= zc_d;
+	
+	
+	
+     end
    
    always@(posedge clk_i)
      begin
 	
 
-	if(div_start_phase_sel_valid)
+	if(div_start_phase_sel_valid_d)
 	  begin
-	     phase_divided0 <= f_fast_div_by_5(phase_up0) + (f_count_ones(zc, 1) * div_start_phase_sel[0]) * (16384/5) ;
-	     phase_divided1 <= f_fast_div_by_5(phase_up1) + (f_count_ones(zc, 2) * div_start_phase_sel[1]) * (16384/5) ;
-	     phase_divided2 <= f_fast_div_by_5(phase_up2) + (f_count_ones(zc, 3) * div_start_phase_sel[2]) * (16384/5) ;
-	     phase_divided3 <= f_fast_div_by_5(phase_up3) + (f_count_ones(zc, 4) * div_start_phase_sel[3]) * (16384/5) ;
+	     phase_divided0 <= phase_up0_div5 + (f_count_ones(zc_d, 1) * div_start_phase_sel_d[0]) * (16384/5) ;
+	     phase_divided1 <= phase_up1_div5 + (f_count_ones(zc_d, 2) * div_start_phase_sel_d[1]) * (16384/5) ;
+	     phase_divided2 <= phase_up2_div5 + (f_count_ones(zc_d, 3) * div_start_phase_sel_d[2]) * (16384/5) ;
+	     phase_divided3 <= phase_up3_div5 + (f_count_ones(zc_d, 4) * div_start_phase_sel_d[3]) * (16384/5) ;
 
-	     div_bias <= f_count_ones(zc & div_start_phase_sel,4);
-	     
+	     div_bias <= f_count_ones(zc_d2 & div_start_phase_sel_d, 4);
+	     	     
 
 	  end else begin
 
-	     phase_divided0 <= f_fast_div_by_5(phase_up0) + (f_count_ones(zc, 1) + div_bias) * (16384/5) ;
-	     phase_divided1 <= f_fast_div_by_5(phase_up1) + (f_count_ones(zc, 2) + div_bias) * (16384/5) ;
-	     phase_divided2 <= f_fast_div_by_5(phase_up2) + (f_count_ones(zc, 3) + div_bias) * (16384/5) ;
-	     phase_divided3 <= f_fast_div_by_5(phase_up3) + (f_count_ones(zc, 4) + div_bias) * (16384/5) ;
+	     phase_divided0 <= phase_up0_div5 + (f_count_ones(zc_d, 1) + div_bias) * (16384/5) ;
+	     phase_divided1 <= phase_up1_div5 + (f_count_ones(zc_d, 2) + div_bias) * (16384/5) ;
+	     phase_divided2 <= phase_up2_div5 + (f_count_ones(zc_d, 3) + div_bias) * (16384/5) ;
+	     phase_divided3 <= phase_up3_div5 + (f_count_ones(zc_d, 4) + div_bias) * (16384/5) ;
 
 	     
-	     if(div_bias + f_count_ones(zc,4) >= 5)
-	       div_bias <= div_bias + f_count_ones(zc,4) - 5;
+	     if(div_bias + f_count_ones(zc_d2,4) >= 5)
+	       div_bias <= div_bias + f_count_ones(zc_d2,4) - 5;
 	     else
-	       div_bias <= div_bias + f_count_ones(zc,4);
+	       div_bias <= div_bias + f_count_ones(zc_d2,4);
 
 	  end
 	

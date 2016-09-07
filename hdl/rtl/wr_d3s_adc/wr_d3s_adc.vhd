@@ -16,14 +16,14 @@ entity wr_d3s_adc is
   generic (
     g_use_fake_data : boolean := false);
   port (
-    rst_n_sys_i : in std_logic;
-    clk_sys_i   : in std_logic;
-    clk_125m_pllref_i: in std_logic;
-    clk_wr_o : out std_logic;
+    rst_n_sys_i       : in  std_logic;
+    clk_sys_i         : in  std_logic;
+    clk_125m_pllref_i : in  std_logic;
+    clk_wr_o          : out std_logic;
 
-    tm_link_up_i         : in std_logic;
-	 tm_time_valid_i      : in  std_logic;
-	 tm_cycles_i          : in  std_logic_vector(27 downto 0);
+    tm_link_up_i         : in  std_logic;
+    tm_time_valid_i      : in  std_logic;
+    tm_cycles_i          : in  std_logic_vector(27 downto 0);
     tm_clk_aux_lock_en_o : out std_logic;
     tm_clk_aux_locked_i  : in  std_logic;
 
@@ -61,9 +61,9 @@ entity wr_d3s_adc is
     slave_o : out t_wishbone_slave_out;
 
     debug_o : out std_logic_vector(3 downto 0);
-	 
-	 -- ChipScope Signals
-	 TRIG_O	: out std_logic_vector(127 downto 0)
+
+    -- ChipScope Signals
+    TRIG_O : out std_logic_vector(127 downto 0)
     );
 
 end wr_d3s_adc;
@@ -148,43 +148,45 @@ architecture rtl of wr_d3s_adc is
         LOCKED_IN           : in  std_logic;
         LOCKED_OUT          : out std_logic;
         CLK_RESET           : in  std_logic;  -- Reset signal for Clock circuit
-        IO_RESET            : in  std_logic   -- Reset signal for IO circuit
+        IO_RESET            : in  std_logic;  -- Reset signal for IO circuit
+        SERDES_STROBE_O     : out std_logic
+
         );
   end component adc_serdes;
 
   component stdc_hostif is
-	generic(
-		D_DEPTH: positive
-	);
-	port(
-		sys_rst_n_i     : in std_logic;
-		clk_sys_i       : in std_logic;
-      clk_125m_i      : in std_logic;
-		
-		serdes_clk_i    : in std_logic;
-		serdes_strobe_i : in std_logic;
-		
-		wb_addr_i       : in std_logic_vector(31 downto 0);
-		wb_data_i       : in std_logic_vector(31 downto 0);
-		wb_data_o       : out std_logic_vector(31 downto 0);
-		wb_cyc_i        : in std_logic;
-		wb_sel_i        : in std_logic_vector(3 downto 0);
-		wb_stb_i        : in std_logic;
-		wb_we_i         : in std_logic;
-		wb_ack_o        : out std_logic;
-		wb_stall_o      : out std_logic;
-		
-		stdc_input_i    : in std_logic;
+    generic(
+      D_DEPTH : positive
+      );
+    port(
+      sys_rst_n_i : in std_logic;
+      clk_sys_i   : in std_logic;
+      clk_125m_i  : in std_logic;
 
-		cycles_i        : in std_logic_vector(27 downto 0);
-		
-		-- TDC outputs			
-		strobe_o        : out    std_logic;
-		stdc_data_o     : out    std_logic_vector(31 downto 0);
-		
-		-- ChipScope Signals
-		TRIG_O			 : out std_logic_vector(127 downto 0)
-	);
+      serdes_clk_i    : in std_logic;
+      serdes_strobe_i : in std_logic;
+
+      wb_addr_i  : in  std_logic_vector(31 downto 0);
+      wb_data_i  : in  std_logic_vector(31 downto 0);
+      wb_data_o  : out std_logic_vector(31 downto 0);
+      wb_cyc_i   : in  std_logic;
+      wb_sel_i   : in  std_logic_vector(3 downto 0);
+      wb_stb_i   : in  std_logic;
+      wb_we_i    : in  std_logic;
+      wb_ack_o   : out std_logic;
+      wb_stall_o : out std_logic;
+
+      stdc_input_i : in std_logic;
+
+      cycles_i : in std_logic_vector(27 downto 0);
+
+      -- TDC outputs                    
+      strobe_o    : out std_logic;
+      stdc_data_o : out std_logic_vector(31 downto 0);
+
+      -- ChipScope Signals
+      TRIG_O : out std_logic_vector(127 downto 0)
+      );
   end component;
 
 ------------------------------------------
@@ -207,7 +209,7 @@ architecture rtl of wr_d3s_adc is
      x"00000700",
      x"00000700"
      );
-	  
+
 ------------------------------------------
 --        SIGNALS DECLARATION  
 ------------------------------------------
@@ -231,11 +233,11 @@ architecture rtl of wr_d3s_adc is
   signal bitslip_sreg        : std_logic_vector(7 downto 0);
 
   --  Signals for SERDES-TDC  -----------------
-  signal pllout_stdc_clk, pllout_stdc_clkdiv8, pllout_stdc_locked, pllout_stdc_fb : std_logic;
-  signal stdc_clkdiv8, stdc_serdes_strobe, stdc_serdes_clk                        : std_logic;
-  signal stdc_strobe                                                              : std_logic;
-  signal stdc_data                                                                : std_logic_vector(31 downto 0);
-  signal ext_trigger                                                              : std_logic;
+
+
+
+  signal stdc_data   : std_logic_vector(31 downto 0);
+  signal ext_trigger : std_logic;
   ----------------------------------------------
 
   signal dco_clk, dco_clk_buf : std_logic;
@@ -245,9 +247,10 @@ architecture rtl of wr_d3s_adc is
   signal locked_in            : std_logic;
   signal locked_out           : std_logic;
   signal serdes_clk           : std_logic;
+  signal serdes_strobe        : std_logic;
   signal fs_clk_buf           : std_logic;
   signal sys_rst              : std_logic;
-
+  signal pllout_serdes_clk : std_logic;
   signal clk_wr_div2 : std_logic;
 
   signal scl_out, sda_out : std_logic;
@@ -316,9 +319,8 @@ begin
   spi_cs_dac3_n_o <= '1';
   spi_cs_dac4_n_o <= '1';
 
-
   --- ADC Mezzanine stuff
-  cmp_dco_buf : IBUFDS
+  cmp_dco_buf : IBUFGDS
     generic map (
       DIFF_TERM  => true,               -- Differential termination
       IOSTANDARD => "LVDS_25")
@@ -331,39 +333,14 @@ begin
 -- Serializer TDC data input buffer:
 
 --        1st attempt
---   cmp_trig_buf : IBUFDS
---    generic map (
---      DIFF_TERM  => true,               -- Differential termination
---      IOSTANDARD => "LVDS_25")
---    port map (
---      I  => adc0_ext_trigger_p_i,
---      IB => adc0_ext_trigger_n_i,
---      O  => ext_trigger
---      );
-
---        2nd attempt                           
-  cmp_trig_buf : IBUFDS
+   cmp_trig_buf : IBUFDS
     generic map (
-      DIFF_TERM    => true,
-      IBUF_LOW_PWR => true  -- Low power (TRUE) vs. performance (FALSE) setting for referenced
-      )
+      DIFF_TERM  => true,               -- Differential termination
+      IOSTANDARD => "LVDS_25")
     port map (
-      O  => ext_trigger,
       I  => adc0_ext_trigger_p_i,
-      IB => adc0_ext_trigger_n_i
-      );
-
-  cmp_dco_bufio : BUFIO2
-    generic map (
-      DIVIDE        => 1,
-      DIVIDE_BYPASS => true,
-      I_INVERT      => false,
-      USE_DOUBLER   => false)
-    port map (
-      I            => dco_clk_buf,
-      IOCLK        => open,
-      DIVCLK       => dco_clk,
-      SERDESSTROBE => open
+      IB => adc0_ext_trigger_n_i,
+      O  => ext_trigger
       );
 
   cmp_serdes_clk_pll : PLL_BASE
@@ -384,8 +361,8 @@ begin
       REF_JITTER         => 0.010)
     port map (
       -- Output clocks
-      CLKFBOUT => open,
-      CLKOUT0  => serdes_clk,
+      CLKFBOUT => clk_fb,
+      CLKOUT0  => pllout_serdes_clk,           -- 1GHz
       CLKOUT1  => fs_clk_buf,
       CLKOUT2  => open,
       CLKOUT3  => open,
@@ -396,21 +373,12 @@ begin
       RST      => sys_rst,
       -- Input clock control
       CLKFBIN  => clk_fb,
-      CLKIN    => dco_clk);
+      CLKIN    => dco_clk_buf);
 
-  cmp_fs_clk_buf : BUFG
+  cmp_wr_ref_buf : BUFG
     port map (
       O => clk_wr,
-      I => fs_clk_buf
-      );
-
-  cmp_fb_clk_bufio : BUFIO2FB
-    generic map (
-      DIVIDE_BYPASS => true)
-    port map (
-      I => clk_fb_buf,
-      O => clk_fb
-      );
+      I => fs_clk_buf);
 
   cmp_adc_serdes : adc_serdes
     port map(
@@ -418,9 +386,10 @@ begin
       DATA_IN_FROM_PINS_N => serdes_in_n,
       DATA_IN_TO_DEVICE   => serdes_out_raw,
       BITSLIP             => serdes_auto_bitslip,
-      CLK_IN              => serdes_clk,
-      CLK_OUT             => clk_fb_buf,
+      CLK_IN              => pllout_serdes_clk,
       CLK_DIV_IN          => clk_wr,
+      CLK_OUT             => serdes_clk,
+      SERDES_STROBE_O     => serdes_strobe,
       LOCKED_IN           => locked_in,
       LOCKED_OUT          => locked_out,
       CLK_RESET           => '0',       -- unused
@@ -571,7 +540,7 @@ begin
       data_i      => raw_phase,
       slave_i     => cnx_out(3),
       slave_o     => cnx_in(3));
-  
+
   U_Phase_Enc : d3s_phase_encoder
     port map (
       clk_i           => clk_wr,
@@ -604,77 +573,76 @@ begin
   clk_wr_o   <= clk_wr;
 
   ----- Adding the new component: stdc_hostif  ----
---  cmp_stdc : stdc_hostif
+  cmp_stdc : stdc_hostif
+    generic map (
+      D_DEPTH => 4)  -- Length of the fifo storing the event time stamps
+    port map(
+      sys_rst_n_i     => rst_n_sys_i,
+      clk_sys_i       => clk_sys_i,     -- 62.5 MHz
+      clk_125m_i      => clk_wr,        -- 125 MHz
+      serdes_clk_i    => serdes_clk,    -- 1000 MHz
+      serdes_strobe_i => serdes_strobe,
+      wb_addr_i       => cnx_out(4).adr,
+      wb_data_i       => cnx_out(4).dat,
+      wb_data_o       => cnx_in(4).dat,
+      wb_cyc_i        => cnx_out(4).cyc,
+      wb_sel_i        => cnx_out(4).sel,
+      wb_stb_i        => cnx_out(4).stb,
+      wb_we_i         => cnx_out(4).we,
+      wb_ack_o        => cnx_in(4).ack,
+      wb_stall_o      => cnx_in(4).stall,
+      stdc_input_i    => ext_trigger,
+      cycles_i        => tm_cycles_i,
+      stdc_data_o     => stdc_data,
+      -- ChipScope Signals
+      TRIG_O          => TRIG_O
+      );    
+
+  cnx_in(4).err <= '0';
+  cnx_in(4).rty <= '0';
+
+  --cmp_stdc_clk_pll : PLL_BASE
+  --  generic map (
+  --    BANDWIDTH          => "OPTIMIZED",
+  --    CLK_FEEDBACK       => "CLKFBOUT",
+  --    COMPENSATION       => "INTERNAL",
+  --    DIVCLK_DIVIDE      => 1,
+  --    CLKFBOUT_MULT      => 8,
+  --    CLKFBOUT_PHASE     => 0.000,
+  --    CLKOUT0_DIVIDE     => 1,          -- 1000 MHz
+  --    CLKOUT0_PHASE      => 0.000,
+  --    CLKOUT0_DUTY_CYCLE => 0.500,
+  --    CLKOUT1_DIVIDE     => 8, --1,     -- 125 MHz
+  --    CLKOUT1_PHASE      => 0.000,
+  --    CLKOUT1_DUTY_CYCLE => 0.500,
+  --    CLKIN_PERIOD       => 8.0,
+  --    REF_JITTER         => 0.016)
+  --  port map (
+  --    CLKFBOUT => pllout_stdc_fb,
+  --    CLKOUT0  => pllout_stdc_clk,
+  --    CLKOUT1  => pllout_stdc_clkdiv8,
+  --    CLKOUT2  => open,
+  --    CLKOUT3  => open,
+  --    CLKOUT4  => open,
+  --    CLKOUT5  => open,
+  --    LOCKED   => pllout_stdc_locked,
+  --    RST      => sys_rst,
+  --    CLKFBIN  => pllout_stdc_fb,
+  --    CLKIN    => clk_125m_pllref_i);
+
+--  cmp_dds_ref_buf : BUFG
+--    port map (
+--      O => stdc_clkdiv8,
+--      I => pllout_stdc_clkdiv8);
+
+--  cmp_serdes_clk_buf : BUFPLL
 --    generic map (
---      D_DEPTH => 4)  -- Length of the fifo storing the event time stamps
---    port map(
---      sys_rst_n_i     => rst_n_sys_i,
---      clk_sys_i       => clk_sys_i,     -- 62.5 MHz
---      clk_125m_i      => clk_wr,        -- 125 MHz
---      serdes_clk_i    => stdc_serdes_clk,  -- 1000 MHz
---      serdes_strobe_i => stdc_serdes_strobe,
---      wb_addr_i       => cnx_out(4).adr,
---      wb_data_i       => cnx_out(4).dat,
---      wb_data_o       => cnx_in(4).dat,
---      wb_cyc_i        => cnx_out(4).cyc,
---      wb_sel_i        => cnx_out(4).sel,
---      wb_stb_i        => cnx_out(4).stb,
---      wb_we_i         => cnx_out(4).we,
---      wb_ack_o        => cnx_in(4).ack,
---      wb_stall_o      => cnx_in(4).stall,
---      stdc_input_i    => ext_trigger,
---      cycles_i        => tm_cycles_i,
---      strobe_o        => stdc_strobe,
---      stdc_data_o     => stdc_data,
---		-- ChipScope Signals
---		TRIG_O			 => TRIG_O
---	);    
-		
---  cnx_in(4).err <= '0';
---  cnx_in(4).rty <= '0';
-
-  cmp_stdc_clk_pll : PLL_BASE
-    generic map (
-      BANDWIDTH          => "OPTIMIZED",
-      CLK_FEEDBACK       => "CLKFBOUT",
-      COMPENSATION       => "INTERNAL",
-      DIVCLK_DIVIDE      => 1,
-      CLKFBOUT_MULT      => 8,
-      CLKFBOUT_PHASE     => 0.000,
-      CLKOUT0_DIVIDE     => 1,          -- 1000 MHz
-      CLKOUT0_PHASE      => 0.000,
-      CLKOUT0_DUTY_CYCLE => 0.500,
-      CLKOUT1_DIVIDE     => 8, --1,     -- 125 MHz
-      CLKOUT1_PHASE      => 0.000,
-      CLKOUT1_DUTY_CYCLE => 0.500,
-      CLKIN_PERIOD       => 8.0,
-      REF_JITTER         => 0.016)
-    port map (
-      CLKFBOUT => pllout_stdc_fb,
-      CLKOUT0  => pllout_stdc_clk,
-      CLKOUT1  => pllout_stdc_clkdiv8,
-      CLKOUT2  => open,
-      CLKOUT3  => open,
-      CLKOUT4  => open,
-      CLKOUT5  => open,
-      LOCKED   => pllout_stdc_locked,
-      RST      => sys_rst,
-      CLKFBIN  => pllout_stdc_fb,
-      CLKIN    => clk_125m_pllref_i);
-
-  cmp_dds_ref_buf : BUFG
-    port map (
-      O => stdc_clkdiv8,
-      I => pllout_stdc_clkdiv8);
-
-  cmp_serdes_clk_buf : BUFPLL
-    generic map (
-      DIVIDE => 8)
-    port map (
-      PLLIN        => pllout_stdc_clk,  --  from PLL (CLKOUT0, CLKOUT1) 
-      GCLK         => stdc_clkdiv8,     --  from BUFG or GCLK
-      IOCLK        => stdc_serdes_clk,  --  Connects to IOSERDES2(CLK0),BUFIO2FB(I),or IODELAY2 IOCLK0, IOCLK1)
-      LOCK         => open,
-      LOCKED       => pllout_stdc_locked,   -- LOCKED signal from PLL
-      SERDESSTROBE => stdc_serdes_strobe);  --  used to drive IOSERDES2(IOCE)
-end rtl;
+--      DIVIDE => 8)
+--    port map (
+--      PLLIN        => pllout_stdc_clk,  --  from PLL (CLKOUT0, CLKOUT1) 
+--      GCLK         => stdc_clkdiv8,     --  from BUFG or GCLK
+--      IOCLK        => stdc_serdes_clk,  --  Connects to IOSERDES2(CLK0),BUFIO2FB(I),or IODELAY2 IOCLK0, IOCLK1)
+--      LOCK         => open,
+--      LOCKED       => pllout_stdc_locked,   -- LOCKED signal from PLL
+--      SERDESSTROBE => stdc_serdes_strobe);  --  used to drive IOSERDES2(IOCE)-
+  end rtl;

@@ -82,7 +82,11 @@ port
   LOCKED_IN               : in    std_logic;
   LOCKED_OUT              : out   std_logic;
   CLK_RESET               : in    std_logic;                    -- Reset signal for Clock circuit
-  IO_RESET                : in    std_logic);                   -- Reset signal for IO circuit
+  IO_RESET                : in    std_logic;
+
+  SERDES_STROBE_O : out std_logic
+  
+  );                   -- Reset signal for IO circuit
 end adc_serdes;
 
 architecture xilinx of adc_serdes is
@@ -113,6 +117,7 @@ architecture xilinx of adc_serdes is
 
 begin
 
+  SERDES_STROBE_O <= serdesstrobe;
 
 
   -- Create the clock logic
