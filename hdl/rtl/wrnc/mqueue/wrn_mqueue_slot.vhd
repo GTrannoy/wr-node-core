@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2016-06-06
+-- Last update: 2016-09-19
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -220,12 +220,9 @@ begin  -- rtl
         stat_o.commit_mask <= '0';
       else
 
-        if(in_commit = '1') then
+        if(in_commit = '1' or in_ready = '1') then
           stat_o.commit_mask <= '1';
-        elsif (empty = '1') then
-          stat_o.commit_mask <= '0';
         end if;
-
 
         case wr_state is
           when IDLE =>
@@ -246,7 +243,6 @@ begin  -- rtl
           when ACCEPT_DATA =>
             
             if in_ready = '1' then
-              stat_o.commit_mask <= '1';
               wr_state           <= READY_SEND;
             elsif in_enqueue = '1' then
               stat_o.commit_mask <= '0';
