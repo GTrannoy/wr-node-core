@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2016-05-02
+-- Last update: 2016-09-20
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -724,8 +724,8 @@ begin
 		 dac_n_o              => fmc1_dac_n_o,
 		 dac_p_o              => fmc1_dac_p_o,
 		 slave_i              => fmc_wb_muxed_out(c_FMC_1),
-		 slave_o              => fmc_wb_muxed_in(c_FMC_1),
-		 debug_o              => debug
+		 slave_o              => fmc_wb_muxed_in(c_FMC_1)
+	--	 debug_o              => debug
 		 );  
   
   U_Silabs_IF: xwr_si57x_interface
@@ -746,12 +746,15 @@ begin
   adc0_si570_sda_b <= '0' when sda_pad_oen = '0' else 'Z';
   adc0_si570_scl_b <= '0' when scl_pad_oen = '0' else 'Z';
 
---  fp_gpio1_b <= debug(0);
---  fp_gpio2_b <= tm_dac_wr(0);
 
   adc0_gpio_dac_clr_n_o <= '1';
   adc0_gpio_si570_oe_o <= '1';
 
+  fp_gpio1_b <= debug(0);
+  fp_gpio2_b <= debug(0);
+  fp_gpio3_b <= debug(0);
+  fp_gpio4_b <= debug(0);
+  
   fp_gpio1_a2b_o <= '1';  -- svec front panel LEMO L2 set as output
   fp_gpio2_a2b_o <= '1';  -- svec front panel LEMO L1 set as output
   fp_gpio34_a2b_o <= '1'; -- svec front panel LEMOs L3 and L4 set as output

@@ -164,7 +164,6 @@ NET "sda_afpga_b" LOC = AA30;
 #NET "fp_ledn_o[5]" LOC = AE30;
 #NET "fp_ledn_o[6]" LOC = AF28;
 #NET "fp_ledn_o[7]" LOC = AE28;
-
 #NET "fp_ledn_o[0]" IOSTANDARD = "LVCMOS33";
 #NET "fp_ledn_o[1]" IOSTANDARD = "LVCMOS33";
 #NET "fp_ledn_o[2]" IOSTANDARD = "LVCMOS33";
@@ -173,7 +172,6 @@ NET "sda_afpga_b" LOC = AA30;
 #NET "fp_ledn_o[5]" IOSTANDARD = "LVCMOS33";
 #NET "fp_ledn_o[6]" IOSTANDARD = "LVCMOS33";
 #NET "fp_ledn_o[7]" IOSTANDARD = "LVCMOS33";
-
 #----------------------------------------
 # 1-wire thermoeter + unique ID
 #----------------------------------------
@@ -310,7 +308,6 @@ NET "sfp_tx_fault_i" IOSTANDARD = "LVCMOS33";
 #----------------------------------------
 # Clock controls
 #----------------------------------------
-
 NET "pll20dac_din_o" IOSTANDARD = "LVCMOS33";
 NET "pll20dac_sclk_o" IOSTANDARD = "LVCMOS33";
 NET "pll20dac_sync_n_o" IOSTANDARD = "LVCMOS33";
@@ -431,9 +428,7 @@ TIMESPEC TS_crossdomain_2 = FROM "clk_125m_pllref_p_i" TO "clk_sys" 20 ns DATAPA
 NET "*/gc_sync_register_in[*]" MAXDELAY=4ns;
 
 # <ucfgen_start>
-
 # This section has bee generated automatically by ucfgen.py. Do not hand-modify if not really necessary.
-
 # ucfgen pin assignments for mezzanine fmc-adc-v5 slot 0
 NET "adc0_ext_trigger_n_i" LOC = "A15";
 NET "adc0_ext_trigger_n_i" IOSTANDARD = "LVDS_25";
@@ -567,14 +562,13 @@ NET "adc0_si570_sda_b" IOSTANDARD = "LVCMOS25";
 #NET "adc0_one_wire_b" IOSTANDARD = "LVCMOS25";
 #Created by Constraints Editor (xc6slx150t-fgg900-3) - 2016/02/03
 NET "adc0_dco_p_i" TNM_NET = adc0_dco_p_i;
-TIMESPEC TS_adc0_dco_p_i = PERIOD "adc0_dco_p_i" 400 MHz HIGH 50%;
+TIMESPEC TS_adc0_dco_p_i = PERIOD "adc0_dco_p_i" 500 MHz HIGH 50%;
 NET "adc0_dco_n_i" TNM_NET = adc0_dco_n_i;
-TIMESPEC TS_adc0_dco_n_i = PERIOD "adc0_dco_n_i" 400 MHz HIGH 50%;
+TIMESPEC TS_adc0_dco_n_i = PERIOD "adc0_dco_n_i" 500 MHz HIGH 50%;
 NET "U_Node_Template/gen_with_phy.U_GTP/ch1_gtp_clkout_int<1>" TNM_NET = U_Node_Template/gen_with_phy.U_GTP/ch1_gtp_clkout_int<1>;
 TIMESPEC TS_U_Node_Template_gen_with_phy_U_GTP_ch1_gtp_clkout_int_1_ = PERIOD "U_Node_Template/gen_with_phy.U_GTP/ch1_gtp_clkout_int<1>" 8 ns HIGH 50%;
 
 # ucfgen pin assignments for mezzanine fmc-dds-600m slot 1
-
 NET "fmc1_dac_p_o[13]" LOC = "AG8";
 NET "fmc1_dac_p_o[13]" IOSTANDARD = "LVDS_25";
 NET "fmc1_dac_n_o[13]" LOC = "AH8";
@@ -718,7 +712,6 @@ NET "fmc1_wr_ref_clk_p_i" IOSTANDARD = "LVDS_25";
 #NET "fmc1_trig_n_i" LOC = "AF21";
 #NET "fmc1_trig_n_i" IOSTANDARD = "LVDS_25";
 # <ucfgen_end>
-
 NET "fmc1_wr_ref_clk_p_i" TNM_NET = fmc1_wr_ref_clk_p_i;
 TIMESPEC TS_fmc1_wr_ref_clk_p_i = PERIOD "fmc1_wr_ref_clk_p_i" 8 ns HIGH 50%;
 NET "fmc1_wr_ref_clk_n_i" TNM_NET = fmc1_wr_ref_clk_n_i;
