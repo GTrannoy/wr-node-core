@@ -346,7 +346,7 @@ begin
   cmp_serdes_clk_pll : PLL_BASE
     generic map (
       BANDWIDTH          => "OPTIMIZED",
-      CLK_FEEDBACK       => "CLKOUT0",
+      CLK_FEEDBACK       => "CLKFBOUT",
       COMPENSATION       => "SYSTEM_SYNCHRONOUS",
       DIVCLK_DIVIDE      => 1,
       CLKFBOUT_MULT      => 2,
@@ -363,7 +363,7 @@ begin
       -- Output clocks
       CLKFBOUT => clk_fb,
       CLKOUT0  => pllout_serdes_clk,           -- 1GHz
-      CLKOUT1  => fs_clk_buf,
+      CLKOUT1  => fs_clk_buf, -- 125 MHz
       CLKOUT2  => open,
       CLKOUT3  => open,
       CLKOUT4  => open,
@@ -580,7 +580,7 @@ begin
       sys_rst_n_i     => rst_n_sys_i,
       clk_sys_i       => clk_sys_i,     -- 62.5 MHz
       clk_125m_i      => clk_wr,        -- 125 MHz
-      serdes_clk_i    => serdes_clk,    -- 1000 MHz
+      serdes_clk_i    => pllout_serdes_clk,    -- 1000 MHz
       serdes_strobe_i => serdes_strobe,
       wb_addr_i       => cnx_out(4).adr,
       wb_data_i       => cnx_out(4).dat,
@@ -600,6 +600,8 @@ begin
 
   cnx_in(4).err <= '0';
   cnx_in(4).rty <= '0';
+
+
 
   --cmp_stdc_clk_pll : PLL_BASE
   --  generic map (
