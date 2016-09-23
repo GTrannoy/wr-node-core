@@ -346,7 +346,7 @@ begin
   cmp_serdes_clk_pll : PLL_BASE
     generic map (
       BANDWIDTH          => "OPTIMIZED",
-      CLK_FEEDBACK       => "CLKOUT0",
+      CLK_FEEDBACK       => "CLKFBOUT",
       COMPENSATION       => "SYSTEM_SYNCHRONOUS",
       DIVCLK_DIVIDE      => 1,
       CLKFBOUT_MULT      => 2,
