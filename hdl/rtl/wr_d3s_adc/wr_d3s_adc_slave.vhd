@@ -13,45 +13,54 @@ use UNISIM.vcomponents.all;
 entity wr_d3s_adc_slave is
   port (
     rst_n_sys_i   : in std_logic;
-	 clk_sys_i     : in std_logic;
---    clk_wr_o : out std_logic;
---    clk_125m_pllref_i : in std_logic;
+	clk_sys_i     : in std_logic;
+    clk_wr_o : out std_logic;
+    clk_125m_pllref_i : in std_logic;
 
+    -- Timing (WRC)
     tm_link_up_i         : in  std_logic;
-	 tm_time_valid_i      : in  std_logic;
+	tm_time_valid_i      : in  std_logic;
     tm_tai_i             : in  std_logic_vector(39 downto 0);
     tm_cycles_i          : in  std_logic_vector(27 downto 0);
---    tm_clk_aux_lock_en_o : out std_logic;
---    tm_clk_aux_locked_i  : in  std_logic;
+    tm_clk_aux_lock_en_o : out std_logic;
+    tm_clk_aux_locked_i  : in  std_logic;
+    tm_dac_value_i       : in  std_logic_vector(23 downto 0);
+    tm_dac_wr_i          : in  std_logic;
 
     -- WR reference clock from FMC's PLL (AD9516)
     wr_ref_clk_n_i : in std_logic;
     wr_ref_clk_p_i : in std_logic;
 
     -- System/WR PLL dedicated lines
---    pll_sys_cs_n_o    : out std_logic;
---    pll_sys_ld_i      : in  std_logic;
---    pll_sys_reset_n_o : out std_logic;
---    pll_sys_sync_n_o  : out std_logic;
+    pll_sys_cs_n_o    : out std_logic;
+    pll_sys_ld_i      : in  std_logic;
+    pll_sys_reset_n_o : out std_logic;
+    pll_sys_sync_n_o  : out std_logic;
 
     -- VCXO PLL dedicated lines
---    pll_vcxo_cs_n_o   : out std_logic;
---    pll_vcxo_sync_n_o : out std_logic;
---    pll_vcxo_status_i : in  std_logic;
+    pll_vcxo_cs_n_o   : out std_logic;
+    pll_vcxo_sync_n_o : out std_logic;
+    pll_vcxo_status_i : in  std_logic;   --FIXME! : not connected
 
     -- SPI bus to both PLL chips
---    pll_sclk_o : out   std_logic;
---    pll_sdio_b : inout std_logic;
---    pll_sdo_i  : in    std_logic;
-
-
+    pll_sclk_o : out   std_logic;
+    pll_sdio_b : inout std_logic;
+    pll_sdo_i  : in    std_logic;    --FIXME! : not connected
+ 	 
     -- DDS Dac I/F (Maxim)
     dac_n_o : out std_logic_vector(13 downto 0);
     dac_p_o : out std_logic_vector(13 downto 0);
+    
+    -- WR mezzanine DAC
+    wr_dac_sclk_o   : out std_logic;
+    wr_dac_din_o    : out std_logic;
+    wr_dac_sync_n_o : out std_logic;
 
+    -- WB interface
     slave_i : in  t_wishbone_slave_in;
     slave_o : out t_wishbone_slave_out;
 
+    -- debugging
     debug_o : out std_logic_vector(3 downto 0)
     );
 end wr_d3s_adc_slave;
@@ -199,6 +208,8 @@ architecture rtl of wr_d3s_adc_slave is
 
   signal dac_data_par : std_logic_vector(4 * 14 - 1 downto 0);
   
+  signal pll_sdio_val               : std_logic;
+
 begin
 
   fpll_reset <= regs_out.rstr_pll_rst_o or (not rst_n_sys_i);
@@ -360,4 +371,47 @@ begin
       CLK_RESET            => rst_wr,
       IO_RESET             => rst_wr);
 
+  -- Do I need this for DAC AD5662?
+  U_WR_DAC : gc_serial_dac
+    generic map (
+      g_num_data_bits  => 16,
+      g_num_extra_bits => 8,
+      g_num_cs_select  => 1,
+      g_sclk_polarity  => 0)
+    port map (
+      clk_i         => clk_sys_i,
+      rst_n_i       => rst_n_wr,
+      value_i       => tm_dac_value_i(15 downto 0),
+      cs_sel_i      => "1",
+      load_i        => tm_dac_wr_i,
+      sclk_divsel_i => "010",
+      dac_cs_n_o(0) => wr_dac_sync_n_o,
+      dac_sclk_o    => wr_dac_sclk_o,
+      dac_sdata_o   => wr_dac_din_o);
+		
+   -- PLL SYS signals were not connected... 
+   pll_sys_cs_n_o    <= regs_out.gpior_pll_sys_cs_n_o;
+   pll_sys_reset_n_o <= regs_out.gpior_pll_sys_reset_n_o;
+   pll_sys_sync_n_o  <= '1';
+
+   pll_sclk_o <= regs_out.gpior_pll_sclk_o;
+
+   pll_vcxo_cs_n_o   <= regs_out.gpior_pll_vcxo_cs_n_o;
+   pll_vcxo_sync_n_o <= '1';
+
+   process(clk_sys_i)
+   begin
+     if rising_edge(clk_sys_i) then
+       if regs_out.gpior_pll_sdio_load_o = '1' then
+         pll_sdio_val             <= regs_out.gpior_pll_sdio_o;
+         regs_in.gpior_pll_sdio_i <= pll_sdio_b;
+
+       end if;
+     end if;
+   end process;
+  
+   pll_sdio_b <= pll_sdio_val when regs_out.gpior_pll_sdio_dir_o = '1' else 'Z';
+	
+	
+	
 end rtl;

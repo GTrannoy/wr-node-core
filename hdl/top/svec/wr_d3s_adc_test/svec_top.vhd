@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2016-09-20
+-- Last update: 2016-05-02
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -68,10 +68,11 @@ entity svec_top is
     fp_led_line_oen_o : out std_logic_vector(1 downto 0);
     fp_led_line_o     : out std_logic_vector(1 downto 0);
     fp_led_column_o   : out std_logic_vector(3 downto 0);
-    dbg_led0_o : out std_logic;
-    dbg_led1_o : out std_logic;
-    dbg_led2_o : out std_logic;
-    dbg_led3_o : out std_logic;
+    dbg_led0_o : out std_logic;  -- FIXME : Not connected
+    dbg_led1_o : out std_logic;  -- FIXME : Not connected
+    dbg_led2_o : out std_logic;  -- FIXME : Not connected
+    dbg_led3_o : out std_logic;  -- FIXME : Not connected
+    
     ----------------------------------------    
     -- SVEC GPIO
     ----------------------------------------  
@@ -82,8 +83,9 @@ entity svec_top is
     fp_gpio2_b : inout std_logic;
     fp_gpio3_b : inout std_logic;
     fp_gpio4_b : inout std_logic;
+    
     ----------------------------------------
-    -- VME Interface 
+    -- VME Interface pins
     ----------------------------------------
     VME_AS_n_i      : in    std_logic;
     VME_RST_n_i     : in    std_logic;
@@ -109,7 +111,7 @@ entity svec_top is
     VME_ADDR_DIR_o  : inout std_logic;
     VME_ADDR_OE_N_o : inout std_logic;
     ----------------------------------------
-    --  SFP s
+    --  SFP pins
     ----------------------------------------
     sfp_txp_o : out std_logic;
     sfp_txn_o : out std_logic;
@@ -128,7 +130,9 @@ entity svec_top is
     pll20dac_din_o    : out std_logic;
     pll20dac_sclk_o   : out std_logic;
     pll20dac_sync_n_o : out std_logic;
-    pll25dac_din_o    : out std_logic;
+    -- Signals controlling the DAC AD5662
+	-- which feeds the VCO which feeds the AD9516
+	 pll25dac_din_o    : out std_logic;
     pll25dac_sclk_o   : out std_logic;
     pll25dac_sync_n_o : out std_logic;
     ----------------------------------------
@@ -141,7 +145,7 @@ entity svec_top is
     uart_rxd_i       : in  std_logic := '1';
     uart_txd_o       : out std_logic ;
     ----------------------------------------
-    --  EEPROM
+    --  SVEC carrier EEPROM
     ----------------------------------------
     scl_afpga_b       : inout std_logic; 
     sda_afpga_b       : inout std_logic; 
@@ -194,33 +198,38 @@ entity svec_top is
     ----    FMC 1 : Dds-fmc type   ---------
     
     -- DDS Dac I/F (Maxim)
-    fmc1_dac_p_o             : out std_logic_vector(13 downto 0);
+    fmc1_dac_p_o             : out std_logic_vector(13 downto 0); --DDS 14b DAC
     fmc1_dac_n_o             : out std_logic_vector(13 downto 0);
     -- SPI bus to both PLL chips
---    fmc1_pll_sclk_o          : buffer std_logic;
---    fmc1_pll_sdio_b          : inout std_logic;
---    fmc1_pll_sdo_i           : in std_logic;
+    fmc1_pll_sclk_o          : buffer std_logic;
+    fmc1_pll_sdio_b          : inout std_logic;
+    fmc1_pll_sdo_i           : in std_logic;
     -- System/WR PLL dedicated lines
---    fmc1_pll_sys_ld_i        : in std_logic;
---    fmc1_pll_sys_reset_n_o   : buffer std_logic;
---    fmc1_pll_sys_cs_n_o      : buffer std_logic;
---    fmc1_pll_sys_sync_n_o    : buffer std_logic;
+	 -- AD9516 PLL generating DDS DAC clk
+    fmc1_pll_sys_ld_i        : in std_logic;
+    fmc1_pll_sys_reset_n_o   : buffer std_logic;
+    fmc1_pll_sys_cs_n_o      : buffer std_logic;
+    fmc1_pll_sys_sync_n_o    : buffer std_logic;
     -- VCXO PLL dedicated lines
---    fmc1_pll_vcxo_cs_n_o     : buffer std_logic;
---    fmc1_pll_vcxo_sync_n_o   : buffer std_logic;
---    fmc1_pll_vcxo_status_i   : in std_logic;
-    -- Phase Detector & ADC
---    fmc1_adc_sdo_i           : in std_logic;
+	 -- AD9510 distribution clock IC, which generates the
+	 -- RF input signal that feeds the phase detector
+    fmc1_pll_vcxo_cs_n_o     : buffer std_logic;
+    fmc1_pll_vcxo_sync_n_o   : buffer std_logic;
+    fmc1_pll_vcxo_status_i   : in std_logic;
+    -- Serial interface signals for
+	 -- the ADC after the phase detector
+--	   fmc1_adc_sdo_i           : in std_logic;
 --    fmc1_adc_sck_o           : out std_logic;
 --    fmc1_adc_cnv_o           : out std_logic;
 --    fmc1_adc_sdi_o           : out std_logic;
---    fmc1_pd_lockdet_i        : in std_logic;
+    -- Phase Detector signals
+--	   fmc1_pd_lockdet_i        : in std_logic;
 --    fmc1_pd_clk_o            : out std_logic; 
 --    fmc1_pd_data_b           : inout std_logic;
 --    fmc1_pd_le_o             : out std_logic;
     -- WR reference clock from FMC's PLL (AD9516)
     fmc1_wr_ref_clk_n_i      : in std_logic;
-    fmc1_wr_ref_clk_p_i      : in std_logic
+    fmc1_wr_ref_clk_p_i      : in std_logic;
  
 --    fmc1_synth_clk_n_i       : in std_logic;
 --    fmc1_synth_clk_p_i       : in std_logic;
@@ -242,9 +251,11 @@ entity svec_top is
 --    fmc1_onewire_b           : inout std_logic;
     
     -- WR mezzanine DAC
---    fmc1_wr_dac_sclk_o   : out std_logic;
---    fmc1_wr_dac_din_o    : out std_logic;
---    fmc1_wr_dac_sync_n_o : out std_logic; 
+	 -- Control signals of the nanoDAC (AD5662) 
+	 -- which controls the VCO feeding the AD9516 PLL 
+    fmc1_wr_dac_sclk_o   : out std_logic;
+    fmc1_wr_dac_din_o    : out std_logic;
+    fmc1_wr_dac_sync_n_o : out std_logic 
 
 --    fmc1_scl_b        : inout std_logic;
 --    fmc1_sda_b        : inout std_logic
@@ -315,35 +326,44 @@ architecture rtl of svec_top is
   port (
 		 rst_n_sys_i       : in std_logic;
 		 clk_sys_i         : in std_logic;
---		 clk_125m_pllref_i : in std_logic;
---		 clk_wr_o          : out std_logic;
+		 clk_125m_pllref_i : in std_logic;
+		 clk_wr_o          : out std_logic;
 		 tm_link_up_i      : in std_logic;
 		 tm_time_valid_i      : in  std_logic;
 		 tm_tai_i             : in  std_logic_vector(39 downto 0);
 		 tm_cycles_i          : in  std_logic_vector(27 downto 0);	 
---		 tm_clk_aux_lock_en_o : out std_logic;
---		 tm_clk_aux_locked_i  : in  std_logic;
-		 -- WR reference clock from FMC's PLL (AD9516)
+		 tm_clk_aux_lock_en_o : out std_logic;
+		 tm_clk_aux_locked_i  : in  std_logic;
+		 tm_dac_value_i       : in  std_logic_vector(23 downto 0);
+         tm_dac_wr_i          : in  std_logic;
+
+         -- WR reference clock from FMC's PLL (AD9516)
 		 wr_ref_clk_n_i : in std_logic;
 		 wr_ref_clk_p_i : in std_logic;
 		 -- System/WR PLL dedicated lines
---		 pll_sys_cs_n_o    : out std_logic;
---		 pll_sys_ld_i      : in  std_logic;
---		 pll_sys_reset_n_o : out std_logic;
---		 pll_sys_sync_n_o  : out std_logic;
+		 pll_sys_cs_n_o    : out std_logic;
+		 pll_sys_ld_i      : in  std_logic;
+		 pll_sys_reset_n_o : out std_logic;
+		 pll_sys_sync_n_o  : out std_logic;
 		 -- VCXO PLL dedicated lines
---		 pll_vcxo_cs_n_o   : out std_logic;
---		 pll_vcxo_sync_n_o : out std_logic;
---		 pll_vcxo_status_i : in  std_logic;
+		 pll_vcxo_cs_n_o   : out std_logic;
+		 pll_vcxo_sync_n_o : out std_logic;
+		 pll_vcxo_status_i : in  std_logic;
 		 -- SPI bus to both PLL chips
---		 pll_sclk_o : out   std_logic;
---		 pll_sdio_b : inout std_logic;
---		 pll_sdo_i  : in    std_logic;
+		 pll_sclk_o : out   std_logic;
+    	 pll_sdio_b : inout std_logic;
+		 pll_sdo_i  : in    std_logic;
 		 -- DDS Dac I/F (Maxim)
 		 dac_n_o : out std_logic_vector(13 downto 0);
 		 dac_p_o : out std_logic_vector(13 downto 0);
+         -- WR mezzanine DAC
+         wr_dac_sclk_o   : out std_logic;
+         wr_dac_din_o    : out std_logic;
+         wr_dac_sync_n_o : out std_logic;
+         -- WB interface
 		 slave_i : in  t_wishbone_slave_in;
 		 slave_o : out t_wishbone_slave_out;
+         -- debug
 		 debug_o : out std_logic_vector(3 downto 0)
 		 );
   end component wr_d3s_adc_slave;
@@ -693,39 +713,42 @@ begin
   port map (
 		 rst_n_sys_i         => rst_n,
 		 clk_sys_i           => clk_sys,
---		 clk_wr_o            => fmc1_clk_wr,
---		 clk_125m_pllref_i   => clk_125m_pllref,
+		 clk_wr_o            => fmc1_clk_wr,
+		 clk_125m_pllref_i   => clk_125m_pllref,
 		 
 		 tm_link_up_i         => tm_link_up,
 		 tm_tai_i             => tm_tai,
 		 tm_cycles_i          => tm_cycles,
 		 tm_time_valid_i      => tm_time_valid,
---		 tm_clk_aux_lock_en_o => tm_clk_aux_lock_en(1),
---		 tm_clk_aux_locked_i  => tm_clk_aux_locked(1),
+		 tm_clk_aux_lock_en_o => tm_clk_aux_lock_en(1),
+		 tm_clk_aux_locked_i  => tm_clk_aux_locked(1),
 		 
+         tm_dac_value_i       => tm_dac_value,
+         tm_dac_wr_i          => tm_dac_wr(1),
+ 
 		 wr_ref_clk_n_i       => fmc1_wr_ref_clk_n_i,
 		 wr_ref_clk_p_i       => fmc1_wr_ref_clk_p_i,
 		 
 		 -- System/WR PLL dedicated lines
---		 pll_sys_cs_n_o       => fmc1_pll_sys_cs_n_o,
---		 pll_sys_ld_i         => fmc1_pll_sys_ld_i,
---		 pll_sys_reset_n_o    => fmc1_pll_sys_reset_n_o,
---		 pll_sys_sync_n_o     => fmc1_pll_sys_sync_n_o,
+		 pll_sys_cs_n_o       => fmc1_pll_sys_cs_n_o,
+		 pll_sys_ld_i         => fmc1_pll_sys_ld_i,
+		 pll_sys_reset_n_o    => fmc1_pll_sys_reset_n_o,
+		 pll_sys_sync_n_o     => fmc1_pll_sys_sync_n_o,
 		 -- VCXO PLL dedicated lines
---		 pll_vcxo_cs_n_o      => fmc1_pll_vcxo_cs_n_o,
---		 pll_vcxo_sync_n_o    => fmc1_pll_vcxo_sync_n_o,
---		 pll_vcxo_status_i    => fmc1_pll_vcxo_status_i,
+		 pll_vcxo_cs_n_o      => fmc1_pll_vcxo_cs_n_o,
+		 pll_vcxo_sync_n_o    => fmc1_pll_vcxo_sync_n_o,
+		 pll_vcxo_status_i    => fmc1_pll_vcxo_status_i,
 		 -- SPI bus to both PLL chips
---		 pll_sclk_o           => fmc1_pll_sclk_o,
---		 pll_sdio_b           => fmc1_pll_sdio_b,
---		 pll_sdo_i            => fmc1_pll_sdo_i,
-		 
+		 pll_sclk_o           => fmc1_pll_sclk_o,
+		 pll_sdio_b           => fmc1_pll_sdio_b,
+		 pll_sdo_i            => fmc1_pll_sdo_i,
 		 -- DDS Dac I/F (Maxim)
 		 dac_n_o              => fmc1_dac_n_o,
 		 dac_p_o              => fmc1_dac_p_o,
-		 slave_i              => fmc_wb_muxed_out(c_FMC_1),
-		 slave_o              => fmc_wb_muxed_in(c_FMC_1)
-	--	 debug_o              => debug
+		 -- WB interface
+         slave_i              => fmc_wb_muxed_out(c_FMC_1),
+		 slave_o              => fmc_wb_muxed_in(c_FMC_1),
+		 debug_o              => debug
 		 );  
   
   U_Silabs_IF: xwr_si57x_interface
@@ -746,15 +769,12 @@ begin
   adc0_si570_sda_b <= '0' when sda_pad_oen = '0' else 'Z';
   adc0_si570_scl_b <= '0' when scl_pad_oen = '0' else 'Z';
 
+--  fp_gpio1_b <= debug(0);
+--  fp_gpio2_b <= tm_dac_wr(0);
 
   adc0_gpio_dac_clr_n_o <= '1';
   adc0_gpio_si570_oe_o <= '1';
 
-  fp_gpio1_b <= debug(0);
-  fp_gpio2_b <= debug(0);
-  fp_gpio3_b <= debug(0);
-  fp_gpio4_b <= debug(0);
-  
   fp_gpio1_a2b_o <= '1';  -- svec front panel LEMO L2 set as output
   fp_gpio2_a2b_o <= '1';  -- svec front panel LEMO L1 set as output
   fp_gpio34_a2b_o <= '1'; -- svec front panel LEMOs L3 and L4 set as output
