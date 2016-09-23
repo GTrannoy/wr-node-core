@@ -6,7 +6,102 @@ peripheral {
 
 	 hdl_entity="d3s_adc_wb";
 	 
+   reg {
+			prefix = "TCR";
+			name = "Time Control Register";
+      
+      field {
+				 prefix = "WR_LOCK_EN";
+				 name = "WR Lock Enable";
+				 description = "write 1: enable locking of the ADC clock to WR. Enable only after Si57x has been initialized.";
 
+				 type = BIT;
+				 access_dev = READ_ONLY;
+				 access_bus = READ_WRITE;
+			};
+			field {
+				 prefix = "WR_LOCKED";
+				 name = "WR Locked";
+				 description = "When 1, the ADC clock is locked to WR.";
+
+				 type = BIT;
+				 access_dev = WRITE_ONLY;
+				 access_bus = READ_ONLY;
+			};
+			field {
+				 prefix = "WR Time Valid";
+				 name = "WR_TIME_VALID";
+				 description = "when 1, the WR Core is synchronized with the WR network";
+				 type = BIT;
+				 access_dev = WRITE_ONLY;
+				 access_bus = READ_ONLY;
+			};
+      field {
+				 prefix = "WR_LINK";
+				 name = "WR Link";
+				 description = "when 1, WR link is up";
+				 type = BIT;
+				 access_dev = WRITE_ONLY;
+				 access_bus = READ_ONLY;
+			};
+   };
+
+   reg {
+			name = "GPIO register";
+			prefix = "GPIOR";
+			
+      field {
+				 prefix = "SI57X_SCL";
+				 name = "SI57X_SCL";
+				 description = "GPIO controlling the state of the SCL line of the Silabs Si57p oscillator on the ADC mezzanine."; 
+				 type = BIT;
+				 access_dev = READ_WRITE;
+				 access_bus = READ_WRITE;
+				 load = LOAD_EXT;
+			};
+			field {
+				 prefix = "SI57X_SDA";
+				 name = "SI57X_SDA";
+				 description = "GPIO controlling the state of the SDA line of the Silabs Si57p oscillator on the ADC mezzanine."; 
+				 type = BIT;
+				 access_dev = READ_WRITE;
+				 access_bus = READ_WRITE;
+				 load = LOAD_EXT;
+			};
+			field {
+				 prefix = "SPI_CS_ADC";
+				 name = "SPI_CS_ADC";
+				 description = "GPIO controlling the state of the Chip Select line of the LTC2175 ADC on the ADC mezzanine";
+				 type = BIT;
+				 access_dev = READ_ONLY;
+				 access_bus = READ_WRITE;
+			};
+			field {
+				 prefix = "SPI_SCK";
+				 name = "SPI_SCK";
+				 description = "GPIO controlling the state of the SCK line of the LTC2175 ADC on the ADC mezzanine";
+				 type = BIT;
+				 access_dev = READ_ONLY;
+				 access_bus = READ_WRITE;
+			};
+			field {
+				 prefix = "SPI_MOSI";
+				 name = "SPI_MOSI";
+				 description = "GPIO controlling the state of the MOSI line of the LTC2175 ADC on the ADC mezzanine";
+				 type = BIT;
+				 access_dev = READ_ONLY;
+				 access_bus = READ_WRITE;
+			};
+			field {
+				 prefix = "SPI_MISO";
+				 name = "SPI_MISO";
+				 description = "GPIO with the state (input) of the MISO line of the LTC2175 ADC on the ADC mezzanine";
+				 type = BIT;
+				 access_dev = WRITE_ONLY;
+				 access_bus = READ_ONLY;
+			};
+	 };
+ 
 	 fifo_reg {
 			size = 1024; -- or more. We'll see :)
 			direction = CORE_TO_BUS;
@@ -62,104 +157,6 @@ peripheral {
 				 access_bus = READ_WRITE;
 				 clock = "clk_wr_i";
 			};
-	 };
-
-	 reg {
-			name = "GPIO Reg";
-			prefix = "GPIOR";
-			field {
-				 prefix = "SI57X_SCL";
-				 name = "SI57X_SCL";
-				 description = "GPIO controlling the state of the SCL line of the Silabs Si57p oscillator on the ADC mezzanine."; 
-				 type = BIT;
-				 access_dev = READ_WRITE;
-				 access_bus = READ_WRITE;
-				 load = LOAD_EXT;
-			};
-
-			field {
-				 prefix = "SI57X_SDA";
-				 name = "SI57X_SDA";
-				 description = "GPIO controlling the state of the SDA line of the Silabs Si57p oscillator on the ADC mezzanine."; 
-				 type = BIT;
-				 access_dev = READ_WRITE;
-				 access_bus = READ_WRITE;
-				 load = LOAD_EXT;
-			};
-
-			field {
-				 prefix = "SPI_CS_ADC";
-				 name = "SPI_CS_ADC";
-				 description = "GPIO controlling the state of the Chip Select line of the LTC2175 ADC on the ADC mezzanine";
-				 type = BIT;
-				 access_dev = READ_ONLY;
-				 access_bus = READ_WRITE;
-			};
-			
-			field {
-				 prefix = "SPI_SCK";
-				 name = "SPI_SCK";
-				 description = "GPIO controlling the state of the SCK line of the LTC2175 ADC on the ADC mezzanine";
-				 type = BIT;
-				 access_dev = READ_ONLY;
-				 access_bus = READ_WRITE;
-			};
-			
-			field {
-				 prefix = "SPI_MOSI";
-				 name = "SPI_MOSI";
-				 description = "GPIO controlling the state of the MOSI line of the LTC2175 ADC on the ADC mezzanine";
-				 type = BIT;
-				 access_dev = READ_ONLY;
-				 access_bus = READ_WRITE;
-			};
-
-			field {
-				 prefix = "SPI_MISO";
-				 name = "SPI_MISO";
-				 description = "GPIO with the state (input) of the MISO line of the LTC2175 ADC on the ADC mezzanine";
-
-				 type = BIT;
-				 access_dev = WRITE_ONLY;
-				 access_bus = READ_ONLY;
-			};
-
-			field {
-				 prefix = "TM_LOCK_EN";
-				 name = "TM_LOCK_EN";
-				 description = "write 1: enable locking of the ADC clock to WR. Enable only after Si57x has been initialized.";
-
-				 type = BIT;
-				 access_dev = READ_ONLY;
-				 access_bus = READ_WRITE;
-			};
-			field {
-				 prefix = "TM_LOCKED";
-				 name = "TM_LOCKED";
-				 description = "When 1, the ADC clock is locked to WR.";
-
-				 type = BIT;
-				 access_dev = WRITE_ONLY;
-				 access_bus = READ_ONLY;
-			};
-			field {
-				 prefix = "TM_TIME_VALID";
-				 name = "TM_TIME_VALID";
-				 description = "when 1, the WR Core is synchronized with the WR network";
-				 type = BIT;
-				 access_dev = WRITE_ONLY;
-				 access_bus = READ_ONLY;
-			};
-      field {
-				 prefix = "TM_LINK";
-				 name = "TM_LINK";
-				 description = "when 1, WR link is up";
-				 type = BIT;
-				 access_dev = WRITE_ONLY;
-				 access_bus = READ_ONLY;
-			};
-
-			
 	 };
 
 	 reg {
