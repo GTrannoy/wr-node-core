@@ -21,6 +21,45 @@ peripheral {
       };
    };
 
+   reg {
+			prefix = "TCR";
+			name = "Time Control Register";
+      
+      field {
+				 prefix = "WR_LOCK_EN";
+				 name = "WR Lock Enable";
+				 description = "write 1: enable locking of the ADC clock to WR. Enable only after Si57x has been initialized.";
+
+				 type = BIT;
+				 access_dev = READ_ONLY;
+				 access_bus = READ_WRITE;
+			};
+			field {
+				 prefix = "WR_LOCKED";
+				 name = "WR Locked";
+				 description = "When 1, the ADC clock is locked to WR.";
+
+				 type = BIT;
+				 access_dev = WRITE_ONLY;
+				 access_bus = READ_ONLY;
+			};
+			field {
+				 prefix = "WR Time Valid";
+				 name = "WR_TIME_VALID";
+				 description = "when 1, the WR Core is synchronized with the WR network";
+				 type = BIT;
+				 access_dev = WRITE_ONLY;
+				 access_bus = READ_ONLY;
+			};
+      field {
+				 prefix = "WR_LINK";
+				 name = "WR Link";
+				 description = "when 1, WR link is up";
+				 type = BIT;
+				 access_dev = WRITE_ONLY;
+				 access_bus = READ_ONLY;
+			};
+   };
 
    reg {
       prefix = "GPIOR";
