@@ -130,8 +130,6 @@ entity svec_top is
     pll20dac_din_o    : out std_logic;
     pll20dac_sclk_o   : out std_logic;
     pll20dac_sync_n_o : out std_logic;
-    -- Signals controlling the DAC AD5662
-	-- which feeds the VCO which feeds the AD9516
 	 pll25dac_din_o    : out std_logic;
     pll25dac_sclk_o   : out std_logic;
     pll25dac_sync_n_o : out std_logic;
@@ -326,7 +324,7 @@ architecture rtl of svec_top is
   port (
 		 rst_n_sys_i       : in std_logic;
 		 clk_sys_i         : in std_logic;
-		 clk_125m_pllref_i : in std_logic;
+--		 clk_125m_pllref_i : in std_logic;
 		 clk_wr_o          : out std_logic;
 		 tm_link_up_i      : in std_logic;
 		 tm_time_valid_i      : in  std_logic;
@@ -625,7 +623,7 @@ begin
       fmc0_dp_wb_o         => fmc_dp_wb_out(0),
       fmc0_dp_wb_i         => fmc_dp_wb_in(0),
       
---      fmc1_clk_aux_i       => fmc1_clk_wr,
+      fmc1_clk_aux_i       => fmc1_clk_wr,
       fmc1_host_wb_o       => fmc_host_wb_out(1),
       fmc1_host_wb_i       => fmc_host_wb_in(1),
       fmc1_host_irq_i      => fmc_host_irq(1),
@@ -714,7 +712,7 @@ begin
 		 rst_n_sys_i         => rst_n,
 		 clk_sys_i           => clk_sys,
 		 clk_wr_o            => fmc1_clk_wr,
-		 clk_125m_pllref_i   => clk_125m_pllref,
+--		 clk_125m_pllref_i   => clk_125m_pllref,
 		 
 		 tm_link_up_i         => tm_link_up,
 		 tm_tai_i             => tm_tai,
@@ -725,7 +723,12 @@ begin
 		 
          tm_dac_value_i       => tm_dac_value,
          tm_dac_wr_i          => tm_dac_wr(1),
- 
+       
+		 -- WR mezzanine DAC
+       wr_dac_sclk_o        => fmc1_wr_dac_sclk_o,
+       wr_dac_din_o         => fmc1_wr_dac_din_o,
+       wr_dac_sync_n_o      => fmc1_wr_dac_sync_n_o,
+	 
 		 wr_ref_clk_n_i       => fmc1_wr_ref_clk_n_i,
 		 wr_ref_clk_p_i       => fmc1_wr_ref_clk_p_i,
 		 
