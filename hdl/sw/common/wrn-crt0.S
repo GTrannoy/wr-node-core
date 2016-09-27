@@ -102,6 +102,21 @@ _reset_handler:
     calli   _crt0
     nop
         .size	_reset_handler, .-_reset_handler
+
+.org 0x80
+
+_data_bus_error_handler:
+  mvi r1, 4
+  bi _exception_entry
+
+.org 0xa0
+_divide_by_zero_error_handler:
+  mvi r1, 5
+  bi _exception_entry
+
+.weak _exception_entry
+_exception_entry:
+  bi _exception_entry
 	
 .extern _irq_entry
 .org 0xc0

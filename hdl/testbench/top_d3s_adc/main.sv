@@ -42,6 +42,10 @@ module main;
 
    always@(posedge clk_62m5)
      clk_acam <= ~clk_acam;
+
+   reg adc_dco = 0;
+   
+   always #1ns adc_dco <= ~adc_dco;
    
    
    svec_top #(
@@ -52,6 +56,10 @@ module main;
 		     .clk_125m_pllref_n_i(~clk_125m),
 		     .clk_125m_gtp_p_i(clk_125m),
 		     .clk_125m_gtp_n_i(~clk_125m),
+
+		     .adc0_dco_p_i(adc_dco),
+		     .adc0_dco_n_i(~adc_dco),
+		     
 
 //		     .fmc0_wr_ref_clk_p_i(clk_125m),
 //		     .fmc0_wr_ref_clk_n_i(~clk_125m),

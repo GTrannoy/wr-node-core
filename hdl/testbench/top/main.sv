@@ -66,10 +66,10 @@ module main;
       host_acc.write(`MQUEUE_GCR_IRQ_MASK, 'hffff);
       
       cpu_csr.init();
-
+      cpu_csr.reset_core(0, 1);
       cpu_csr.load_firmware (0, "../../sw/debug-test/debug-test.ram");
       cpu_csr.reset_core(0, 0);
-
+      
 /* -----\/----- EXCLUDED -----\/-----
       cpu_csr.load_firmware (1, "../../sw/debug-test/debug-test.ram");
       cpu_csr.reset_core(1, 0);
@@ -79,14 +79,12 @@ module main;
 
       $display("CPU0 started\n");
       
-/* -----\/----- EXCLUDED -----\/-----
       forever begin
 	 cpu_csr.update();
 
 	 @(posedge clk_sys);
 	 
       end
- -----/\----- EXCLUDED -----/\----- */
            
 
 /* -----\/----- EXCLUDED -----\/-----
@@ -134,7 +132,7 @@ module main;
       $display("smem-read: %x", rv);
  -----/\----- EXCLUDED -----/\----- */
       
-      $error("Loop");
+//      $error("Loop");
       
       
       forever begin
