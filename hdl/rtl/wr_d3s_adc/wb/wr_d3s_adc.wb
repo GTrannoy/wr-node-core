@@ -29,8 +29,8 @@ peripheral {
 				 access_bus = READ_ONLY;
 			};
 			field {
-				 prefix = "WR Time Valid";
-				 name = "WR_TIME_VALID";
+				 prefix = "WR_TIME_VALID";
+         name = "WR Time Valid";
 				 description = "when 1, the WR Core is synchronized with the WR network";
 				 type = BIT;
 				 access_dev = WRITE_ONLY;

@@ -13,13 +13,13 @@ use UNISIM.vcomponents.all;
 entity wr_d3s_adc_slave is
   port (
     rst_n_sys_i   : in std_logic;
-	clk_sys_i     : in std_logic;
+	 clk_sys_i     : in std_logic;
     clk_wr_o : out std_logic;
-    clk_125m_pllref_i : in std_logic;
+--    clk_125m_pllref_i : in std_logic;
 
     -- Timing (WRC)
     tm_link_up_i         : in  std_logic;
-	tm_time_valid_i      : in  std_logic;
+	 tm_time_valid_i      : in  std_logic;
     tm_tai_i             : in  std_logic_vector(39 downto 0);
     tm_cycles_i          : in  std_logic_vector(27 downto 0);
     tm_clk_aux_lock_en_o : out std_logic;
@@ -74,7 +74,7 @@ architecture rtl of wr_d3s_adc_slave is
     port (
       rst_n_i    : in  std_logic;
       clk_sys_i  : in  std_logic;
-      wb_adr_i   : in  std_logic_vector(2 downto 0);
+      wb_adr_i   : in  std_logic_vector(3 downto 0);
       wb_dat_i   : in  std_logic_vector(31 downto 0);
       wb_dat_o   : out std_logic_vector(31 downto 0);
       wb_cyc_i   : in  std_logic;
@@ -240,7 +240,7 @@ begin
       CLKOUT1_DIVIDE     => 8,          -- 125 MHz
       CLKOUT1_PHASE      => 0.000,
       CLKOUT1_DUTY_CYCLE => 0.500,
-      CLKOUT2_DIVIDE     => 6,          -- 200 MHz
+      CLKOUT2_DIVIDE     => 6,          -- 166 MHz
       CLKOUT2_PHASE      => 0.000,
       CLKOUT2_DUTY_CYCLE => 0.500,
       CLKIN_PERIOD       => 8.0,
@@ -256,7 +256,7 @@ begin
       LOCKED   => clk_dds_locked,
       RST      => fpll_reset,
       CLKFBIN  => pllout_clk_fb_pllref,
-      CLKIN    => clk_wr_ref_pllin);
+      CLKIN    => clk_wr_ref_pllin);  
 
 
   cmp_dds_ref_buf : BUFG
@@ -295,7 +295,7 @@ begin
     port map (
       rst_n_i    => rst_n_sys_i,
       clk_sys_i  => clk_sys_i,
-      wb_adr_i   => slave_i.adr(4 downto 2),   -- cnx_out(c_ADC_slave).adr(4 downto 2),
+      wb_adr_i   => slave_i.adr(5 downto 2),   -- cnx_out(c_ADC_slave).adr(4 downto 2),
       wb_dat_i   => slave_i.dat,               --cnx_out(c_ADC_slave).dat,
       wb_dat_o   => slave_o.dat,               --cnx_in(c_ADC_slave).dat,
       wb_cyc_i   => slave_i.cyc,                --cnx_out(c_ADC_slave).cyc,
@@ -412,6 +412,13 @@ begin
   
    pll_sdio_b <= pll_sdio_val when regs_out.gpior_pll_sdio_dir_o = '1' else 'Z';
 	
+	-- Driving timing signals
+	regs_in.tcr_wr_link_i       <= tm_link_up_i;
+   regs_in.tcr_wr_time_valid_i <= tm_time_valid_i;
+   regs_in.tcr_wr_locked_i     <= tm_clk_aux_locked_i;
+
+   tm_clk_aux_lock_en_o <= regs_out.tcr_wr_lock_en_o;
 	
+	clk_wr_o   <= clk_wr;
 	
 end rtl;

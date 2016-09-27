@@ -278,11 +278,11 @@ begin
       master_i   => cnx_in,
       master_o   => cnx_out);
 
-  regs_in.gpior_tm_link_i       <= tm_link_up_i;
-  regs_in.gpior_tm_time_valid_i <= tm_time_valid_i;
-  regs_in.gpior_tm_locked_i     <= tm_clk_aux_locked_i;
+  regs_in.tcr_wr_link_i       <= tm_link_up_i;
+  regs_in.tcr_wr_time_valid_i <= tm_time_valid_i;
+  regs_in.tcr_wr_locked_i     <= tm_clk_aux_locked_i;
 
-  tm_clk_aux_lock_en_o <= regs_out.gpior_tm_lock_en_o;
+  tm_clk_aux_lock_en_o <= regs_out.tcr_wr_lock_en_o;
 
   regs_in.gpior_si57x_scl_i <= si570_scl_b;
   regs_in.gpior_si57x_sda_i <= si570_sda_b;
