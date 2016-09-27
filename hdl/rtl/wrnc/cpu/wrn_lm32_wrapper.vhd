@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2016-02-03
+-- Last update: 2016-09-27
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -49,6 +49,7 @@ entity wrn_lm32_wrapper is
   generic(
     g_iram_size         : integer;
     g_cpu_id            : integer;
+    g_bus_timeout       : integer := 30;
     g_double_core_clock : boolean
     );
 
@@ -77,16 +78,19 @@ architecture wrapper of wrn_lm32_wrapper is
 
     port (
       clk_i     : in std_logic;
+      enable_i  : in std_logic                     := '1';
 --      clk_wb_i  : in std_logic;
       rst_i     : in std_logic;
       interrupt : in std_logic_vector(31 downto 0) := x"00000000";
 
-      --jtag_clk        : in  std_logic;
-      --jtag_update     : in  std_logic;
-      --jtag_reg_q      : in std_logic_vector(7 downto 0);
-      --jtag_reg_addr_q : in std_logic_vector(2 downto 0);
-      --jtag_reg_d      : out  std_logic_vector(7 downto 0);
-      --jtag_reg_addr_d : out  std_logic_vector (2 downto 0);
+      dbg_csr_write_enable_i : in std_logic                     := '0';
+      dbg_csr_write_data_i   : in std_logic_vector(31 downto 0) := x"00000000";
+      dbg_csr_addr_i         : in std_logic_vector(4 downto 0)  := "00000";
+
+      dbg_exception_o : out std_logic;
+      dbg_reset_i     : in  std_logic := '0';
+      dbg_break_i     : in  std_logic := '0';
+
 
       iram_i_adr_o : out std_logic_vector(31 downto 0);
       iram_i_dat_i : in  std_logic_vector(31 downto 0);
@@ -97,6 +101,13 @@ architecture wrapper of wrn_lm32_wrapper is
       iram_d_sel_o : out std_logic_vector(3 downto 0);
       iram_d_we_o  : out std_logic;
       iram_d_en_o  : out std_logic;
+
+      --trace_pc : out std_logic_vector(31 downto 0);
+      --trace_pc_valid : out std_logic;
+      --trace_exception : out std_logic;
+      --trace_eid : out std_logic_vector(2 downto 0);
+      --trace_eret : out std_logic;
+      --trace_bret : out std_logic;
 
       D_DAT_O : out std_logic_vector(31 downto 0);
       D_ADR_O : out std_logic_vector(31 downto 0);
@@ -195,7 +206,7 @@ architecture wrapper of wrn_lm32_wrapper is
   signal iram_bwe                          : std_logic_vector(3 downto 0);
 
   signal dwb_out : t_wishbone_master_out;
-  
+
   component chipscope_ila
     port (
       CONTROL : inout std_logic_vector(35 downto 0);
@@ -217,7 +228,9 @@ architecture wrapper of wrn_lm32_wrapper is
   signal TRIG1   : std_logic_vector(31 downto 0);
   signal TRIG2   : std_logic_vector(31 downto 0);
   signal TRIG3   : std_logic_vector(31 downto 0);
-  
+
+  signal bus_timeout : unsigned(7 downto 0);
+  signal bus_timeout_hit : std_logic;
 begin
 
 
@@ -396,18 +409,18 @@ begin
         D_RTY_I => cpu_dwb_in.rty);
 
 
-    --chipscope_ila_1 : chipscope_ila
-    --  port map (
-    --    CONTROL => CONTROL,
-    --    CLK     => clk_sys_i,
-    --    TRIG0   => TRIG0,
-    --    TRIG1   => TRIG1,
-    --    TRIG2   => TRIG2,
-    --    TRIG3   => TRIG3);
+--    chipscope_ila_1 : chipscope_ila
+--      port map (
+--        CONTROL => CONTROL,
+--        CLK     => clk_sys_i,
+--        TRIG0   => TRIG0,
+--        TRIG1   => TRIG1,
+--        TRIG2   => TRIG2,
+--        TRIG3   => TRIG3);
 
-    --chipscope_icon_1 : chipscope_icon
-    --  port map (
-    --    CONTROL0 => CONTROL);
+--    chipscope_icon_1 : chipscope_icon
+--      port map (
+--        CONTROL0 => CONTROL);
 
     trig0(0)  <= cpu_reset;
     trig0(1)  <= iram_i_en_cpu;
@@ -427,9 +440,27 @@ begin
     trig2     <= iram_d_adr;
 
 
+    cpu_dwb_in.ack   <= cpu_dwb_in_sys.ack;
+    cpu_dwb_in.stall <= cpu_dwb_in_sys.stall;
+    cpu_dwb_in.rty   <= '0';
+    cpu_dwb_in.err   <= bus_timeout_hit or cpu_dwb_in_sys.err;
 
-    cpu_dwb_in      <= cpu_dwb_in_sys;
     cpu_dwb_out_sys <= cpu_dwb_out;
+
+    p_timeout_counter : process(clk_sys_i)
+    begin
+      if rising_edge(clk_sys_i) then
+        if cpu_reset = '1' or cpu_dwb_out.cyc = '0' or (cpu_dwb_in.ack = '1' and cpu_dwb_out.cyc = '1') then
+          bus_timeout     <= (others => '0');
+          bus_timeout_hit <= '0';
+        elsif (bus_timeout /= g_bus_timeout) then
+          bus_timeout     <= bus_timeout + 1;
+          bus_timeout_hit <= '0';
+        else
+          bus_timeout_hit <= '1';
+        end if;
+      end if;
+    end process;
 
     gen_iram_blocks : for i in 0 to 3 generate
       
@@ -493,7 +524,7 @@ begin
       master_o  => dwb_out);
 
   dwb_o <= dwb_out;
-  
+
   core_sel_match <= '1' when unsigned(cpu_csr_i.core_sel_o) = g_cpu_id else '0';
 
   cpu_reset   <= not rst_n_i or (cpu_csr_i.reset_o(g_cpu_id) and not dwb_out.cyc);
