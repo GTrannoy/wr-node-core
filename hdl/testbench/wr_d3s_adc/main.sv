@@ -424,7 +424,7 @@ endclass // Decompressor
    initial begin
       uint64_t rv;
       CBusAccessor acc = Host1.get_accessor();
-      int max_error_deg = 3;
+      int max_error_deg = 0;
       int max_err = (1<<(9+14))  * max_error_deg / 360;
       
       
@@ -448,8 +448,12 @@ endclass // Decompressor
 	   
 	   
 	   acc.read(`ADDR_D3S_ADC_CSR, rv);
+	   $display("CSR %x", rv);
 
-	   if(!(rv & `D3S_ADC_CSR_EMPTY)) begin
+	   #10us;
+	   
+	   
+	 /*  if(!(rv & `D3S_ADC_CSR_EMPTY)) begin
 	      phase_rl_record_t  rec;
 	      
 	      acc.read(`ADDR_D3S_ADC_R0, r0);
@@ -473,7 +477,7 @@ endclass // Decompressor
 	      
 	      
   
-	   end
+	   end*/
 	   
 	end
       
@@ -543,7 +547,7 @@ endclass // Decompressor
 	   
 	   end
 
-	$display("MaxErr %d %.3f [%d/%d samples, %d records]\n", max_err, real'(max_err)/real'(1<<23), ph_unc.samples.size(), ph_rec.samples.size(), compr_records.size());
+	$display("MaxErr %d %.3f deg [%d/%d samples, %d records]\n", max_err, real'(max_err)/real'(1<<23) * 360.0, ph_unc.samples.size(), ph_rec.samples.size(), compr_records.size());
 	
 	
    end

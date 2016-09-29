@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2016-09-27
+-- Last update: 2016-09-29
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -409,18 +409,18 @@ begin
         D_RTY_I => cpu_dwb_in.rty);
 
 
---    chipscope_ila_1 : chipscope_ila
---      port map (
---        CONTROL => CONTROL,
---        CLK     => clk_sys_i,
---        TRIG0   => TRIG0,
---        TRIG1   => TRIG1,
---        TRIG2   => TRIG2,
---        TRIG3   => TRIG3);
+    chipscope_ila_1 : chipscope_ila
+      port map (
+        CONTROL => CONTROL,
+        CLK     => clk_sys_i,
+        TRIG0   => TRIG0,
+        TRIG1   => TRIG1,
+        TRIG2   => TRIG2,
+        TRIG3   => TRIG3);
 
---    chipscope_icon_1 : chipscope_icon
---      port map (
---        CONTROL0 => CONTROL);
+    chipscope_icon_1 : chipscope_icon
+      port map (
+        CONTROL0 => CONTROL);
 
     trig0(0)  <= cpu_reset;
     trig0(1)  <= iram_i_en_cpu;
@@ -435,11 +435,11 @@ begin
     trig0(10) <= dwb_i.err;
     trig0(11) <= dwb_i.rty;
     trig0(12) <= dwb_i.stall;
-    trig3     <= cpu_dwb_out.adr;
-    trig1     <= iram_i_adr_cpu;
-    trig2     <= iram_d_adr;
+    trig0(13) <= iram_i_en;
+    trig0(14) <= iram_i_wr;
 
 
+    cpu_dwb_in.dat <= cpu_dwb_in_sys.dat;
     cpu_dwb_in.ack   <= cpu_dwb_in_sys.ack;
     cpu_dwb_in.stall <= cpu_dwb_in_sys.stall;
     cpu_dwb_in.rty   <= '0';

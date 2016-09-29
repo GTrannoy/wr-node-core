@@ -120,21 +120,32 @@ module main;
       MQueueHost hmq;
       uint64_t d;
       
-      #100us;
-
+      #50us;
+      
       init_vme64x_core(acc);
       acc_casted.set_default_xfer_size(A24|SINGLE|D32);
 
-      #150us;
+
+      cpu_csr = new ( acc, 'hc2c000 );
       
+      cpu_csr.init();
+      cpu_csr.reset_core(0, 1);
+      cpu_csr.load_firmware (0, "../../sw/debug-test/debug-test.ram");
+      cpu_csr.reset_core(0, 0);
 
-      acc.write('hc11000 + 0, 'h10000000); // RFREQL
-      acc.write('hc11000 + 'h4, 'h0); // RFREQH
+//      acc.write('hc11000 + 0, 'h10000000); // RFREQL
+  //    acc.write('hc11000 + 'h4, 'h0); // RFREQH
 
-      acc.write('hc60200 + 'h24, (0 | (1<<16)));
+    //  acc.write('hc60200 + 'h24, (0 | (1<<16)));
 		
       
-      
+       
+      forever begin
+	 cpu_csr.update();
+
+	 #1us;
+	 
+      end
       
       #150us;
 

@@ -107,6 +107,7 @@ peripheral {
 			direction = CORE_TO_BUS;
 			prefix = "adc";
 			name = "ADC Data FIFO";
+			clock = "clk_wr_i";
 
 			description = "FIFO with the compressed phase entries. Each entry contains a timestamp and one of two record types:\
 - Initial phase (IS_RL = 0): RL_PHASE contains a fixed initial phase value, RL_LENGTH is ignored.\

@@ -30,8 +30,8 @@ uint32_t _lm32_read_err_addr()
 void _exception_entry(int eid)
 {
   
-  pp_printf("Fatal exception %d at PC = 0x%x.\n", eid, _lm32_read_ea() );
-  pp_printf("Offending memory address = 0x%x.\n",  _lm32_read_err_addr() );
+//  pp_printf("Fatal exception %d at PC = 0x%x.\n", eid, _lm32_read_ea() );
+//  pp_printf("Offending memory address = 0x%x.\n",  _lm32_read_err_addr() );
 
   for(;;);
 }
@@ -40,35 +40,36 @@ main()
 {   
   volatile int n = 0;
 
-    
-
-
-      puts("Test\n");
- n = n / 0;
-  
-   
-//  volatile int q = *(volatile int *)(0x100000); //lr_readl(0);
-
-  pp_printf("Hello, world %d\n\r", n++);
-
-//  *(volatile int *)(0xdeadbeef) = 0xfff;
-  for(;;);
+  puts("TEst\n");
   for(;;)
   {
-    volatile int x = mq_poll();
-
+//    dp_writel(1, 0x1008);
+    volatile int x = dp_readl(0x1008);
+    puts("read\n");
   }
-/*  volatile uint32_t *msg = mq_map_out_buffer(0, 0);
-  mq_claim(0, 0);
-  msg[0] = 1;
-  mq_enqueue(0, 0, 1);
-  mq_claim(0, 0);
-  msg[0] = 2;
-  mq_enqueue(0, 0, 1);
-  mq_claim(0, 0);
-  msg[0] = 3;
-  mq_enqueue(0, 0, 1);
-  mq_commit(0, 0);*/
+#if 0
+  asm volatile("nop\nnop\nnop");
+
+    if(x&1)
+      puts("1 ");
+    else
+      puts("0 ");
+
+  asm volatile("nop\nnop\nnop");
+
+/*    dp_writel(1, 0x100c);
+    x = dp_readl(0x1008);
+    if(x&1)
+      puts("1 "); 
+    else
+      puts("0 ");
+
+    puts(" \n");
+
+    dp_writel(2, 0x1008);
+    dp_writel(2, 0x100c);*/
+  }
+#endif
 
   for(;;);
 

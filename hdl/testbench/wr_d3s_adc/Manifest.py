@@ -11,5 +11,5 @@ vcom_opt="-mixedsvvh l -2008"
 
 files = [ "main.sv" ]
 
-modules = { "local" :  [ "../../rtl", "../../ip_cores/serdes-tdc" ] }
+modules = { "local" :  [ "../../rtl" ] }
 
