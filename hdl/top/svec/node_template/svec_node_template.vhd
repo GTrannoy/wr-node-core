@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2016-05-02
+-- Last update: 2016-09-29
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -91,7 +91,9 @@ entity svec_node_template is
 -- Use external LEDs. When true, the front panel LEDs on the SVEC are
 -- driven by the "led_state_i" signal. Otherwise, they display the default
 -- board status (WR Link, timing, etc.)
-    g_use_external_fp_leds: boolean := false
+    g_use_external_fp_leds: boolean := false;
+
+    g_wr_node_cpu_arch : string := "LM32"
     
     );
 
@@ -813,7 +815,8 @@ begin
   U_WR_Node : wr_node_core_with_etherbone
     generic map (
       g_config => g_wr_node_config,
-      g_double_core_clock => g_double_wrnode_core_clock )
+      g_double_core_clock => g_double_wrnode_core_clock,
+      g_cpu_arch => g_wr_node_cpu_arch)
     port map (
       clk_i          => clk_sys,
       clk_cpu_i      => clk_cpu,

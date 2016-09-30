@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-07-30
+-- Last update: 2016-09-29
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -400,7 +400,8 @@ begin
       g_with_wr_phy              => true,
       g_double_wrnode_core_clock => false,
       g_with_white_rabbit        => true,      
-      g_wr_node_config           => c_node_config)
+      g_wr_node_config           => c_node_config,
+      g_wr_node_cpu_arch => "URV")
     port map (
       rst_n_a_i           => rst_n_a_i,
       rst_n_sys_o         => rst_n,
@@ -486,9 +487,9 @@ begin
       tm_clk_aux_locked_o  => tm_clk_aux_locked,
       tm_time_valid_o      => tm_time_valid,
       tm_tai_o             => tm_tai,
-      tm_cycles_o          => tm_cycles,
-      carrier_scl_b        => carrier_scl_b,
-      carrier_sda_b        => carrier_sda_b);
+      tm_cycles_o          => tm_cycles );
+--      carrier_scl_b        => carrier_scl_b,
+--      carrier_sda_b        => carrier_sda_b);
 
 
   U_TDC_Core : fmc_tdc_wrapper
