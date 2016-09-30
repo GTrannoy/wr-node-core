@@ -41,11 +41,12 @@ main()
   volatile int n = 0;
 
   puts("TEst\n");
+  int i =0;
   for(;;)
   {
 //    dp_writel(1, 0x1008);
-    volatile int x = dp_readl(0x1008);
-    puts("read\n");
+    pp_printf("hello %d\n", i);
+    i++;
   }
 #if 0
   asm volatile("nop\nnop\nnop");

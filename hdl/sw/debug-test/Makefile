@@ -1,3 +1,4 @@
+CPU=urv
 OBJS = debug-test.o
 OUTPUT = debug-test
 
