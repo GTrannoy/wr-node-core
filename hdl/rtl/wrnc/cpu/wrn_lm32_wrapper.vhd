@@ -440,6 +440,7 @@ begin
     trig2     <= iram_d_adr;
 
 
+    cpu_dwb_in.dat <= cpu_dwb_in_sys.dat;
     cpu_dwb_in.ack   <= cpu_dwb_in_sys.ack;
     cpu_dwb_in.stall <= cpu_dwb_in_sys.stall;
     cpu_dwb_in.rty   <= '0';
