@@ -5,16 +5,6 @@
 `include "svec_vme_buffers.svh"
 
 
-   /*
-   initial begin
-    
-         
-         
-     */ 
-      
-         
-   
-
 module main;
 
    reg rst_n = 0;

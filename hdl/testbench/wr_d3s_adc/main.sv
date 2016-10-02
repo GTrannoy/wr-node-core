@@ -4,17 +4,17 @@ import wishbone_pkg::*;
 import wr_node_pkg::*;
 
 `include "vhd_wishbone_master.svh"
-
 `include "d3s_acq_buffer_wb.vh"
 `include "wr_d3s_adc.vh"
 `include "wr_d3s_adc_slave.vh"
 
 // from ADC to raw_phase : 3262ns
 
+// Generates a modulated RF sinewave
 class RFGenerator;
 
    real sample_freq;
-  int lp_ratio;
+   int lp_ratio;
    real lp_sample_freq;
    real lp_sample_period;
    real tune_start;
@@ -132,210 +132,7 @@ class RFGenerator;
    endfunction // y_under_sample
    
 
-      
-
-
-      
-   
 endclass // RFGenerator
-
-
-
-module main;
-
-   reg rst_n = 0;
-   reg clk_dac = 0;
-   
-   reg clk_sys = 0;
-   reg clk_wr =0, clk_wr_2x = 0;
-
-   reg frev_in = 0;
-
-   parameter g_h_divider = 2000;
-   parameter g_delay_us = 300;
-   
-
-   
-   always #1ns clk_dac <= ~clk_dac; // 500 MHz DAC clock
-   
-   always@(posedge clk_dac)
-     clk_wr_2x <= ~clk_wr_2x;
-
-   always@(posedge clk_wr_2x)
-     clk_wr <= ~clk_wr;
-
-   always@(posedge clk_wr)
-     clk_sys <= ~clk_sys;
-
-   initial begin
-      repeat(20) @(posedge clk_sys);
-      rst_n = 1;
-   end
-
-   IVHDWishboneMaster Host1 ( clk_sys, rst_n );
-   IVHDWishboneMaster Host2 ( clk_sys, rst_n );
-
-   reg [39:0]  tm_tai = 100;
-   reg [31:0]  tm_nsec = 0;
-   
-   // 1GHz nsec counter
-   always@(posedge clk_dac or negedge clk_dac) begin
-      if(tm_nsec == 1000000000-1) begin
-	 tm_tai <= tm_tai + 1;
-	 tm_nsec <= 0;
-      end      else
-	tm_nsec <= tm_nsec + 1;
-   end
-
-
-   RFGenerator gen = new;
-
-   reg clk_adc = 0;
-   reg clk_samp = 0;
-   
-   always #1ns clk_adc <= ~clk_adc;
-
-   real t = 0;
-
-   reg [13:0] sine;
-   
-
-   int samples[$];
-   int pos = 0;
-
-   real sine_in, sine_in_d0;
-   
-   reg 	clk_rf = 0;
-   
-
-   real a_rf = 0;
-   
-   
-   initial forever begin
-      a_rf <= gen.y_sign();
-      
-      sine_in <= gen.y();
-      sine_in_d0 <= sine_in;
-      if(sine_in_d0 < 0 && sine_in >= 0)
-	clk_rf <= 1;
-      else if (sine_in_d0 >=0 && sine_in < 0)
-	clk_rf <= 0;
-      
-      #100ps;
-   end
-   
-
-   // produce the fake fRev
-
-   int frev_count = 0;
-
-   always@(posedge clk_rf) begin
-      if (frev_count == g_h_divider - 1)
-	begin
-	   frev_count <= 0;
-	   frev_in <= 1;
-	end else begin
-	   frev_count <= frev_count + 1;
-	   frev_in <= 0;
-	end
-   end
-   
-   
-   real y_under;
-   
-   
-   
-   always@(posedge clk_wr)
-    begin
-	y_under = gen.y_under_sample();
-	
-	sine <= int'(2000.0*y_under);
-     end
-
-
-   
-   reg [31:0] frev_ts_ns;
-   reg [31:0] frev_ts_tai;
-   
-   reg frev_ts_valid = 0; 
-
-
-   always@(posedge frev_in)
-     begin
-	frev_ts_ns <= tm_nsec;
-	frev_ts_tai <= tm_tai;
-
-	@(posedge clk_wr);
-	frev_ts_valid <= 1;
-	@(posedge clk_wr);
-	frev_ts_valid <= 0;
-	@(posedge clk_wr);
-	
-     end
-   
-   
-   
-   wr_d3s_adc
-     
-     #(
-.g_use_fake_data(1)
-       )
-DUT (
-	  .rst_n_sys_i(rst_n),
-	  .clk_sys_i (clk_wr),
-	  .adc_dco_p_i(clk_adc),
-	  .adc_dco_n_i(~clk_adc),
-     .tm_cycles_i(tm_nsec[30:3]),
-	  .fake_data_i(sine),
-
-	  .slave_i(Host1.master.out),
-	  .slave_o(Host1.master.in)
-
- 
-     );
-
-
-   wr_d3s_adc_slave
-      
-     DUT_S (
-	    .rst_n_sys_i(rst_n),
-	    .clk_sys_i (clk_wr),
-
-	    .tm_time_valid_i(1'b1),
-	    .tm_tai_i(tm_tai),
-	    .tm_cycles_i(tm_nsec[30:3]),
-     
-	    .wr_ref_clk_p_i (clk_wr),
-	    .wr_ref_clk_n_i (~clk_wr),
-
-	    .slave_i(Host2.master.out),
-	    .slave_o(Host2.master.in)
-
-     
-	    );
-
-/* -----\/----- EXCLUDED -----\/-----
-
-   d3s_upsample_divide DUT2
-     (
-      .clk_i(clk_wr),
-      .rst_n_sys_i(rst_n),
-      .phase_i (DUT.raw_phase[13:0]),
-
-      .frev_ts_tai_i(frev_ts_tai),
-      .frev_ts_nsec_i(frev_ts_ns),
-      .frev_ts_valid_i(frev_ts_valid),
-
-      .tm_time_valid_i(1'b1),
-      .tm_tai_i(tm_tai),
-      .tm_cycles_i(tm_nsec[30:3])
-      );
- -----/\----- EXCLUDED -----/\----- */
-   
-     
-  
-
-     
 
    typedef struct {
       bit 	  is_rl;
@@ -398,62 +195,215 @@ class PhaseData;
    
    
 endclass // Decompressor
+
+
+module main;
+
+   reg rst_n = 0;
+   reg clk_adc = 0;
+   reg clk_sys = 0;
+   reg clk_wr =0, clk_wr_2x = 0;
+
+   reg frev_in = 0;
+
+   parameter g_h_divider = 2000;
+   parameter g_delay_us = 300;
+
    
+   always #1ns clk_adc <= ~clk_adc; // 500 MHz ADC/DAC clock
    
-   task automatic uncompress ( ref phase_rl_record_t rec, ref out_samples[$] );
+   always@(posedge clk_adc)
+     clk_wr_2x <= ~clk_wr_2x;
+
+   always@(posedge clk_wr_2x)
+     clk_wr <= ~clk_wr;
+
+   always@(posedge clk_wr)
+     clk_sys <= ~clk_sys;
+
+   initial begin
+      repeat(20) @(posedge clk_sys);
+      rst_n = 1;
+   end
+
+   IVHDWishboneMaster Host1 ( clk_sys, rst_n );
+   IVHDWishboneMaster Host2 ( clk_sys, rst_n );
+
+   reg [39:0]  tm_tai = 100;
+   reg [31:0]  tm_nsec = 0;
+   
+   // 1GHz nsec counter
+   always@(posedge clk_adc or negedge clk_adc) begin
+      if(tm_nsec == 1000000000-1) begin
+	 tm_tai <= tm_tai + 1;
+	 tm_nsec <= 0;
+      end      else
+	tm_nsec <= tm_nsec + 1;
+   end
+
+   RFGenerator gen = new;
+
+
+   reg [13:0] sine;
+   
+
+//   int samples[$];
+   int pos = 0;
+
+   real sine_in, sine_in_d0;
+   
+   reg 	clk_rf = 0;
+   
+
+   real a_rf = 0;
+   
+
+   // produce a pseudo-analog ( 10GHz sampling freq)  RF signal  for display purposes and to fake the square RF clock
+   
+    initial forever begin
+      a_rf <= gen.y_sign();
       
-   endtask // uncompress
+      sine_in <= gen.y();
+      sine_in_d0 <= sine_in;
+      if(sine_in_d0 < 0 && sine_in >= 0)
+	clk_rf <= 1;
+      else if (sine_in_d0 >=0 && sine_in < 0)
+	clk_rf <= 0;
+      
+      #100ps;
+   end
+   
+
+   // produce the fake fRev
+
+   int frev_count = 0;
+
+   always@(posedge clk_rf) begin
+      if (frev_count == g_h_divider - 1)
+	begin
+	   frev_count <= 0;
+	   frev_in <= 1;
+	end else begin
+	   frev_count <= frev_count + 1;
+	   frev_in <= 0;
+	end
+   end
+   
+   
+   real y_under;
+   
+   // produce the undersampled clock for the WR-DDS Master (ADC Input)
+   always@(posedge clk_wr)
+    begin
+	y_under = gen.y_under_sample();
+	sine <= int'(2000.0*y_under);
+     end
+
+
+   
+   reg [31:0] frev_ts_ns;
+   reg [31:0] frev_ts_tai;
+   
+   reg frev_ts_valid = 0; 
+
+   // Fake timestamper for the FRev
+   always@(posedge frev_in)
+     begin
+	frev_ts_ns <= tm_nsec;
+	frev_ts_tai <= tm_tai;
+
+	@(posedge clk_wr);
+	frev_ts_valid <= 1;
+	@(posedge clk_wr);
+	frev_ts_valid <= 0;
+	@(posedge clk_wr);
+	
+     end
+   
+   
+
+   // cores under test
+   wr_d3s_adc
+      
+     #(
+       .g_use_fake_data(1)
+       )
+   DUT_M (
+	.rst_n_sys_i(rst_n),
+	.clk_sys_i (clk_sys),
+	.adc_dco_p_i(clk_adc),
+	.adc_dco_n_i(~clk_adc),
+	.tm_cycles_i(tm_nsec[30:3]),
+	.fake_data_i(sine),
+
+	.slave_i(Host1.master.out),
+	.slave_o(Host1.master.in)
+	);
+
+
+   wr_d3s_adc_slave
+      
+     DUT_S 
+       (
+	.rst_n_sys_i(rst_n),
+	.clk_sys_i (clk_sys),
+
+	.tm_time_valid_i(1'b1),
+	.tm_tai_i(tm_tai),
+	.tm_cycles_i(tm_nsec[30:3]),
+       
+	.wr_ref_clk_p_i (clk_wr),
+	.wr_ref_clk_n_i (~clk_wr),
+
+	.slave_i(Host2.master.out),
+	.slave_o(Host2.master.in)
+	);
+
    
 
    PhaseData ph_unc = new, ph_rec = new;
 
 
+   // store whatever goes to the Phase Encoder's FIFO also to the ph_unc object.
    initial begin
       forever begin
 	 @(posedge clk_wr);
-	 if(DUT.U_Phase_Enc.fifo_en_i)
-	   ph_unc.add(DUT.U_Phase_Enc.rl_phase_ext);
+	 if(DUT_M.U_Phase_Enc.fifo_en_i)
+	   ph_unc.add(DUT_M.U_Phase_Enc.rl_phase_ext);
       end
    end
 
-
    phase_rl_record_t compr_records[$];
-   
-   
-   
+     
+
+   // Master process: configure the compressor, start sampling, push all records to a queue
    initial begin
       uint64_t rv;
       CBusAccessor acc = Host1.get_accessor();
-      int max_error_deg = 0;
+      int max_error_deg = 3;
       int max_err = (1<<(9+14))  * max_error_deg / 360;
-      
-      
+            
       #50us;
 
+      $display ("Starting DDS Master");
+      
       
       acc.write(`ADDR_D3S_CR, `D3S_CR_ENABLE);
-      
-
       acc.write(`ADDR_D3S_RL_ERR_MIN, -max_err);
       acc.write(`ADDR_D3S_RL_ERR_MAX, max_err);
       acc.write(`ADDR_D3S_RL_LENGTH_MAX, 2000);
-      
-      
-		     
+      		     
       while(1)
 	begin
 	   uint64_t rv,r0,r1,r2;
-
-
 	   
 	   
 	   acc.read(`ADDR_D3S_ADC_CSR, rv);
-	   $display("CSR %x", rv);
 
-	   #10us;
-	   
-	   
-	 /*  if(!(rv & `D3S_ADC_CSR_EMPTY)) begin
+	   if(rv & `D3S_ADC_CSR_FULL)
+		$warning("master: full FIFO\n");
+
+	   if(!(rv & `D3S_ADC_CSR_EMPTY)) begin
 	      phase_rl_record_t  rec;
 	      
 	      acc.read(`ADDR_D3S_ADC_R0, r0);
@@ -474,42 +424,38 @@ endclass // Decompressor
 	      compr_records.push_back(rec);
 	      
 	      ph_rec.uncompress(rec);
-	      
-	      
-  
-	   end*/
-	   
+	   end
 	end
-      
-      
-		    
-
    end // initial begin
 
    initial begin
       CBusAccessor acc_slave = Host2.get_accessor();
 
-      $display("Init slave!");
+      $display ("Starting DDS Slave");
       
       #10us;
       acc_slave.write(`ADDR_D3SS_RSTR, 'hffffffff); // reset
       acc_slave.write(`ADDR_D3SS_RSTR, 'h0); // un-reset
-
-      acc_slave.write(`ADDR_D3SS_REC_DELAY_COARSE, (200000/8)); // 20us
+      acc_slave.write(`ADDR_D3SS_REC_DELAY_COARSE, (200000/8)); // 200us reconstruction delay
       acc_slave.write(`ADDR_D3SS_CR, `D3SS_CR_ENABLE);
 
 
-
+      // push the stuff to the decompressor FIFO
       forever begin
 	 uint64_t fifo_stat;
 
 	 acc_slave.read(`ADDR_D3SS_PHFIFO_CSR, fifo_stat);
-	 
+
+
 	 
 	 if(compr_records.size() > 0 && !(fifo_stat & `D3SS_PHFIFO_CSR_FULL))
 	   begin
 	      phase_rl_record_t  rec;
 	      rec = compr_records.pop_front();
+	      
+
+	      if(fifo_stat & `D3SS_PHFIFO_CSR_EMPTY)
+		$warning("slave : empty FIFO\n");
 	      
 	      
 	      acc_slave.write(`ADDR_D3SS_PHFIFO_R0, rec.r0);
@@ -519,38 +465,53 @@ endclass // Decompressor
 	end  else begin
 	   #100ns;
 	end // if (!compr_records.empty() && !(fifo_stat & `D3SS_PHFIFO_CSR_FULL))
-	 
       end // forever begin
-      
    end // initial begin
    
    
-   
+
+   // Calculate worst phase error 
    initial
      begin
-	int i;
+	int f = $fopen("phase_err.txt","w");
+	
+	int i, size_unc, size_rec, size, n_records;
 	int max_err= 0, err;
 	
-	#200us;
-	for(i=0;i<ph_rec.samples.size();i++) begin
-	  err = ph_unc.samples[i] - ph_rec.samples[i];
+	#100us;
+
+
+	n_records = compr_records.size();
+	size_unc = ph_unc.samples.size();
+	size_rec = ph_rec.samples.size();
+
+	if(size_rec < size_unc)
+	  size = size_rec;
+	else
+	  size = size_unc;
+	
+	
+	
+	
+	for(i=0; i<size ;i++) begin
+	   err = ph_unc.samples[i] - ph_rec.samples[i];
 
 	   if(err < -8200000 ) // wrap-around
 	     err += (1<<23);
 	   if(err > 8200000 ) // wrap-around
 	     err -= (1<<23);
-	
-	   
-	  $display("%d %d %d %d", i, ph_unc.samples[i], ph_rec.samples[i], err);
+	   $display("%d %d %d %d %.1f", i, ph_unc.samples[i], ph_rec.samples[i], err, real'(err)	/real'(1<<23) * 360.0);
+	   $fdisplay(f, "%d %d %d %d %.1f", i, ph_unc.samples[i], ph_rec.samples[i], err, real'(err)/real'(1<<23) * 360.0);
 	   if((err > 0 ? err : -err) > max_err)
 	     max_err = (err > 0 ? err : -err);
-	   
-	   end
+	end
+	$fclose(f);
+	
+	$display("t = %f us : MaxErr %d %.3f deg [%d/%d samples, %d records]\n", real'($time)/real'(1us), max_err, real'(max_err)/real'(1<<23) * 360.0, size_unc, size_rec, n_records);
 
-	$display("MaxErr %d %.3f deg [%d/%d samples, %d records]\n", max_err, real'(max_err)/real'(1<<23) * 360.0, ph_unc.samples.size(), ph_rec.samples.size(), compr_records.size());
+	$display("unc:%d rec:%d size:%d",size_unc, size_rec, size );
 	
-	
-   end
+     end
    
    
    
