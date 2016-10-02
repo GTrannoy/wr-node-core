@@ -12,24 +12,24 @@ entity d3s_phase_encoder is
 
     adc_data_i : in std_logic_vector(13 downto 0);
 
-    raw_phase_o : out std_logic_vector(15 downto 0);
+    raw_phase_o   : out std_logic_vector(15 downto 0);
     raw_hp_data_o : out std_logic_vector(15 downto 0);
-    
-    r_max_run_len_i : in std_logic_vector(15 downto 0);
-    r_max_error_i : in std_logic_vector(22 downto 0);
-    r_min_error_i : in std_logic_vector(22 downto 0);
-    r_record_count_o : out std_logic_vector(31 downto 0);
-    
 
-    fifo_en_i : in std_logic;
-    fifo_full_i  : in  std_logic;
-    fifo_lost_o  : out std_logic;
-    fifo_rl_o    : out std_logic_vector(15 downto 0);
-    fifo_phase_o : out std_logic_vector(31 downto 0);
+    r_max_run_len_i  : in  std_logic_vector(15 downto 0);
+    r_max_error_i    : in  std_logic_vector(22 downto 0);
+    r_min_error_i    : in  std_logic_vector(22 downto 0);
+    r_record_count_o : out std_logic_vector(31 downto 0);
+
+
+    fifo_en_i     : in  std_logic;
+    fifo_full_i   : in  std_logic;
+    fifo_lost_o   : out std_logic;
+    fifo_rl_o     : out std_logic_vector(15 downto 0);
+    fifo_phase_o  : out std_logic_vector(31 downto 0);
     fifo_tstamp_o : out std_logic_vector(27 downto 0);
-    fifo_is_rl_o : out std_logic;
-    fifo_we_o : out std_logic;
-    
+    fifo_is_rl_o  : out std_logic;
+    fifo_we_o     : out std_logic;
+
     tm_cycles_i : in std_logic_vector(27 downto 0)
     );
 
@@ -104,7 +104,7 @@ architecture rtl of d3s_phase_encoder is
       x_i     : in  std_logic_vector(g_data_bits-1 downto 0);
       y_o     : out std_logic_vector(g_data_bits-1 downto 0));
   end component d3s_highpass_filter;
-  
+
   constant c_HILBERT_GROUP_DELAY : integer := 71 + 64;
 
   signal adc_i, adc_i_pre : std_logic_vector(15 downto 0);
@@ -115,35 +115,65 @@ architecture rtl of d3s_phase_encoder is
   signal adc_phase_d0     : std_logic_vector(15 downto 0);
   signal flag             : std_logic;
 
-  signal avg_lt, avg_lt_predelay, avg_lt_d                  : std_logic_vector(15+7 downto 0);
-  signal avg_lt_valid            : std_logic;
+  signal avg_lt, avg_lt_predelay, avg_lt_d : std_logic_vector(15+7 downto 0);
+  signal avg_lt_valid                      : std_logic;
   signal avg_st_predelay, avg_st, avg_st_d : std_logic_vector(15+3 downto 0);
-  signal avg_st_valid            : std_logic;
+  signal avg_st_valid                      : std_logic;
 
   --signal avg_lt_trunc, avg_st_trunc : std_logic_vector(15 downto 0);
 
   type t_state is (STARTUP, IDLE, RL_SHORT, RL_LONG);
 
-  signal rl_phase               : std_logic_vector(15 downto 0);
-  signal rl_integ, rl_phase_ext : unsigned(22 downto 0);
-  signal rl_length              : unsigned(15 downto 0);
-  signal rl_state               : t_state;
-  signal rl_cycles_start : std_logic_vector(27 downto 0);
-  signal err_st : signed(22 downto 0);
-  signal err_lt : signed(22 downto 0);
+  signal rl_phase                   : std_logic_vector(15 downto 0);
+  signal rl_integ, rl_phase_ext     : unsigned(22 downto 0);
+  signal rl_length                  : unsigned(15 downto 0);
+  signal rl_state                   : t_state;
+  signal rl_cycles_start            : std_logic_vector(27 downto 0);
+  signal err_st                     : signed(22 downto 0);
+  signal err_lt                     : signed(22 downto 0);
   signal err_lt_bound, err_st_bound : std_logic;
 
-  signal adc_hp_out : std_logic_vector(15 downto 0);
+  signal adc_hp_out   : std_logic_vector(15 downto 0);
   signal adc_data_reg : std_logic_vector(13 downto 0);
+  signal ccc          : integer;
+
+  type t_comp_record is record
+    phase  : std_logic_vector(31 downto 0);
+    rl     : std_logic_vector(15 downto 0);
+    valid  : std_logic;
+    is_rl  : std_logic;
+    tstamp : std_logic_vector(27 downto 0);
+  end record;
+
+  signal c1, c2, c1_d, c2_d, c_out : t_comp_record;
+  signal c2_pending                : std_logic;
+
+  function f_pack (r : t_comp_record) return std_logic_vector is
+  begin
+    return r.phase & r.rl & r.valid & r.is_rl & r.tstamp;
+  end function;
+
+  function f_unpack (v : std_logic_vector) return t_comp_record is
+    variable tmp : t_comp_record;
+  begin
+    tmp.tstamp := v(27 downto 0);
+    tmp.is_rl  := v(28);
+    tmp.valid  := v(29);
+    tmp.rl     := v(30 + 15 downto 30);
+    tmp.phase  := v(30+16+31 downto 30+16);
+    return tmp;
+  end function;
+  
+  
 begin
 
   process(clk_i)
-    begin
-      if rising_edge(clk_i) then
-        adc_data_reg <= adc_data_i;
-      end if;
-    end process;
-  
+  begin
+    if rising_edge(clk_i) then
+      adc_data_reg <= adc_data_i;
+    end if;
+  end process;
+
   --U_DC_Cut: d3s_highpass_filter
   --  generic map (
   --    g_data_bits => 16,
@@ -154,20 +184,20 @@ begin
   --    x_i     => (adc_data_reg & "00"),
   --    y_o     => adc_hp_out);
 
-    DcBlock_1: DcBlock
-      generic map (
-        data_width => 16,
-        data_depth => 256)
-      port map (
-        clk_i     => clk_i,
-        rst_n_i   => rst_n_i,
-        x_valid_i => '1',
-        x_i     => (adc_data_reg(13) & adc_data_reg(13) & adc_data_reg ),
-        y_valid_o => open,
-        y_o     => adc_hp_out);
-    
-    raw_hp_data_o <= adc_hp_out;
-    
+  DcBlock_1 : DcBlock
+    generic map (
+      data_width => 16,
+      data_depth => 256)
+    port map (
+      clk_i     => clk_i,
+      rst_n_i   => rst_n_i,
+      x_valid_i => '1',
+      x_i       => (adc_data_reg(13) & adc_data_reg(13) & adc_data_reg),
+      y_valid_o => open,
+      y_o       => adc_hp_out);
+
+  raw_hp_data_o <= adc_hp_out;
+
   U_Hilbert_transformer : fir_compiler_v5_0
     port map (
       clk               => clk_i,
@@ -201,8 +231,8 @@ begin
       rdy       => open,
       clk       => clk_i);
 
-raw_phase_o <= adc_phase;
-  
+  raw_phase_o <= adc_phase;
+
   p_derivative : process(clk_i)
   begin
     if rising_edge(clk_i) then
@@ -281,14 +311,15 @@ raw_phase_o <= adc_phase;
 
   err_lt_bound <= '1' when err_lt > signed(r_min_error_i) and err_lt < signed(r_max_error_i) else '0';
   err_st_bound <= '1' when err_st > signed(r_min_error_i) and err_st < signed(r_max_error_i) else '0';
-  
-  
+
+
   p_compress_fsm : process (clk_i)
   begin
     if rising_edge(clk_i) then
       if rst_n_i = '0' then
         rl_state <= STARTUP;
-        fifo_we_o <= '0';
+        c1.valid <= '0';
+        c2.valid <= '0';
       else
 
         
@@ -297,47 +328,63 @@ raw_phase_o <= adc_phase;
             rl_length <= (others => '0');
             rl_integ  <= rl_phase_ext;
             if(fifo_en_i = '1') then
-              rl_state  <= IDLE;
+              ccc      <= 0;
+              rl_state <= IDLE;
             end if;
           when IDLE =>
-            
---            fifo_we_o <= '0';
-            fifo_tstamp_o <= tm_cycles_i;
+            ccc             <= ccc + 1;
             rl_cycles_start <= std_logic_vector(unsigned(tm_cycles_i) + 1);
-            fifo_we_o <= fifo_en_i;
-            fifo_is_rl_o <= '0';
-            fifo_phase_o <= std_logic_vector(resize(rl_phase_ext,32));
-            avg_st_d <= avg_st;
-            avg_lt_d <= avg_lt;
+            rl_length <= (others => '0');
+            avg_st_d        <= avg_st;
+            avg_lt_d        <= avg_lt;
 
-            if (err_st_bound = '1') then
-              rl_length <= rl_length + 1;
-              rl_state  <= RL_SHORT;
-              rl_integ  <= rl_integ + unsigned(avg_st_d(avg_st'length-3 downto 0) & "000000");
-            elsif (err_lt_bound = '1') then
-              rl_length <= rl_length + 1;
-              rl_state  <= RL_LONG;
-              rl_integ  <= rl_integ + unsigned(avg_lt_d(avg_lt'length-3 downto 0) & "00");
+            c1.valid <= '1';
+            c2.valid <= '0';
+
+            c1.phase  <= std_logic_vector(resize(rl_phase_ext, 32));
+            c1.is_rl  <= '0';
+            c1.tstamp <= tm_cycles_i;
+
+            if (err_lt_bound = '1') then
+              rl_state <= RL_LONG;
+--              rl_integ <= rl_integ + unsigned(avg_lt_d(avg_lt'length-3 downto 0) & "00");
+              rl_integ <= rl_phase_ext;
+            elsif (err_st_bound = '1') then
+              rl_state <= RL_SHORT;
+  --            rl_integ <= rl_integ + unsigned(avg_st_d(avg_st'length-3 downto 0) & "000000");
+              rl_integ <= rl_phase_ext;
             else
-              rl_length <= (others => '0');
-              rl_state  <= IDLE;
-              rl_integ  <= rl_phase_ext;
+              rl_state <= IDLE;
+              rl_integ <= rl_phase_ext;
             end if;
             
           when RL_SHORT =>
-            fifo_we_o <= '0';
+            ccc      <= ccc + 1;
+            c1.valid <= '0';
+            c2.valid <= '0';
+
 
             if (err_st_bound = '1' and rl_length < unsigned(r_max_run_len_i)) then
               rl_length <= rl_length + 1;
               rl_state  <= RL_SHORT;
               rl_integ  <= rl_integ + unsigned(avg_st_d(avg_st'length-3 downto 0) & "000000");
             else
-              fifo_we_o <= fifo_en_i;
-              fifo_is_rl_o <= '1';
-              fifo_phase_o <= std_logic_vector(resize(unsigned(avg_st_d(avg_st'length-3 downto 0) & "000000"),32));
-              fifo_rl_o <= std_logic_vector(rl_length);
-              fifo_tstamp_o <= rl_cycles_start;
-              
+
+              c2.phase <= std_logic_vector(resize(unsigned(avg_st_d(avg_st'length-3 downto 0) & "000000"), 32));
+              c2.is_rl <= '1';
+              c2.rl    <= std_logic_vector(rl_length);
+
+              if (rl_length /= 0) then
+                c2.valid <= '1';
+              end if;
+
+              c2.tstamp <= rl_cycles_start;
+
+              c1.phase  <= std_logic_vector(resize(rl_phase_ext, 32));
+              c1.is_rl  <= '0';
+              c1.valid  <= '1';
+              c1.tstamp <= tm_cycles_i;
+
               rl_length <= (others => '0');
               rl_state  <= IDLE;
               rl_integ  <= rl_phase_ext;
@@ -345,18 +392,31 @@ raw_phase_o <= adc_phase;
             end if;
 
           when RL_LONG =>
-            fifo_we_o <= '0';
+            ccc <= ccc + 1;
+
+            c1.valid <= '0';
+            c2.valid <= '0';
 
             if (err_lt_bound = '1' and rl_length < unsigned(r_max_run_len_i)) then
               rl_length <= rl_length + 1;
               rl_state  <= RL_LONG;
               rl_integ  <= rl_integ + unsigned(avg_lt_d(avg_lt'length-3 downto 0) & "00");
             else
-              fifo_we_o <= fifo_en_i;
-              fifo_is_rl_o <= '1';
-              fifo_phase_o <= std_logic_vector(resize(unsigned(avg_lt_d(avg_lt'length-3 downto 0) & "00"),32));
-              fifo_rl_o <= std_logic_vector(rl_length);
-              fifo_tstamp_o <= rl_cycles_start;
+
+              c2.phase <= std_logic_vector(resize(unsigned(avg_lt_d(avg_lt'length-3 downto 0) & "00"), 32));
+
+              c2.is_rl <= '1';
+              c2.rl    <= std_logic_vector(rl_length);
+              if (rl_length /= 0) then
+                c2.valid <= '1';
+              end if;
+
+              c2.tstamp <= rl_cycles_start;
+
+              c1.phase  <= std_logic_vector(resize(rl_phase_ext, 32));
+              c1.is_rl  <= '0';
+              c1.valid  <= '1';
+              c1.tstamp <= tm_cycles_i;
 
               rl_state  <= IDLE;
               rl_length <= (others => '0');
@@ -369,5 +429,33 @@ raw_phase_o <= adc_phase;
   end process;
 
 
+  p_write_fifo : process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      if rst_n_i = '0' then
+        c2_pending <= '0';
+      else
+        c1_d <= c1;
 
+        if(c2.valid = '1') then
+          c_out <= c2;
+        elsif (c1_d.valid = '1') then
+          c_out <= c1_d;
+        else
+          c_out.valid <= '0';
+        end if;
+
+        c2_pending <= c2.valid and c1_d.valid;
+        
+      end if;
+    end if;
+  end process;
+
+  fifo_we_o     <= c_out.valid and fifo_en_i;
+  fifo_phase_o  <= c_out.phase;
+  fifo_rl_o     <= c_out.rl;
+  fifo_is_rl_o  <= c_out.is_rl;
+  fifo_tstamp_o <= c_out.tstamp;
+
+  
 end rtl;

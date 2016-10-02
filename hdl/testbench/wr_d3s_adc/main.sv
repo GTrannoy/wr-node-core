@@ -171,19 +171,33 @@ class PhaseData;
 
    task uncompress(ref phase_rl_record_t rec);
 //      $display("Uncompress!");
+
+      int t0_last = -1;
       
       if(!rec.is_rl) begin
 	 integ = rec.phase;
 	 samples.push_back(rec.phase);
+	 if(t0_last > 0 && rec.cycles != t0_last + 1)
+	   $error("strange, gap in the timstamps: %d %d", t0_last + 1, rec.cycles);
+	 
+	 t0_last = rec.cycles;
+	 
       end else begin
 	 int i;
 //	 if(samples.size() < 100)
 //	   $display("dphase %d %d", rec.phase, rec.length);
+
+	 if(t0_last > 0 && rec.cycles != t0_last + 1)
+	   $error("strange, gap in the timstamps: %d %d", t0_last + 1, rec.cycles);
+
+	 t0_last = rec.cycles;
+	 
 	 
 	 for(i = 0; i<rec.length;i++) begin
 	    
 	    integ = integ+rec.phase;
 	    samples.push_back(integ);
+	    t0_last++;
 	    
 //	    $display("i %d integ %d", i, integ);
 	    
@@ -383,7 +397,7 @@ module main;
       int max_error_deg = 3;
       int max_err = (1<<(9+14))  * max_error_deg / 360;
             
-      #50us;
+      #5us;
 
       $display ("Starting DDS Master");
       
@@ -428,7 +442,9 @@ module main;
 	end
    end // initial begin
 
-   initial begin
+   /*
+   
+    initial begin
       CBusAccessor acc_slave = Host2.get_accessor();
 
       $display ("Starting DDS Slave");
@@ -467,6 +483,7 @@ module main;
 	end // if (!compr_records.empty() && !(fifo_stat & `D3SS_PHFIFO_CSR_FULL))
       end // forever begin
    end // initial begin
+*/
    
    
 
@@ -475,33 +492,53 @@ module main;
      begin
 	int f = $fopen("phase_err.txt","w");
 	
-	int i, size_unc, size_rec, size, n_records;
+	int i, size_unc, size_rec, size=0, n_records;
 	int max_err= 0, err;
+	const int sample_count = 30000;
 	
-	#100us;
 
 
-	n_records = compr_records.size();
-	size_unc = ph_unc.samples.size();
-	size_rec = ph_rec.samples.size();
+	while ( size < sample_count )
+	  begin
+	     n_records = compr_records.size();
+	     size_unc = ph_unc.samples.size();
+	     size_rec = ph_rec.samples.size();
 
-	if(size_rec < size_unc)
-	  size = size_rec;
-	else
-	  size = size_unc;
+	     if(size_rec < size_unc)
+	       size = size_rec;
+	     else
+	       size = size_unc;
+
+	     #1us;
+	     $display("got %d samples so far.", size);
+	     
+	     
+	  end // while ( size < 200 )
 	
 	
-	
-	
-	for(i=0; i<size ;i++) begin
+		
+	for(i=0; i<sample_count ;i++) begin
+	    automatic real err_deg;
+	   
 	   err = ph_unc.samples[i] - ph_rec.samples[i];
 
 	   if(err < -8200000 ) // wrap-around
 	     err += (1<<23);
 	   if(err > 8200000 ) // wrap-around
 	     err -= (1<<23);
-	   $display("%d %d %d %d %.1f", i, ph_unc.samples[i], ph_rec.samples[i], err, real'(err)	/real'(1<<23) * 360.0);
-	   $fdisplay(f, "%d %d %d %d %.1f", i, ph_unc.samples[i], ph_rec.samples[i], err, real'(err)/real'(1<<23) * 360.0);
+	   
+	   err_deg = real'(err)	/real'(1<<23) * 360.0;
+	   
+	   $display("%d %d %d %d %.1f", i, ph_unc.samples[i], ph_rec.samples[i], err, err_deg);
+	   $fdisplay(f, "%d %d %d %d %.1f", i, ph_unc.samples[i], ph_rec.samples[i], err,err_deg);
+
+	   if(err_deg < 0)
+	     err_deg = -err_deg;
+	   
+	   if(err_deg > 3.0)
+	     $display("Error too big!");
+	   
+	   
 	   if((err > 0 ? err : -err) > max_err)
 	     max_err = (err > 0 ? err : -err);
 	end
