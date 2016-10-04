@@ -210,9 +210,19 @@ class PhaseData;
    
 endclass // Decompressor
 
+function automatic int max(int a, int b);
+   return (a > b ? a : b);
+endfunction // max
+
+function automatic int min(int a, int b);
+   return (a < b ? a : b);
+endfunction // max
+
 
 module main;
 
+   const int max_error_deg = 6;
+   
    reg rst_n = 0;
    reg clk_adc = 0;
    reg clk_sys = 0;
@@ -375,26 +385,29 @@ module main;
 
    
 
-   PhaseData ph_unc = new, ph_rec = new;
+   PhaseData ph_master = new;
+   PhaseData ph_slave = new;
+   PhaseData ph_check = new;
+   
+   // store whatever goes to the Phase Encoder's FIFO also to the ph_unc object.
 
+   always @(posedge clk_wr)
+     if(DUT_M.U_Phase_Enc.fifo_en_i)
+       ph_master.add(DUT_M.U_Phase_Enc.rl_phase_ext);
 
    // store whatever goes to the Phase Encoder's FIFO also to the ph_unc object.
-   initial begin
-      forever begin
-	 @(posedge clk_wr);
-	 if(DUT_M.U_Phase_Enc.fifo_en_i)
-	   ph_unc.add(DUT_M.U_Phase_Enc.rl_phase_ext);
-      end
-   end
-
+   always @(posedge clk_wr)
+     if(DUT_S.U_Phase_Dec.s3_valid)
+       ph_slave.add(DUT_S.U_Phase_Dec.s3_phase);
+   
    phase_rl_record_t compr_records[$];
-     
+   int n_records = 0;
+   
 
    // Master process: configure the compressor, start sampling, push all records to a queue
    initial begin
       uint64_t rv;
       CBusAccessor acc = Host1.get_accessor();
-      int max_error_deg = 3;
       int max_err = (1<<(9+14))  * max_error_deg / 360;
             
       #5us;
@@ -405,11 +418,12 @@ module main;
       acc.write(`ADDR_D3S_CR, `D3S_CR_ENABLE);
       acc.write(`ADDR_D3S_RL_ERR_MIN, -max_err);
       acc.write(`ADDR_D3S_RL_ERR_MAX, max_err);
-      acc.write(`ADDR_D3S_RL_LENGTH_MAX, 2000);
+      acc.write(`ADDR_D3S_RL_LENGTH_MAX, 20000);
       		     
       while(1)
 	begin
 	   uint64_t rv,r0,r1,r2;
+	   time t_start, t_end;
 	   
 	   
 	   acc.read(`ADDR_D3S_ADC_CSR, rv);
@@ -418,17 +432,24 @@ module main;
 		$warning("master: full FIFO\n");
 
 	   if(!(rv & `D3S_ADC_CSR_EMPTY)) begin
+	      
 	      phase_rl_record_t  rec;
+	      t_start = $time;
+
 	      
 	      acc.read(`ADDR_D3S_ADC_R0, r0);
 	      acc.read(`ADDR_D3S_ADC_R1, r1);
 	      acc.read(`ADDR_D3S_ADC_R2, r2);
 
+	      t_end = $time;
+
+//	      $display("Read from FIFO took %.0f ns", real'(t_end-t_start)/real'(1ns) );
+	      
+	      
 	      rec.r0 = r0;
 	      rec.r1=r1;
 	      rec.r2=r2;
-	      
-	      
+	            
 	      rec.is_rl = (r0 & `D3S_ADC_R0_IS_RL) ? 1 : 0;
 	      rec.cycles = r0 & `D3S_ADC_R0_TSTAMP ;
 	      rec.phase = r2;
@@ -436,20 +457,21 @@ module main;
 
 	  //    $display("is_rl %d cyc %d phase %d len %d", rec.is_rl, rec.cycles, rec.phase, rec.length);
 	      compr_records.push_back(rec);
+	      n_records++;
 	      
-	      ph_rec.uncompress(rec);
+	      ph_check.uncompress(rec);
 	   end
 	end
    end // initial begin
 
-   /*
+   
    
     initial begin
       CBusAccessor acc_slave = Host2.get_accessor();
 
       $display ("Starting DDS Slave");
       
-      #10us;
+      #5us;
       acc_slave.write(`ADDR_D3SS_RSTR, 'hffffffff); // reset
       acc_slave.write(`ADDR_D3SS_RSTR, 'h0); // un-reset
       acc_slave.write(`ADDR_D3SS_REC_DELAY_COARSE, (200000/8)); // 200us reconstruction delay
@@ -470,8 +492,8 @@ module main;
 	      rec = compr_records.pop_front();
 	      
 
-	      if(fifo_stat & `D3SS_PHFIFO_CSR_EMPTY)
-		$warning("slave : empty FIFO\n");
+//	      if(fifo_stat & `D3SS_PHFIFO_CSR_EMPTY)
+//		$warning("slave : empty FIFO\n");
 	      
 	      
 	      acc_slave.write(`ADDR_D3SS_PHFIFO_R0, rec.r0);
@@ -479,12 +501,12 @@ module main;
 	      acc_slave.write(`ADDR_D3SS_PHFIFO_R2, rec.r2);
 
 	end  else begin
-	   #100ns;
+	   #16ns;
 	end // if (!compr_records.empty() && !(fifo_stat & `D3SS_PHFIFO_CSR_FULL))
       end // forever begin
    end // initial begin
-*/
-   
+
+ 
    
 
    // Calculate worst phase error 
@@ -492,35 +514,37 @@ module main;
      begin
 	int f = $fopen("phase_err.txt","w");
 	
-	int i, size_unc, size_rec, size=0, n_records;
-	int max_err= 0, err;
-	const int sample_count = 30000;
+	int i, size_m, size_s, size_check, size=0;
+	int max_err = 3, err;
+	const int sample_count = 100000;
 	
 
 
 	while ( size < sample_count )
 	  begin
-	     n_records = compr_records.size();
-	     size_unc = ph_unc.samples.size();
-	     size_rec = ph_rec.samples.size();
+	     size_m = ph_master.samples.size();
+	     size_s = ph_slave.samples.size();
+	     size_check = ph_check.samples.size();
 
-	     if(size_rec < size_unc)
-	       size = size_rec;
-	     else
-	       size = size_unc;
+	     size =min( min (size_m, size_s), size_check );
+	     
 
 	     #1us;
 	     $display("got %d samples so far.", size);
-	     
-	     
+	     	     
 	  end // while ( size < 200 )
-	
 	
 		
 	for(i=0; i<sample_count ;i++) begin
-	    automatic real err_deg;
+	   automatic real err_deg;
+	   automatic int err_s;
+	   	   
+	   err = ph_master.samples[i] - ph_check.samples[i];
+	   err_s = ph_slave.samples[i] - ph_check.samples[i];
+
+	   if (err_s != 0)
+	     $error ("Slave decompression error!");
 	   
-	   err = ph_unc.samples[i] - ph_rec.samples[i];
 
 	   if(err < -8200000 ) // wrap-around
 	     err += (1<<23);
@@ -529,24 +553,35 @@ module main;
 	   
 	   err_deg = real'(err)	/real'(1<<23) * 360.0;
 	   
-	   $display("%d %d %d %d %.1f", i, ph_unc.samples[i], ph_rec.samples[i], err, err_deg);
-	   $fdisplay(f, "%d %d %d %d %.1f", i, ph_unc.samples[i], ph_rec.samples[i], err,err_deg);
+//	   $display("%d %d %d %d %.1f [%d %d]" , i, ph_master.samples[i], ph_check.samples[i], err, err_deg, ph_slave.samples[i],err_s);
+	   $fdisplay(f, "%d %d %d %d %.1f [%d]", i, ph_master.samples[i], ph_check.samples[i], err,err_deg, err_s);
 
 	   if(err_deg < 0)
 	     err_deg = -err_deg;
 	   
-	   if(err_deg > 3.0)
+	   if(err_deg > real'(max_error_deg))
 	     $display("Error too big!");
-	   
+	    
 	   
 	   if((err > 0 ? err : -err) > max_err)
 	     max_err = (err > 0 ? err : -err);
 	end
 	$fclose(f);
-	
-	$display("t = %f us : MaxErr %d %.3f deg [%d/%d samples, %d records]\n", real'($time)/real'(1us), max_err, real'(max_err)/real'(1<<23) * 360.0, size_unc, size_rec, n_records);
+	f = $fopen("phase_data.txt","w");
 
-	$display("unc:%d rec:%d size:%d",size_unc, size_rec, size );
+	for(i=0;i<size;i++)
+	  begin
+	     $fdisplay(f,"%d", ph_master.samples[i] );
+	     
+	  end
+	
+	
+	$fclose(f);
+
+	
+	$display("t = %f us : MaxErr %d %.3f deg [%d/%d samples, %d records]\n", real'($time)/real'(1us), max_err, real'(max_err)/real'(1<<23) * 360.0, size_m, size_check, n_records);
+
+
 	
      end
    

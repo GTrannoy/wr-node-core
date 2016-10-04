@@ -4,62 +4,62 @@ add wave -noupdate -expand -group {Input signals} /main/clk_rf
 add wave -noupdate -expand -group {Input signals} -format Analog-Step -height 50 -max 1.0 -min -1.0 /main/sine_in
 add wave -noupdate -expand -group {Input signals} -format Analog-Step -max 1.0 -min -1.0 /main/y_under
 add wave -noupdate -expand -group {Input signals} /main/frev_in
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/clk_i
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/rst_n_i
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/adc_data_i
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/raw_phase_o
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/raw_hp_data_o
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/r_max_run_len_i
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/r_max_error_i
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/r_min_error_i
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/r_record_count_o
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/fifo_en_i
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/fifo_full_i
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/fifo_lost_o
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/fifo_rl_o
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/fifo_phase_o
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/fifo_tstamp_o
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/fifo_is_rl_o
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/fifo_we_o
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/tm_cycles_i
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/adc_i
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/adc_i_pre
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/adc_q
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/adc_q_pre
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/adc_phase
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/dummy
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/adc_dphase
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/adc_phase_d0
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/flag
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/avg_lt
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/avg_lt_predelay
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/avg_lt_d
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/avg_lt_valid
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/avg_st_predelay
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/avg_st
-add wave -noupdate -expand -group PhaseEncoder -radix unsigned /main/DUT_M/U_Phase_Enc/avg_st_d
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/avg_st_valid
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/rl_phase
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/rl_integ
-add wave -noupdate -expand -group PhaseEncoder -radix unsigned /main/DUT_M/U_Phase_Enc/rl_phase_ext
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/rl_length
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/rl_cycles_start
-add wave -noupdate -expand -group PhaseEncoder -radix decimal /main/DUT_M/U_Phase_Enc/err_st
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/err_lt
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/err_lt_bound
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/err_st_bound
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/adc_hp_out
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/adc_data_reg
-add wave -noupdate -expand -group PhaseEncoder -height 16 /main/DUT_M/U_Phase_Enc/rl_state
-add wave -noupdate -expand -group PhaseEncoder -radix decimal /main/DUT_M/U_Phase_Enc/ccc
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/c1.valid
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/c2.valid
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/c_out.valid
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/c2_pending
-add wave -noupdate -expand -group PhaseEncoder -expand /main/DUT_M/U_Phase_Enc/c1
-add wave -noupdate -expand -group PhaseEncoder -expand /main/DUT_M/U_Phase_Enc/c1_d
-add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/c1_d.valid
-add wave -noupdate -expand -group PhaseEncoder -expand /main/DUT_M/U_Phase_Enc/c2
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/clk_i
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/rst_n_i
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/adc_data_i
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/raw_phase_o
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/raw_hp_data_o
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/r_max_run_len_i
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/r_max_error_i
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/r_min_error_i
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/r_record_count_o
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/fifo_en_i
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/fifo_full_i
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/fifo_lost_o
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/fifo_rl_o
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/fifo_phase_o
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/fifo_tstamp_o
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/fifo_is_rl_o
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/fifo_we_o
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/tm_cycles_i
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/adc_i
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/adc_i_pre
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/adc_q
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/adc_q_pre
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/adc_phase
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/dummy
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/adc_dphase
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/adc_phase_d0
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/flag
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/avg_lt
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/avg_lt_predelay
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/avg_lt_d
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/avg_lt_valid
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/avg_st_predelay
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/avg_st
+add wave -noupdate -group PhaseEncoder -radix unsigned /main/DUT_M/U_Phase_Enc/avg_st_d
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/avg_st_valid
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/rl_phase
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/rl_integ
+add wave -noupdate -group PhaseEncoder -radix unsigned /main/DUT_M/U_Phase_Enc/rl_phase_ext
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/rl_length
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/rl_cycles_start
+add wave -noupdate -group PhaseEncoder -radix decimal /main/DUT_M/U_Phase_Enc/err_st
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/err_lt
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/err_lt_bound
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/err_st_bound
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/adc_hp_out
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/adc_data_reg
+add wave -noupdate -group PhaseEncoder -height 16 /main/DUT_M/U_Phase_Enc/rl_state
+add wave -noupdate -group PhaseEncoder -radix decimal /main/DUT_M/U_Phase_Enc/ccc
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/c1.valid
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/c2.valid
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/c_out.valid
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/c2_pending
+add wave -noupdate -group PhaseEncoder -expand /main/DUT_M/U_Phase_Enc/c1
+add wave -noupdate -group PhaseEncoder -expand /main/DUT_M/U_Phase_Enc/c1_d
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/c1_d.valid
+add wave -noupdate -group PhaseEncoder -expand /main/DUT_M/U_Phase_Enc/c2
 add wave -noupdate -expand /main/DUT_M/U_Phase_Enc/c_out
 add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/clk_wr_i
 add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/rst_n_wr_i
@@ -226,4 +226,4 @@ configure wave -griddelta 40
 configure wave -timeline 0
 configure wave -timelineunits ns
 update
-WaveRestoreZoom {27345805 ps} {27395853 ps}
+WaveRestoreZoom {19952455 ps} {20002503 ps}

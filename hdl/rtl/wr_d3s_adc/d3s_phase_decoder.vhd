@@ -113,7 +113,7 @@ begin
 
 
         if(stall = '0') then
-          fifo_rd_d <= '1';
+          fifo_rd_d <=  not fifo_empty_i;
 
           if (fifo_rd_d = '1') then
             --s1_phase <= unsigned(fifo_phase_i);
