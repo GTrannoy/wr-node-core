@@ -94,24 +94,21 @@ architecture rtl of wr_d3s_adc is
 
   component d3s_phase_encoder is
     port (
-      clk_i           : in  std_logic;
-      rst_n_i         : in  std_logic;
-      adc_data_i      : in  std_logic_vector(13 downto 0);
-      r_max_run_len_i : in  std_logic_vector(15 downto 0);
-      r_max_error_i   : in  std_logic_vector(22 downto 0);
-      r_min_error_i   : in  std_logic_vector(22 downto 0);
-      raw_phase_o     : out std_logic_vector(15 downto 0);
-      raw_hp_data_o   : out std_logic_vector(15 downto 0);
-
-      fifo_en_i     : in  std_logic;
-      fifo_full_i   : in  std_logic;
-      fifo_lost_o   : out std_logic;
-      fifo_rl_o     : out std_logic_vector(15 downto 0);
-      fifo_phase_o  : out std_logic_vector(31 downto 0);
-      fifo_tstamp_o : out std_logic_vector(27 downto 0);
-      fifo_is_rl_o  : out std_logic;
-      fifo_we_o     : out std_logic;
-      tm_cycles_i   : in  std_logic_vector(27 downto 0));
+      clk_i            : in  std_logic;
+      rst_n_i          : in  std_logic;
+      adc_data_i       : in  std_logic_vector(13 downto 0);
+      raw_phase_o      : out std_logic_vector(15 downto 0);
+      raw_hp_data_o    : out std_logic_vector(15 downto 0);
+      r_max_run_len_i  : in  std_logic_vector(15 downto 0);
+      r_max_error_i    : in  std_logic_vector(22 downto 0);
+      r_min_error_i    : in  std_logic_vector(22 downto 0);
+      r_record_count_o : out std_logic_vector(31 downto 0);
+      fifo_en_i        : in  std_logic;
+      fifo_full_i      : in  std_logic;
+      fifo_lost_o      : out std_logic;
+      fifo_payload_o   : out std_logic_vector(31 downto 0);
+      fifo_we_o        : out std_logic;
+      tm_cycles_i      : in  std_logic_vector(27 downto 0));
   end component d3s_phase_encoder;
 
   component d3s_acq_buffer is
@@ -554,10 +551,7 @@ begin
       fifo_en_i       => regs_out.cr_enable_o,
       fifo_full_i     => regs_out.adc_wr_full_o,
       fifo_lost_o     => open,
-      fifo_rl_o       => regs_in.adc_rl_length_i(15 downto 0),
-      fifo_phase_o    => regs_in.adc_rl_phase_i(31 downto 0),
-      fifo_tstamp_o   => regs_in.adc_tstamp_i,
-      fifo_is_rl_o    => regs_in.adc_is_rl_i,
+      fifo_payload_o => regs_in.adc_payload_i,
       fifo_we_o       => regs_in.adc_wr_req_i,
       tm_cycles_i     => tm_cycles_i);
 

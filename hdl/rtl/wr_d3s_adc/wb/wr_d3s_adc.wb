@@ -118,29 +118,8 @@ peripheral {
 			flags_dev = {FIFO_FULL, FIFO_EMPTY};
 			
 			field {
-				 name = "Timestamp";
-				 prefix = "tstamp";
-				 description = "Record timestamp (WR clock cycles)";
-				 type = SLV;
-				 size = 28;
-			};
-
-			field {
-				 name = "Run Length Enable";
-				 prefix = "IS_RL";
-				 type = BIT;
-			};
-
-			field {
-				 name = "Run Length";
-				 prefix = "RL_LENGTH";
-				 size = 16;
-				 type = SLV;
-			};
-
-			field {
-				 name = "Phase";
-				 prefix = "RL_PHASE";
+				 name = "Payload";
+				 prefix = "PAYLOAD";
 				 size = 32;
 				 type = SLV;
 			};
