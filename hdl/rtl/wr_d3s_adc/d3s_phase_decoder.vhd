@@ -23,12 +23,9 @@ entity d3s_phase_decoder is
     tm_cycles_i     : in std_logic_vector(27 downto 0);
 
     -- FIFO I/F (clk_wr domain)
-    fifo_phase_i  : in  std_logic_vector(31 downto 0);
-    fifo_rl_i     : in  std_logic_vector(15 downto 0);
-    fifo_is_rl_i  : in  std_logic;
-    fifo_tstamp_i : in  std_logic_vector(27 downto 0);
-    fifo_empty_i  : in  std_logic;
-    fifo_rd_o     : out std_logic;
+    fifo_payload_i : in  std_logic_vector(31 downto 0);
+    fifo_empty_i   : in  std_logic;
+    fifo_rd_o      : out std_logic;
 
     -- Decompressed phase (clk_wr domain)
     phase_o       : out std_logic_vector(13 downto 0);
@@ -42,7 +39,22 @@ architecture behavioral of d3s_phase_decoder is
   type t_state is (WAIT_FIXUP, IDLE, RUN_LENGTH);
 
 
-
+  component d3s_predecode is
+    port (
+      clk_wr_i        : in  std_logic;
+      rst_n_wr_i      : in  std_logic;
+      r_enable_i      : in  std_logic;
+      ififo_payload_i : in  std_logic_vector(31 downto 0);
+      ififo_empty_i   : in  std_logic;
+      ififo_rd_o      : out std_logic;
+      ofifo_empty_o   : out std_logic;
+      ofifo_rd_i      : in  std_logic;
+      ofifo_is_rl_o   : out std_logic;
+      ofifo_rl_o      : out std_logic_vector(11 downto 0);
+      ofifo_phase_o   : out std_logic_vector(22 downto 0);
+      ofifo_tstamp_o  : out std_logic_vector(27 downto 0));
+  end component d3s_predecode;
+  
 
   signal s2_valid_comb           : std_logic;
   signal s2_valid                : std_logic;
@@ -52,11 +64,11 @@ architecture behavioral of d3s_phase_decoder is
   signal s2_rl                   : unsigned(15 downto 0);
   signal s3_ts_match, s3_ts_miss : std_logic;
 
-  
+
   signal s3_valid  : std_logic;
   signal s3_phase  : unsigned(22 downto 0);
   signal s3_dphase : unsigned(22 downto 0);
-  signal s3_count  : unsigned(15 downto 0);
+  signal s3_count  : unsigned(11 downto 0);
 
   signal s3_state : t_state;
 
@@ -89,11 +101,32 @@ architecture behavioral of d3s_phase_decoder is
     
   end function;
 
-
   signal tm_cycles_adj0, tm_cycles_adj1 : unsigned(27 downto 0);
-  
+
+  signal ofifo_phase  : std_logic_vector(22 downto 0);
+  signal ofifo_rl     : std_logic_vector(11 downto 0);
+  signal ofifo_is_rl  : std_logic;
+  signal ofifo_tstamp : std_logic_vector(27 downto 0);
+  signal ofifo_empty  : std_logic;
+  signal ofifo_rd     : std_logic;
+
+
 begin
 
+  U_Predecode : d3s_predecode
+    port map (
+      clk_wr_i        => clk_wr_i,
+      rst_n_wr_i      => rst_n_wr_i,
+      r_enable_i      => r_enable_i,
+      ififo_payload_i => fifo_payload_i,
+      ififo_empty_i   => fifo_empty_i,
+      ififo_rd_o      => fifo_rd_o,
+      ofifo_empty_o   => ofifo_empty,
+      ofifo_rd_i      => ofifo_rd,
+      ofifo_is_rl_o   => ofifo_is_rl,
+      ofifo_rl_o      => ofifo_rl,
+      ofifo_phase_o   => ofifo_phase,
+      ofifo_tstamp_o  => ofifo_tstamp);
   
 
   p_stage1 : process(clk_wr_i)
@@ -113,7 +146,7 @@ begin
 
 
         if(stall = '0') then
-          fifo_rd_d <=  not fifo_empty_i;
+          fifo_rd_d <= not ofifo_empty;
 
           if (fifo_rd_d = '1') then
             --s1_phase <= unsigned(fifo_phase_i);
@@ -131,14 +164,14 @@ begin
 
 
 
-  process(fifo_tstamp_i, tm_cycles_adj1)
+  process(ofifo_tstamp, tm_cycles_adj1)
   begin
-    if unsigned(fifo_tstamp_i) < tm_cycles_adj1 and not (unsigned(fifo_tstamp_i) < g_clock_freq*1/8 and tm_cycles_adj1 > g_clock_freq*7/8) then
+    if unsigned(ofifo_tstamp) < tm_cycles_adj1 and not (unsigned(ofifo_tstamp) < g_clock_freq*1/8 and tm_cycles_adj1 > g_clock_freq*7/8) then
       s3_ts_miss <= '1';
     else
       s3_ts_miss <= '0';
     end if;
-    if unsigned(fifo_tstamp_i) = tm_cycles_adj1 then
+    if unsigned(ofifo_tstamp) = tm_cycles_adj1 then
       s3_ts_match <= '1';
     else
       s3_ts_match <= '0';
@@ -150,8 +183,8 @@ begin
     if rising_edge(clk_wr_i) then
       if rst_n_wr_i = '0' or r_enable_i = '0' then
         s3_state  <= IDLE;
-        s3_phase <= (others => '0');
-        s3_valid <= '0';
+        s3_phase  <= (others => '0');
+        s3_valid  <= '0';
         got_fixup <= '0';
       else
         case s3_state is
@@ -162,19 +195,19 @@ begin
                 s3_state <= IDLE;
               elsif (s3_ts_match = '1') then
 
-                if fifo_is_rl_i = '0' then
-                  s3_phase  <= unsigned(fifo_phase_i(22 downto 0));
+                if ofifo_is_rl = '0' then
+                  s3_phase <= unsigned(ofifo_phase(22 downto 0));
                   s3_valid <= '1';
 --                  got_fixup <= '1';
                 else
-  --                if (got_fixup = '1') then
-                    s3_phase <= s3_phase + unsigned(fifo_phase_i(22 downto 0));
-                    s3_dphase <= unsigned(fifo_phase_i(22 downto 0));
-                    s3_count <= unsigned(fifo_rl_i);
-                    if unsigned(fifo_rl_i) /= 1 then
-                      s3_state <= RUN_LENGTH;
-                    end if;
-    --              end if;
+                  --                if (got_fixup = '1') then
+                  s3_phase  <= s3_phase + unsigned(ofifo_phase(22 downto 0));
+                  s3_dphase <= unsigned(ofifo_phase(22 downto 0));
+                  s3_count  <= unsigned(ofifo_rl);
+                  if unsigned(ofifo_rl) /= 1 then
+                    s3_state <= RUN_LENGTH;
+                  end if;
+                --              end if;
                 end if;
               end if;
             end if;
@@ -194,7 +227,7 @@ begin
     end if;
   end process;
 
-  p_stall : process(got_fixup, s3_ts_match, s3_ts_miss, fifo_rd_d, fifo_is_rl_i, s3_state, s1_valid, s2_valid, s2_valid_comb, s3_count)
+  p_stall : process(got_fixup, s3_ts_match, s3_ts_miss, fifo_rd_d, ofifo_is_rl, s3_state, s1_valid, s2_valid, s2_valid_comb, s3_count)
   begin
     if s1_valid = '1' and s2_valid_comb = '0' then
       stall <= '0';
@@ -205,7 +238,7 @@ begin
         when IDLE =>
           if (s3_ts_miss = '0' and s3_ts_match = '0' and fifo_rd_d = '1') then
             stall <= '1';
-          elsif (fifo_is_rl_i = '1' and s3_ts_match = '1' and unsigned(fifo_rl_i) /= 1 )  then
+          elsif (ofifo_is_rl = '1' and s3_ts_match = '1' and unsigned(ofifo_rl) /= 1) then
             stall <= '1';
           else
             stall <= '0';
@@ -221,11 +254,10 @@ begin
     
   end process;
 
-  fifo_rd   <= r_enable_i and (not fifo_empty_i) and (not stall);
-  fifo_rd_o <= fifo_rd;
+  ofifo_rd <= r_enable_i and (not ofifo_empty) and (not stall);
 
 
-  phase_o <= std_logic_vector(s3_phase(22 downto 22 - 13));
+  phase_o       <= std_logic_vector(s3_phase(22 downto 22 - 13));
   phase_valid_o <= s3_valid;
   
 end behavioral;

@@ -30,17 +30,17 @@ module d3s_lut (
    // todo: phase interpolation & dithering
    
    always@(posedge clk_i)
-     y0 <= lut01[phase_divided_i[14*0+:14] >> 4][g_lut_sample_bits -1 : 0];
+     y0 <= integer'(1000 * $sin (2*3.14*real'(phase_divided_i[14*0+:14])/real'(1<<14))); // lut01[phase_divided_i[14*0+:14] >> 4][g_lut_sample_bits -1 : 0];
    always@(posedge clk_i)
-     y1 <= lut01[phase_divided_i[14*1+:14] >> 4][g_lut_sample_bits -1 : 0];
+     y1 <= integer'(1000 * $sin (2*3.14*real'(phase_divided_i[14*1+:14])/real'(1<<14)));//lut01[phase_divided_i[14*1+:14] >> 4][g_lut_sample_bits -1 : 0];
    always@(posedge clk_i)
-     y2 <= lut23[phase_divided_i[14*2+:14] >> 4][g_lut_sample_bits -1 : 0];
+     y2 <=integer'(1000 * $sin (2*3.14*real'(phase_divided_i[14*2+:14])/real'(1<<14))); //lut23[phase_divided_i[14*2+:14] >> 4][g_lut_sample_bits -1 : 0];
    always@(posedge clk_i)
-     y3 <= lut23[phase_divided_i[14*3+:14] >> 4][g_lut_sample_bits -1 : 0];
+     y3 <= integer'(1000 * $sin (2*3.14*real'(phase_divided_i[14*3+:14])/real'(1<<14)));//lut23[phase_divided_i[14*3+:14] >> 4][g_lut_sample_bits -1 : 0];
 
 
    always@(posedge clk_i)
-     dac_data_par_o <= y3 & y2 & y1 & y0;
+     dac_data_par_o <= {y3, y2, y1, y0};
 
 endmodule // d3s_lut
 

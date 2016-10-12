@@ -1,5 +1,6 @@
 `timescale 1ps/1ps
 
+// synthesis translate_off
 module monitor_phase
   (
    input 	clk_i,
@@ -13,6 +14,8 @@ module monitor_phase
    parameter g_oversample = 80;
    parameter g_step = 100;
 
+   real 	ph_o;
+   
 
    
    
@@ -81,30 +84,34 @@ module monitor_phase
 
    always@(ph_over)
      ph_out <= #(g_delay) ph_over;
-   
+
+   always@(ph_out)
+     ph_o <= real'(ph_over) * 360.0 / real'(1<<14);
 
 endmodule // monitor_phase
-
+// synthesis translate_on
    
 
 module d3s_upsample_divide
  (
-  input 	clk_i, // clk_wr_ref
-  input 	rst_n_i,
+  input 	    clk_i, // clk_wr_ref
+  input 	    rst_n_i,
 
-  input [13:0] 	phase_i,
-  input 	phase_valid_i,
+  input [13:0] 	    phase_i,
+  input 	    phase_valid_i,
   
   output [4*14-1:0] phase_divided_o,
-  output phase_divided_valid_o,
+  output 	    phase_divided_valid_o,
 
-  input [31:0] 	frev_ts_tai_i,
-  input [31:0] 	frev_ts_nsec_i,
-  input 	frev_ts_valid_i,
+  input [31:0] 	    frev_ts_tai_i,
+  input [31:0] 	    frev_ts_nsec_i,
+  input 	    frev_ts_valid_i,
+  output 	    frev_ts_ready_o,
+  
 
-  input 	tm_time_valid_i,
-  input [31:0] 	tm_tai_i,
-  input [27:0] 	tm_cycles_i
+  input 	    tm_time_valid_i,
+  input [31:0] 	    tm_tai_i,
+  input [27:0] 	    tm_cycles_i
   
 );
 
@@ -254,6 +261,9 @@ module d3s_upsample_divide
 	  end // else: !if(!frev_ts_latched)
      end // else: !if(!rst_n_i)
    
+
+   assign   frev_ts_ready_o = !frev_ts_latched;
+   
    
 
    reg [3:0] zc_masked;
@@ -341,12 +351,9 @@ module d3s_upsample_divide
    
 // synthesis translate_off
    
-
    monitor_phase #(.g_delay(8000)) MonUndiv( clk_i, phase_up0, phase_up1, phase_up2, phase_up3 );
+   monitor_phase #(.g_delay(8000)) MonInterp( clk_i, interp0, interp1, interp2, interp3 );
    
-   
-   
-
 // synthesis translate_on
 
    
@@ -369,11 +376,12 @@ module d3s_upsample_divide
    reg[13:0] div_bias = 0;
 
 
-   function  f_count_ones( input [3:0] x, input [2:0] up_to );
+   function [2:0] f_count_ones( input [3:0] x, input [2:0] up_to );
       reg [2:0] rv;
       reg [3:0] mask;
       begin
 
+	 
 	 case (up_to)
 	   0: mask = 'b0000;
 	   1: mask = 'b0001;
@@ -384,28 +392,77 @@ module d3s_upsample_divide
 	 endcase // case (up_to)
 	 
 	 case (x & mask)
-	   'h0000: rv = 0;
-	   'h0001: rv = 1;
-	   'h0010: rv = 1;
-	   'h0100: rv = 1;
-	   'h1000: rv = 1;
-	   'h1100: rv = 2;
-	   'h1010: rv = 2;
-	   'h1010: rv = 2;
-	   'h1001: rv = 2;
-	   'h0110: rv = 2;
-	   'h0011: rv = 2;
-	   'h0111: rv = 3;
-	   'h1011: rv = 3;
-	   'h1101: rv = 3;
-	   'h1110: rv = 3;
-	   'h1111: rv = 4;
+	   'b0000: rv = 0;
+	   'b0001: rv = 1;
+	   'b0010: rv = 1;
+	   'b0100: rv = 1;
+	   'b1000: rv = 1;
+
+	   'b1100: rv = 2;
+	   'b1010: rv = 2;
+	   'b0101: rv = 2;
+	   'b1001: rv = 2;
+	   'b0110: rv = 2;
+	   'b0011: rv = 2;
+
+	   'b0111: rv = 3;
+	   'b1011: rv = 3;
+	   'b1101: rv = 3;
+	   'b1110: rv = 3;
+	   'b1111: rv = 4;
 	 endcase // case (x)
+//	 $display("count1 x %x up %d mask %x rv %d", x, up_to, mask, rv);
+	 
+
 	 f_count_ones = rv;
 	 
       end
    endfunction // f_count_ones
 
+  function [2:0] f_count_ones2( input [3:0] x, input [2:0] up_to );
+      reg [2:0] rv;
+      reg [3:0] mask;
+      begin
+
+	 
+	 case (up_to)
+	   0: mask = 'b0000;
+	   1: mask = 'b0001;
+	   2: mask = 'b0011;
+	   3: mask = 'b0111;
+	   4: mask = 'b1111;
+	   default : mask = 'b1111;
+	 endcase // case (up_to)
+	 
+	 case (x & mask)
+	   'b0000: rv = 0;
+	   'b0001: rv = 1;
+	   'b0010: rv = 1;
+	   'b0100: rv = 1;
+	   'b1000: rv = 1;
+
+	   'b1100: rv = 2;
+	   'b1010: rv = 2;
+	   'b0101: rv = 2;
+	   'b1001: rv = 2;
+	   'b0110: rv = 2;
+	   'b0011: rv = 2;
+
+	   'b0111: rv = 3;
+	   'b1011: rv = 3;
+	   'b1101: rv = 3;
+	   'b1110: rv = 3;
+	   'b1111: rv = 4;
+	 endcase // case (x)
+//	 $display("count1 x %x up %d mask %x rv %d", x, up_to, mask, rv);
+	 
+
+	 f_count_ones2 = rv;
+	 
+      end
+   endfunction // f_count_ones
+
+   
    // stage 3: divide/count ones
 
    reg[13:0] phase_up0_div5;
@@ -429,27 +486,30 @@ module d3s_upsample_divide
 	
 	
      end
+
+   integer one_cnt;
+   
    
    always@(posedge clk_i)
      begin
-	
-
-	if(div_start_phase_sel_valid_d)
+	if(!rst_n_i) begin
+	   div_bias <= 0;
+	end else if(div_start_phase_sel_valid_d)
 	  begin
-	     phase_divided0 <= phase_up0_div5 + (f_count_ones(zc_d, 1) * div_start_phase_sel_d[0]) * (16384/5) ;
+	    /* phase_divided0 <= phase_up0_div5 + (f_count_ones(zc_d, 1) * div_start_phase_sel_d[0]) * (16384/5) ;
 	     phase_divided1 <= phase_up1_div5 + (f_count_ones(zc_d, 2) * div_start_phase_sel_d[1]) * (16384/5) ;
 	     phase_divided2 <= phase_up2_div5 + (f_count_ones(zc_d, 3) * div_start_phase_sel_d[2]) * (16384/5) ;
 	     phase_divided3 <= phase_up3_div5 + (f_count_ones(zc_d, 4) * div_start_phase_sel_d[3]) * (16384/5) ;
 
 	     div_bias <= f_count_ones(zc_d2 & div_start_phase_sel_d, 4);
-	     	     
+	     */	     
 
 	  end else begin
 
-	     phase_divided0 <= phase_up0_div5 + (f_count_ones(zc_d, 1) + div_bias) * (16384/5) ;
-	     phase_divided1 <= phase_up1_div5 + (f_count_ones(zc_d, 2) + div_bias) * (16384/5) ;
-	     phase_divided2 <= phase_up2_div5 + (f_count_ones(zc_d, 3) + div_bias) * (16384/5) ;
-	     phase_divided3 <= phase_up3_div5 + (f_count_ones(zc_d, 4) + div_bias) * (16384/5) ;
+	     phase_divided0 <= phase_up0_div5 + (f_count_ones(zc_d2, 1) + div_bias) * (16384/5) ;
+	     phase_divided1 <= phase_up1_div5 + (f_count_ones(zc_d2, 2) + div_bias) * (16384/5) ;
+	     phase_divided2 <= phase_up2_div5 + (f_count_ones(zc_d2, 3) + div_bias) * (16384/5) ;
+	     phase_divided3 <= phase_up3_div5 + (f_count_ones(zc_d2, 4) + div_bias) * (16384/5) ;
 
 	     
 	     if(div_bias + f_count_ones(zc_d2,4) >= 5)
@@ -457,6 +517,10 @@ module d3s_upsample_divide
 	     else
 	       div_bias <= div_bias + f_count_ones(zc_d2,4);
 
+	   //  one_cnt <= f_count_ones(zc_d2, 4);
+	     
+	 //    $display("ZC_d2 %x ones : %d", zc_d2, f_count_ones2(zc_d2, 4));
+	     
 	  end
 	
 
@@ -475,7 +539,7 @@ module d3s_upsample_divide
    monitor_phase #(.g_delay(0)) MonDiv( clk_i, phase_divided0, phase_divided1, phase_divided2, phase_divided3 );
    // synthesis translate_on
 
-   assign   phase_divided_valid_o = 1;
+   assign   phase_divided_valid_o = phase_valid_i;
    
    
    

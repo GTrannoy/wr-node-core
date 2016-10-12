@@ -103,6 +103,7 @@ architecture rtl of wr_d3s_adc_slave is
       frev_ts_tai_i   : in std_logic_vector(31 downto 0);
       frev_ts_nsec_i  : in std_logic_vector(31 downto 0);
       frev_ts_valid_i : in std_logic;
+      frev_ts_ready_o : out std_logic;
       tm_time_valid_i : in std_logic;
       tm_tai_i        : in std_logic_vector(31 downto 0);
       tm_cycles_i     : in std_logic_vector(27 downto 0)
@@ -121,10 +122,7 @@ architecture rtl of wr_d3s_adc_slave is
       tm_time_valid_i  : in  std_logic;
       tm_tai_i         : in  std_logic_vector(39 downto 0);
       tm_cycles_i      : in  std_logic_vector(27 downto 0);
-      fifo_phase_i     : in  std_logic_vector(31 downto 0);
-      fifo_rl_i        : in  std_logic_vector(15 downto 0);
-      fifo_is_rl_i     : in  std_logic;
-      fifo_tstamp_i    : in  std_logic_vector(27 downto 0);
+      fifo_payload_i     : in  std_logic_vector(31 downto 0);
       fifo_empty_i     : in  std_logic;
       fifo_rd_o        : out std_logic;
       phase_o          : out std_logic_vector(13 downto 0);
@@ -322,10 +320,7 @@ begin
       tm_time_valid_i  => tm_time_valid_i,
       tm_tai_i         => tm_tai_i,
       tm_cycles_i      => tm_cycles_i,
-      fifo_phase_i     => regs_out.phfifo_rl_phase_o,
-      fifo_rl_i        => regs_out.phfifo_rl_length_o,
-      fifo_is_rl_i     => regs_out.phfifo_is_rl_o,
-      fifo_tstamp_i    => regs_out.phfifo_tstamp_o,
+      fifo_payload_i     => regs_out.phfifo_payload_o,
       fifo_empty_i     => regs_out.phfifo_rd_empty_o,
       fifo_rd_o        => regs_in.phfifo_rd_req_i,
       phase_o          => phase_dec,
@@ -339,10 +334,10 @@ begin
       phase_valid_i         => phase_dec_valid,
       phase_divided_o       => phase_divided,
       phase_divided_valid_o => phase_divided_valid,
-      frev_ts_tai_i         => (others => '0'), --frev_ts_tai, fixme:
-                                                --frev-aligned division
-      frev_ts_nsec_i        => (others => '0'), --frev_ts_nsec,
-      frev_ts_valid_i       => '0', --frev_ts_valid,
+      frev_ts_tai_i         => regs_out.frev_ts_sec_o,
+      frev_ts_nsec_i        => regs_out.frev_ts_ns_o,
+      frev_ts_valid_i       => regs_out.frev_cr_valid_o,
+      frev_ts_ready_o => regs_in.frev_cr_ready_i,
       tm_time_valid_i       => tm_time_valid_i,
       tm_tai_i              => tm_tai_i(31 downto 0),
       tm_cycles_i           => tm_cycles_i);
