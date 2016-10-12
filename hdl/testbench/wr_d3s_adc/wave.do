@@ -13,13 +13,10 @@ add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/r_max_run_len_i
 add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/r_max_error_i
 add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/r_min_error_i
 add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/r_record_count_o
+add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/ts_report_cnt
 add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/fifo_en_i
 add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/fifo_full_i
 add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/fifo_lost_o
-add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/fifo_rl_o
-add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/fifo_phase_o
-add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/fifo_tstamp_o
-add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/fifo_is_rl_o
 add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/fifo_we_o
 add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/tm_cycles_i
 add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/adc_i
@@ -37,11 +34,11 @@ add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/avg_lt_d
 add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/avg_lt_valid
 add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/avg_st_predelay
 add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/avg_st
-add wave -noupdate -group PhaseEncoder -radix unsigned /main/DUT_M/U_Phase_Enc/avg_st_d
+add wave -noupdate -group PhaseEncoder -radix hexadecimal /main/DUT_M/U_Phase_Enc/avg_st_d
 add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/avg_st_valid
 add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/rl_phase
 add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/rl_integ
-add wave -noupdate -group PhaseEncoder -radix unsigned /main/DUT_M/U_Phase_Enc/rl_phase_ext
+add wave -noupdate -group PhaseEncoder -radix hexadecimal /main/DUT_M/U_Phase_Enc/rl_phase_ext
 add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/rl_length
 add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/rl_cycles_start
 add wave -noupdate -group PhaseEncoder -radix decimal /main/DUT_M/U_Phase_Enc/err_st
@@ -60,47 +57,74 @@ add wave -noupdate -group PhaseEncoder -expand /main/DUT_M/U_Phase_Enc/c1
 add wave -noupdate -group PhaseEncoder -expand /main/DUT_M/U_Phase_Enc/c1_d
 add wave -noupdate -group PhaseEncoder /main/DUT_M/U_Phase_Enc/c1_d.valid
 add wave -noupdate -group PhaseEncoder -expand /main/DUT_M/U_Phase_Enc/c2
-add wave -noupdate -expand /main/DUT_M/U_Phase_Enc/c_out
-add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/clk_wr_i
-add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/rst_n_wr_i
-add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/r_enable_i
-add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/r_delay_coarse_i
-add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/tm_time_valid_i
-add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/tm_tai_i
-add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/tm_cycles_i
-add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/fifo_phase_i
-add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/fifo_rl_i
-add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/fifo_is_rl_i
-add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/fifo_tstamp_i
-add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/fifo_empty_i
-add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/fifo_rd_o
-add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/phase_o
-add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/phase_valid_o
-add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s2_valid_comb
-add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s2_valid
-add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s2_phase
-add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s2_is_rl
-add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s2_tstamp
-add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s2_rl
-add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s3_ts_match
-add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s3_ts_miss
-add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s3_valid
-add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s3_phase
-add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s3_dphase
-add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s3_count
-add wave -noupdate -expand -group PhaseDecoder -height 16 /main/DUT_S/U_Phase_Dec/s3_state
-add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s1_phase
-add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s1_is_rl
-add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s1_valid
-add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s1_tstamp
-add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s1_rl
-add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/fifo_rd
-add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/fifo_rd_d
-add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/stall
-add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/got_fixup
-add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/tm_cycles_adj0
-add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/tm_cycles_adj1
+add wave -noupdate -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/clk_wr_i
+add wave -noupdate -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/rst_n_wr_i
+add wave -noupdate -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/r_enable_i
+add wave -noupdate -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/ififo_payload_i
+add wave -noupdate -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/ififo_empty_i
+add wave -noupdate -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/ififo_rd_o
+add wave -noupdate -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/ofifo_empty_o
+add wave -noupdate -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/ofifo_rd_i
+add wave -noupdate -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/ofifo_is_rl_o
+add wave -noupdate -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/ofifo_rl_o
+add wave -noupdate -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/ofifo_phase_o
+add wave -noupdate -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/ofifo_tstamp_o
+add wave -noupdate -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/q_in_packed
+add wave -noupdate -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/q_out_packed
+add wave -noupdate -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/q_wr
+add wave -noupdate -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/q_almost_full
+add wave -noupdate -group PhaseDecoder -group Predecoder -expand /main/DUT_S/U_Phase_Dec/U_Predecode/q_in
+add wave -noupdate -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/q_out
+add wave -noupdate -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/ififo_rd_d
+add wave -noupdate -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/ififo_rd
+add wave -noupdate -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/got_ts
+add wave -noupdate -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/ts
+add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/clk_wr_i
+add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/rst_n_wr_i
+add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/r_enable_i
+add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/r_delay_coarse_i
+add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/tm_time_valid_i
+add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/tm_tai_i
+add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/tm_cycles_i
+add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/fifo_payload_i
+add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/fifo_empty_i
+add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/fifo_rd_o
+add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/phase_o
+add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/phase_valid_o
+add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s2_valid_comb
+add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s2_valid
+add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s2_phase
+add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s2_is_rl
+add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s2_tstamp
+add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s2_rl
+add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s3_ts_match
+add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s3_ts_miss
+add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s3_valid
+add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s3_phase
+add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s3_dphase
+add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s3_count
+add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s3_state
+add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s1_phase
+add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s1_is_rl
+add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s1_valid
+add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s1_tstamp
+add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s1_rl
+add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/fifo_rd
+add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/fifo_rd_d
+add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/stall
+add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/got_fixup
+add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/tm_cycles_adj0
+add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/tm_cycles_adj1
+add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/ofifo_phase
+add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/ofifo_rl
+add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/ofifo_is_rl
+add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/ofifo_tstamp
+add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/ofifo_empty
+add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/ofifo_rd
 add wave -noupdate -group Upsampler /main/DUT_S/U_Upsampler/clk_i
+add wave -noupdate -group Upsampler -expand -group {Interpolated phase (200 MHz)} -format Analog-Step -height 100 -max 360.0 /main/DUT_S/U_Upsampler/MonUndiv/ph_o
+add wave -noupdate -group Upsampler -expand -group {Interpolated phase (undersampled)} -format Analog-Step -height 100 -max 360.0 /main/DUT_S/U_Upsampler/MonInterp/ph_o
+add wave -noupdate -group Upsampler -expand -group {Interpolated phase (40 MHz)} -format Analog-Step -height 100 -max 360.0 /main/DUT_S/U_Upsampler/MonDiv/ph_o
 add wave -noupdate -group Upsampler /main/DUT_S/U_Upsampler/rst_n_i
 add wave -noupdate -group Upsampler /main/DUT_S/U_Upsampler/phase_i
 add wave -noupdate -group Upsampler /main/DUT_S/U_Upsampler/phase_valid_i
@@ -157,61 +181,125 @@ add wave -noupdate -group Upsampler /main/DUT_S/U_Upsampler/phase_divided1
 add wave -noupdate -group Upsampler /main/DUT_S/U_Upsampler/phase_divided2
 add wave -noupdate -group Upsampler /main/DUT_S/U_Upsampler/phase_divided3
 add wave -noupdate -group Upsampler /main/DUT_S/U_Upsampler/div_bias
-add wave -noupdate -group Upsampler /main/DUT_S/U_Upsampler/phase_up0_div5
-add wave -noupdate -group Upsampler /main/DUT_S/U_Upsampler/phase_up1_div5
+add wave -noupdate -group Upsampler -format Analog-Step -height 50 -max 16384.0 /main/DUT_S/U_Upsampler/phase_up0_div5
+add wave -noupdate -group Upsampler -format Analog-Step -height 50 -max 16384.0 /main/DUT_S/U_Upsampler/phase_up1_div5
 add wave -noupdate -group Upsampler /main/DUT_S/U_Upsampler/phase_up2_div5
 add wave -noupdate -group Upsampler /main/DUT_S/U_Upsampler/phase_up3_div5
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/rst_n_sys_i
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/clk_sys_i
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/clk_wr_o
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/tm_link_up_i
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/tm_time_valid_i
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/tm_tai_i
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/tm_cycles_i
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/tm_clk_aux_lock_en_o
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/tm_clk_aux_locked_i
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/tm_dac_value_i
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/tm_dac_wr_i
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/wr_ref_clk_n_i
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/wr_ref_clk_p_i
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/pll_sys_cs_n_o
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/pll_sys_ld_i
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/pll_sys_reset_n_o
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/pll_sys_sync_n_o
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/pll_vcxo_cs_n_o
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/pll_vcxo_sync_n_o
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/pll_vcxo_status_i
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/pll_sclk_o
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/pll_sdio_b
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/pll_sdo_i
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/dac_n_o
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/dac_p_o
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/wr_dac_sclk_o
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/wr_dac_din_o
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/wr_dac_sync_n_o
-add wave -noupdate -expand -group SlaveTop -expand /main/DUT_S/slave_i
-add wave -noupdate -expand -group SlaveTop -expand /main/DUT_S/slave_o
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/debug_o
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/clk_wr_ref
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/clk_wr_ref_pllin
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/pllout_clk_fb_pllref
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/pllout_clk_wr_ref
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/clk_dds_phy
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/regs_in
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/regs_out
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/clk_wr
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/rst_n_wr
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/rst_wr
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/fpll_reset
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/clk_dds_locked
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/phase_divided
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/phase_divided_valid
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/phase_dec
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/phase_dec_valid
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/dac_data_par
-add wave -noupdate -expand -group SlaveTop /main/DUT_S/pll_sdio_val
+add wave -noupdate /main/DUT_S/U_Upsampler/one_cnt
+add wave -noupdate -group SlaveTop /main/DUT_S/rst_n_sys_i
+add wave -noupdate -group SlaveTop /main/DUT_S/clk_sys_i
+add wave -noupdate -group SlaveTop /main/DUT_S/clk_wr_o
+add wave -noupdate -group SlaveTop /main/DUT_S/tm_link_up_i
+add wave -noupdate -group SlaveTop /main/DUT_S/tm_time_valid_i
+add wave -noupdate -group SlaveTop /main/DUT_S/tm_tai_i
+add wave -noupdate -group SlaveTop /main/DUT_S/tm_cycles_i
+add wave -noupdate -group SlaveTop /main/DUT_S/tm_clk_aux_lock_en_o
+add wave -noupdate -group SlaveTop /main/DUT_S/tm_clk_aux_locked_i
+add wave -noupdate -group SlaveTop /main/DUT_S/tm_dac_value_i
+add wave -noupdate -group SlaveTop /main/DUT_S/tm_dac_wr_i
+add wave -noupdate -group SlaveTop /main/DUT_S/wr_ref_clk_n_i
+add wave -noupdate -group SlaveTop /main/DUT_S/wr_ref_clk_p_i
+add wave -noupdate -group SlaveTop /main/DUT_S/pll_sys_cs_n_o
+add wave -noupdate -group SlaveTop /main/DUT_S/pll_sys_ld_i
+add wave -noupdate -group SlaveTop /main/DUT_S/pll_sys_reset_n_o
+add wave -noupdate -group SlaveTop /main/DUT_S/pll_sys_sync_n_o
+add wave -noupdate -group SlaveTop /main/DUT_S/pll_vcxo_cs_n_o
+add wave -noupdate -group SlaveTop /main/DUT_S/pll_vcxo_sync_n_o
+add wave -noupdate -group SlaveTop /main/DUT_S/pll_vcxo_status_i
+add wave -noupdate -group SlaveTop /main/DUT_S/pll_sclk_o
+add wave -noupdate -group SlaveTop /main/DUT_S/pll_sdio_b
+add wave -noupdate -group SlaveTop /main/DUT_S/pll_sdo_i
+add wave -noupdate -group SlaveTop /main/DUT_S/dac_n_o
+add wave -noupdate -group SlaveTop /main/DUT_S/dac_p_o
+add wave -noupdate -group SlaveTop /main/DUT_S/wr_dac_sclk_o
+add wave -noupdate -group SlaveTop /main/DUT_S/wr_dac_din_o
+add wave -noupdate -group SlaveTop /main/DUT_S/wr_dac_sync_n_o
+add wave -noupdate -group SlaveTop -expand /main/DUT_S/slave_i
+add wave -noupdate -group SlaveTop -expand /main/DUT_S/slave_o
+add wave -noupdate -group SlaveTop /main/DUT_S/debug_o
+add wave -noupdate -group SlaveTop /main/DUT_S/clk_wr_ref
+add wave -noupdate -group SlaveTop /main/DUT_S/clk_wr_ref_pllin
+add wave -noupdate -group SlaveTop /main/DUT_S/pllout_clk_fb_pllref
+add wave -noupdate -group SlaveTop /main/DUT_S/pllout_clk_wr_ref
+add wave -noupdate -group SlaveTop /main/DUT_S/clk_dds_phy
+add wave -noupdate -group SlaveTop /main/DUT_S/regs_in
+add wave -noupdate -group SlaveTop /main/DUT_S/regs_out
+add wave -noupdate -group SlaveTop /main/DUT_S/clk_wr
+add wave -noupdate -group SlaveTop /main/DUT_S/rst_n_wr
+add wave -noupdate -group SlaveTop /main/DUT_S/rst_wr
+add wave -noupdate -group SlaveTop /main/DUT_S/fpll_reset
+add wave -noupdate -group SlaveTop /main/DUT_S/clk_dds_locked
+add wave -noupdate -group SlaveTop /main/DUT_S/phase_divided
+add wave -noupdate -group SlaveTop /main/DUT_S/phase_divided_valid
+add wave -noupdate -group SlaveTop /main/DUT_S/phase_dec
+add wave -noupdate -group SlaveTop /main/DUT_S/phase_dec_valid
+add wave -noupdate -group SlaveTop /main/DUT_S/dac_data_par
+add wave -noupdate -group SlaveTop /main/DUT_S/pll_sdio_val
+add wave -noupdate -group Slave /main/DUT_S/rst_n_sys_i
+add wave -noupdate -group Slave /main/DUT_S/clk_sys_i
+add wave -noupdate -group Slave /main/DUT_S/clk_wr_o
+add wave -noupdate -group Slave /main/DUT_S/tm_link_up_i
+add wave -noupdate -group Slave /main/DUT_S/tm_time_valid_i
+add wave -noupdate -group Slave /main/DUT_S/tm_tai_i
+add wave -noupdate -group Slave /main/DUT_S/tm_cycles_i
+add wave -noupdate -group Slave /main/DUT_S/tm_clk_aux_lock_en_o
+add wave -noupdate -group Slave /main/DUT_S/tm_clk_aux_locked_i
+add wave -noupdate -group Slave /main/DUT_S/tm_dac_value_i
+add wave -noupdate -group Slave /main/DUT_S/tm_dac_wr_i
+add wave -noupdate -group Slave /main/DUT_S/wr_ref_clk_n_i
+add wave -noupdate -group Slave /main/DUT_S/wr_ref_clk_p_i
+add wave -noupdate -group Slave /main/DUT_S/pll_sys_cs_n_o
+add wave -noupdate -group Slave /main/DUT_S/pll_sys_ld_i
+add wave -noupdate -group Slave /main/DUT_S/pll_sys_reset_n_o
+add wave -noupdate -group Slave /main/DUT_S/pll_sys_sync_n_o
+add wave -noupdate -group Slave /main/DUT_S/pll_vcxo_cs_n_o
+add wave -noupdate -group Slave /main/DUT_S/pll_vcxo_sync_n_o
+add wave -noupdate -group Slave /main/DUT_S/pll_vcxo_status_i
+add wave -noupdate -group Slave /main/DUT_S/pll_sclk_o
+add wave -noupdate -group Slave /main/DUT_S/pll_sdio_b
+add wave -noupdate -group Slave /main/DUT_S/pll_sdo_i
+add wave -noupdate -group Slave /main/DUT_S/dac_n_o
+add wave -noupdate -group Slave /main/DUT_S/dac_p_o
+add wave -noupdate -group Slave /main/DUT_S/wr_dac_sclk_o
+add wave -noupdate -group Slave /main/DUT_S/wr_dac_din_o
+add wave -noupdate -group Slave /main/DUT_S/wr_dac_sync_n_o
+add wave -noupdate -group Slave /main/DUT_S/slave_i
+add wave -noupdate -group Slave /main/DUT_S/slave_o
+add wave -noupdate -group Slave /main/DUT_S/debug_o
+add wave -noupdate -group Slave /main/DUT_S/clk_wr_ref
+add wave -noupdate -group Slave /main/DUT_S/clk_wr_ref_pllin
+add wave -noupdate -group Slave /main/DUT_S/pllout_clk_fb_pllref
+add wave -noupdate -group Slave /main/DUT_S/pllout_clk_wr_ref
+add wave -noupdate -group Slave /main/DUT_S/clk_dds_phy
+add wave -noupdate -group Slave /main/DUT_S/regs_in
+add wave -noupdate -group Slave /main/DUT_S/regs_out
+add wave -noupdate -group Slave /main/DUT_S/clk_wr
+add wave -noupdate -group Slave /main/DUT_S/rst_n_wr
+add wave -noupdate -group Slave /main/DUT_S/rst_wr
+add wave -noupdate -group Slave /main/DUT_S/fpll_reset
+add wave -noupdate -group Slave /main/DUT_S/clk_dds_locked
+add wave -noupdate -group Slave /main/DUT_S/phase_divided
+add wave -noupdate -group Slave /main/DUT_S/phase_divided_valid
+add wave -noupdate -group Slave /main/DUT_S/phase_dec
+add wave -noupdate -group Slave /main/DUT_S/phase_dec_valid
+add wave -noupdate -group Slave /main/DUT_S/dac_data_par
+add wave -noupdate -group Slave /main/DUT_S/pll_sdio_val
+add wave -noupdate -group LUT /main/DUT_S/U_LUT/clk_i
+add wave -noupdate -group LUT /main/DUT_S/U_LUT/rst_n_i
+add wave -noupdate -group LUT /main/DUT_S/U_LUT/phase_divided_i
+add wave -noupdate -group LUT /main/DUT_S/U_LUT/phase_valid_i
+add wave -noupdate -group LUT /main/DUT_S/U_LUT/dac_data_par_o
+add wave -noupdate -group LUT /main/DUT_S/U_LUT/y0
+add wave -noupdate -group LUT /main/DUT_S/U_LUT/y1
+add wave -noupdate -group LUT /main/DUT_S/U_LUT/y2
+add wave -noupdate -group LUT /main/DUT_S/U_LUT/y3
+add wave -noupdate -expand -group DACModel /main/U_DAC/clk_i
+add wave -noupdate -expand -group DACModel -format Analog-Step -height 84 -max 8175.0 -min -8191.0 -radix decimal /main/U_DAC/data_i
+add wave -noupdate -expand -group DACModel /main/U_DAC/data_o
+add wave -noupdate -expand -group DACModel /main/U_DAC/y_over
+add wave -noupdate -expand -group DACModel /main/U_DAC/y_d
 TreeUpdate [SetDefaultTree]
-WaveRestoreCursors {{Cursor 1} {27368336 ps} 0}
+WaveRestoreCursors {{Cursor 1} {229507000 ps} 0}
 configure wave -namecolwidth 406
 configure wave -valuecolwidth 156
 configure wave -justifyvalue left
@@ -226,4 +314,4 @@ configure wave -griddelta 40
 configure wave -timeline 0
 configure wave -timelineunits ns
 update
-WaveRestoreZoom {19952455 ps} {20002503 ps}
+WaveRestoreZoom {229436681 ps} {229565321 ps}

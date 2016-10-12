@@ -1,4 +1,5 @@
 sim_tool = "modelsim"
+sim_top="main"
 top_module="main"
 syn_device="xc6slx150t"
 
