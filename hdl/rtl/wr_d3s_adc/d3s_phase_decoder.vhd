@@ -144,18 +144,8 @@ begin
           tm_cycles_adj1 <= tm_cycles_adj0;
         end if;
 
-
         if(stall = '0') then
           fifo_rd_d <= not ofifo_empty;
-
-          if (fifo_rd_d = '1') then
-            --s1_phase <= unsigned(fifo_phase_i);
-
-          --s1_tstamp <= f_normalize_timestamp(unsigned(fifo_tstamp_i) + unsigned(r_delay_coarse_i));
-          --s1_is_rl  <= fifo_is_rl_i;
-          --s1_rl     <= unsigned(fifo_rl_i);
-          --s1_valid  <= '1';
-          end if;
         end if;
 
       end if;
@@ -198,16 +188,13 @@ begin
                 if ofifo_is_rl = '0' then
                   s3_phase <= unsigned(ofifo_phase(22 downto 0));
                   s3_valid <= '1';
---                  got_fixup <= '1';
                 else
-                  --                if (got_fixup = '1') then
                   s3_phase  <= s3_phase + unsigned(ofifo_phase(22 downto 0));
                   s3_dphase <= unsigned(ofifo_phase(22 downto 0));
                   s3_count  <= unsigned(ofifo_rl);
                   if unsigned(ofifo_rl) /= 1 then
                     s3_state <= RUN_LENGTH;
                   end if;
-                --              end if;
                 end if;
               end if;
             end if;

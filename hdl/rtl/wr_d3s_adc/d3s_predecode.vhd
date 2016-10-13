@@ -55,7 +55,7 @@ architecture rtl of d3s_predecode is
   end f_unpack;
 
   signal q_in_packed, q_out_packed : std_logic_vector(28 + 23 + 1 + 12 - 1 downto 0);
-  signal q_wr, q_almost_full                      : std_logic;
+  signal q_valid, q_wr, q_almost_full                      : std_logic;
   signal q_in, q_out               : t_compr_record;
   signal ififo_rd_d, ififo_rd      : std_logic;
   signal got_ts, got_fix                    : std_logic;
@@ -117,13 +117,10 @@ begin
 
   q_in_packed <= f_pack(q_in);
 
-  U_Out_Queue : generic_sync_fifo
+  U_Out_Queue : generic_shiftreg_fifo
     generic map (
       g_data_width            => q_in_packed'length,
-      g_size                  => 256,
-      g_show_ahead            => false,
-      g_with_almost_full      => true,
-      g_almost_full_threshold => 250)
+      g_size                  => 16)
     port map (
       rst_n_i       => rst_n_wr_i,
       clk_i         => clk_wr_i,
@@ -131,10 +128,22 @@ begin
       we_i          => q_wr,
       q_o           => q_out_packed,
       rd_i          => ofifo_rd_i,
-      empty_o       => ofifo_empty_o,
-      almost_full_o => q_almost_full);
+     -- empty_o       => open,
+      almost_full_o => q_almost_full,
+      q_valid_o     => q_valid);
 
-  q_out <= f_unpack(q_out_packed);
+  process(clk_wr_i)
+    begin
+      if rising_edge(clk_wr_i) then
+        if (ofifo_rd_i = '1') then
+          q_out <= f_unpack(q_out_packed);
+        end if;
+      end if;
+    end process;
+
+  ofifo_empty_o <= not q_valid;
+    
+  --q_out <= f_unpack(q_out_packed);
 
   ofifo_rl_o    <= std_logic_vector(q_out.rl);
   ofifo_is_rl_o <= q_out.is_rl;

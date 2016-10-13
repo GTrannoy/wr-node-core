@@ -505,7 +505,7 @@ begin
   U_Acq : d3s_acq_buffer
     generic map (
       g_data_width => 14,
-      g_size       => 16384)
+      g_size       => 1024)
     port map (
       rst_n_sys_i => rst_n_sys_i,
       clk_sys_i   => clk_sys_i,
@@ -517,7 +517,7 @@ begin
   U_Acq2 : d3s_acq_buffer
     generic map (
       g_data_width => 16,
-      g_size       => 2048)
+      g_size       => 1024)
     port map (
       rst_n_sys_i => rst_n_sys_i,
       clk_sys_i   => clk_sys_i,
@@ -529,7 +529,7 @@ begin
   U_Acq3 : d3s_acq_buffer
     generic map (
       g_data_width => 16,
-      g_size       => 2048)
+      g_size       => 1024)
     port map (
       rst_n_sys_i => rst_n_sys_i,
       clk_sys_i   => clk_sys_i,

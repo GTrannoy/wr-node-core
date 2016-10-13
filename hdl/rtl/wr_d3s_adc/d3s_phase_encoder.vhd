@@ -127,6 +127,12 @@ architecture rtl of d3s_phase_encoder is
   type t_state is (STARTUP, IDLE, RL_SHORT, RL_LONG);
 
   signal rl_phase                   : std_logic_vector(15 downto 0);
+
+  signal err_bound_st_lo : unsigned ( 22 downto 0);
+  signal err_bound_st_hi : unsigned ( 22 downto 0);
+  signal err_bound_lt_lo : unsigned ( 22 downto 0);
+  signal err_bound_lt_hi : unsigned ( 22 downto 0);
+  
   signal rl_integ, rl_phase_ext     : unsigned(22 downto 0);
   signal rl_length                  : unsigned(15 downto 0);
   signal rl_state                   : t_state;
@@ -147,7 +153,7 @@ architecture rtl of d3s_phase_encoder is
   signal c1, c2, c1_d, c2_d, c_out : t_comp_record;
   signal c2_pending                : std_logic;
   signal ts_report_cnt : unsigned(15 downto 0);
-
+  signal err_st_lo, err_st_hi, err_lt_lo, err_lt_hi : signed(22 downto 0);
 constant c_ACC_SHIFT : integer := 4;
   
 begin
@@ -279,9 +285,9 @@ begin
   --avg_lt_trunc <= avg_lt (avg_lt'length-1 downto avg_lt'length-16);
   --avg_st_trunc <= avg_st (avg_st'length-1 downto avg_st'length-16);
 
-  U_RunLen_Delay : gc_delay_line
+   U_RunLen_Delay : gc_delay_line
     generic map (
-      g_delay => 128,
+      g_delay => 127,
       g_width => adc_phase'length)
     port map (
       clk_i   => clk_i,
@@ -289,13 +295,28 @@ begin
       d_i     => adc_phase,
       q_o     => rl_phase);
 
-  rl_phase_ext <= unsigned(rl_phase(13 downto 0) & "000000000");
+  process (clk_i)
+  begin
+    if rising_edge(clk_i) then
+	  rl_phase_ext <= unsigned(rl_phase(13 downto 0) & "000000000");
+    end if;
+  end process;
 
-  err_st <= signed(rl_phase_ext - rl_integ - (avg_st_d & "0000" ) ); 
-  err_lt <= signed(rl_phase_ext - rl_integ - (avg_lt_d & "0000" ) );
 
-  err_lt_bound <= '1' when err_lt > signed(r_min_error_i) and err_lt < signed(r_max_error_i) else '0';
-  err_st_bound <= '1' when err_st > signed(r_min_error_i) and err_st < signed(r_max_error_i) else '0';
+--  err_st <= signed(rl_phase_ext - rl_integ - (avg_st_d & "0000" ) ); 
+--  err_lt <= signed(rl_phase_ext - rl_integ - (avg_lt_d & "0000" ) );
+
+  err_st_lo <= signed(rl_phase_ext - rl_integ - err_bound_st_lo ); 
+  err_st_hi <= signed(rl_phase_ext - rl_integ - err_bound_st_hi ); 
+  err_lt_lo <= signed(rl_phase_ext - rl_integ - err_bound_lt_lo ); 
+  err_lt_hi <= signed(rl_phase_ext - rl_integ - err_bound_lt_hi ); 
+
+  err_lt_bound <= not std_logic(err_lt_lo(err_lt_lo'length-1)) and std_logic(err_lt_hi(err_lt_hi'length-1));
+  err_st_bound <= not std_logic(err_st_lo(err_st_lo'length-1)) and std_logic(err_st_hi(err_st_hi'length-1));
+
+                  
+--  err_lt_bound <= '1' when err_lt > signed(r_min_error_i) and err_lt < signed(r_max_error_i) else '0';
+--  err_st_bound <= '1' when err_st > signed(r_min_error_i) and err_st < signed(r_max_error_i) else '0';
 
 
   p_compress_fsm : process (clk_i)
@@ -324,6 +345,11 @@ begin
             avg_st_d        <= unsigned( avg_st(avg_st'length-3 downto 0) & "00" );
             avg_lt_d        <= unsigned( avg_lt(avg_lt'length-3 downto 2) );
 
+            err_bound_st_lo <= unsigned( avg_st(avg_st'length-3 downto 0) & "000000" ) + unsigned(r_min_error_i);
+            err_bound_st_hi <= unsigned( avg_st(avg_st'length-3 downto 0) & "000000" ) + unsigned(r_max_error_i);
+            err_bound_lt_lo <= unsigned( avg_lt(avg_lt'length-3 downto 2) & "0000") + unsigned(r_min_error_i);
+            err_bound_lt_hi <= unsigned( avg_lt(avg_lt'length-3 downto 2) & "0000") + unsigned(r_max_error_i);
+            
             c1.valid <= '1';
             c2.valid <= '0';
 
@@ -342,6 +368,7 @@ begin
             else
               rl_state <= IDLE;
               rl_integ <= rl_phase_ext;
+
             end if;
 
             ts_report_cnt <= ts_report_cnt + 1;
