@@ -266,12 +266,14 @@ class PhaseData;
       int i;
       real err_max = 0.0;
    
-      int max_samples = min ( samples.size(), other.samples.size() ) - st_max;
+      int max_samples = min ( samples.size(), other.samples.size() )  - st_max;
 
-//      $display("start_time %d max %d", st_max, max_samples);
+      //$display("start_time %d max %d", st_max, max_samples);
 
 //      max_samples = 100;
       
+
+   //   max_samples = st_max + 100;
       
       for(i=st_max;i<max_samples;i++)
 	begin
@@ -298,7 +300,7 @@ class PhaseData;
 	   
 	end
   
-      $display("compared %d samples, max error = %.1f deg", max_samples-st_max, err_max);
+      $display("compared %d samples, max error = %.3f deg", max_samples-st_max, err_max);
       
       return (err_max > max_allowed_error ? 1 : 0);
       
@@ -369,7 +371,7 @@ endmodule // fake_dac
    
 module main;
 
-   const int max_error_deg = 3;
+   const real max_error_deg = 3.0;
    
    reg rst_n = 0;
    reg clk_adc = 0;
@@ -586,7 +588,7 @@ module main;
    initial begin
       uint64_t rv;
       CBusAccessor acc = Host1.get_accessor();
-      int max_err = (1<<(9+14))  * max_error_deg / 360;
+      int max_err = int' ( real'(1<<(9+14))  * real'(max_error_deg) / 360.0 );
       int 	last_ts_cycles = -1;
       
       #5us;
@@ -594,10 +596,10 @@ module main;
       $display ("Starting DDS Master");
       
       
-      acc.write(`ADDR_D3S_CR, `D3S_CR_ENABLE);
       acc.write(`ADDR_D3S_RL_ERR_MIN, -max_err);
       acc.write(`ADDR_D3S_RL_ERR_MAX, max_err);
-      acc.write(`ADDR_D3S_RL_LENGTH_MAX, 20000);
+      acc.write(`ADDR_D3S_RL_LENGTH_MAX, 4000);
+      acc.write(`ADDR_D3S_CR, `D3S_CR_ENABLE);
       		     
       while(1)
 	begin
@@ -611,8 +613,8 @@ module main;
 	   acc.read(`ADDR_D3S_ADC_CSR, rv);
 	   count = rv & 'hffff;
 	   	   
-	   if(rv & `D3S_ADC_CSR_FULL)
-		$warning("master: full FIFO\n");
+//	   if(rv & `D3S_ADC_CSR_FULL)
+//		$warning("master: full FIFO\n");
 
 //	   $display("Got %d\n", count);
 	   
@@ -721,11 +723,15 @@ module main;
 	 acc_slave.read(`ADDR_D3SS_PHFIFO_CSR, fifo_stat);
 
 
-	 
+	
 	 if(compr_records.size() > 0 && !(fifo_stat & `D3SS_PHFIFO_CSR_FULL))
 	   begin
+	      
+	      
 	      phase_rl_record_t  rec;
 	      rec = compr_records.pop_front();
+
+//	      $display("Write record!", compr_records.size());
 	      
 
 //	      if(fifo_stat & `D3SS_PHFIFO_CSR_EMPTY)
@@ -751,6 +757,8 @@ module main;
 	int i, size_m, size_s, size_check, size=0;
 	int max_err = 3, err;
 	const int sample_count = 1000;
+	int   st;
+	
 	
 
 
@@ -774,8 +782,17 @@ module main;
 	  $error("master-slave error exceeding the limit (%.1f deg)", max_error_deg);
 	
 
+	
 	ph_slave.set_start_time(0);
 	ph_check.set_start_time(0);
+	
+	st = max(ph_master.get_start_time(), ph_slave.get_start_time());
+	
+/*	for(i = st; i < st + size; i++)
+	  $display("%d %d %d", ph_master.sample_at(i), ph_slave.sample_at(i),ph_master.sample_at(i)- ph_slave.sample_at(i));*/
+
+	
+
 	
 	if ( ph_slave.compare( ph_check, 0.0 ) )
 	  $error("slave and check samples not equal, something wrong with the decompressor!");
@@ -809,7 +826,7 @@ module main;
 	   if(err_deg < 0)
 	     err_deg = -err_deg;
 	   
-	   if(err_deg > real'(max_error_deg))
+	   if(err_deg > max_error_deg)
 	     $display("Error too big!");
 	    
 	   

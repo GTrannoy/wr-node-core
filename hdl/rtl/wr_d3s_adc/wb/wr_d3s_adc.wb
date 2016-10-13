@@ -200,6 +200,52 @@ peripheral {
 			};
 
 	 };
+
+reg {
+			name = "Fixed record count";
+			prefix = "CNT_FIXED";
+
+			field {
+				 name = "Count";
+				 description = "Number of fixed phase records produced by the compression engine.";
+				 type = SLV;
+				 size = 32;
+				 access_dev = WRITE_ONLY;
+				 access_bus = READ_ONLY;
+				 clock = "clk_wr_i";
+			};
+
+	 };
+reg {
+			name = "Run Length record count";
+			prefix = "CNT_RL";
+
+			field {
+				 name = "Count";
+				 description = "Number of run length records produced by the compression engine.";
+				 type = SLV;
+				 size = 32;
+				 access_dev = WRITE_ONLY;
+				 access_bus = READ_ONLY;
+				 clock = "clk_wr_i";
+			};
+
+	 };
+reg {
+			name = "Timestamp record count";
+			prefix = "CNT_TSTAMP";
+
+			field {
+				 name = "Count";
+				 description = "Number of timestamp records produced by the compression engine.";
+				 type = SLV;
+				 size = 32;
+				 access_dev = WRITE_ONLY;
+				 access_bus = READ_ONLY;
+				 clock = "clk_wr_i";
+			};
+
+	 };
 	 
 
 };

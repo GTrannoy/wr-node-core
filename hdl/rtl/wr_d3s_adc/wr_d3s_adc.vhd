@@ -108,7 +108,11 @@ architecture rtl of wr_d3s_adc is
       fifo_lost_o      : out std_logic;
       fifo_payload_o   : out std_logic_vector(31 downto 0);
       fifo_we_o        : out std_logic;
-      tm_cycles_i      : in  std_logic_vector(27 downto 0));
+      tm_cycles_i      : in  std_logic_vector(27 downto 0);
+      cnt_fixed_o      : out std_logic_vector(31 downto 0);
+      cnt_rl_o         : out std_logic_vector(31 downto 0);
+      cnt_ts_o         : out std_logic_vector(31 downto 0));
+
   end component d3s_phase_encoder;
 
   component d3s_acq_buffer is
@@ -247,8 +251,8 @@ architecture rtl of wr_d3s_adc is
   signal serdes_strobe        : std_logic;
   signal fs_clk_buf           : std_logic;
   signal sys_rst              : std_logic;
-  signal pllout_serdes_clk : std_logic;
-  signal clk_wr_div2 : std_logic;
+  signal pllout_serdes_clk    : std_logic;
+  signal clk_wr_div2          : std_logic;
 
   signal scl_out, sda_out : std_logic;
 
@@ -330,7 +334,7 @@ begin
 -- Serializer TDC data input buffer:
 
 --        1st attempt
-   cmp_trig_buf : IBUFDS
+  cmp_trig_buf : IBUFDS
     generic map (
       DIFF_TERM  => true,               -- Differential termination
       IOSTANDARD => "LVDS_25")
@@ -359,8 +363,8 @@ begin
     port map (
       -- Output clocks
       CLKFBOUT => clk_fb,
-      CLKOUT0  => pllout_serdes_clk,           -- 1GHz
-      CLKOUT1  => fs_clk_buf, -- 125 MHz
+      CLKOUT0  => pllout_serdes_clk,    -- 1GHz
+      CLKOUT1  => fs_clk_buf,           -- 125 MHz
       CLKOUT2  => open,
       CLKOUT3  => open,
       CLKOUT4  => open,
@@ -551,9 +555,13 @@ begin
       fifo_en_i       => regs_out.cr_enable_o,
       fifo_full_i     => regs_out.adc_wr_full_o,
       fifo_lost_o     => open,
-      fifo_payload_o => regs_in.adc_payload_i,
+      fifo_payload_o  => regs_in.adc_payload_i,
       fifo_we_o       => regs_in.adc_wr_req_i,
-      tm_cycles_i     => tm_cycles_i);
+      tm_cycles_i     => tm_cycles_i,
+      cnt_fixed_o => regs_in.cnt_fixed_i,
+      cnt_rl_o => regs_in.cnt_rl_i,
+      cnt_ts_o => regs_in.cnt_tstamp_i
+      );
 
   u_mon_adc_clock : process(clk_wr)
   begin
@@ -574,7 +582,7 @@ begin
       sys_rst_n_i     => rst_n_sys_i,
       clk_sys_i       => clk_sys_i,     -- 62.5 MHz
       clk_125m_i      => clk_wr,        -- 125 MHz
-      serdes_clk_i    => pllout_serdes_clk,    -- 1000 MHz
+      serdes_clk_i    => pllout_serdes_clk,  -- 1000 MHz
       serdes_strobe_i => serdes_strobe,
       wb_addr_i       => cnx_out(4).adr,
       wb_data_i       => cnx_out(4).dat,
@@ -641,4 +649,4 @@ begin
 --      LOCK         => open,
 --      LOCKED       => pllout_stdc_locked,   -- LOCKED signal from PLL
 --      SERDESSTROBE => stdc_serdes_strobe);  --  used to drive IOSERDES2(IOCE)-
-  end rtl;
+end rtl;

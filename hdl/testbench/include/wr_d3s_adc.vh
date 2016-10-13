@@ -27,10 +27,13 @@
 `define ADDR_D3S_RL_ERR_MIN            6'h10
 `define ADDR_D3S_RL_ERR_MAX            6'h14
 `define ADDR_D3S_RL_LENGTH_MAX         6'h18
-`define ADDR_D3S_ADC_R0                6'h1c
+`define ADDR_D3S_CNT_FIXED             6'h1c
+`define ADDR_D3S_CNT_RL                6'h20
+`define ADDR_D3S_CNT_TSTAMP            6'h24
+`define ADDR_D3S_ADC_R0                6'h28
 `define D3S_ADC_R0_PAYLOAD_OFFSET 0
 `define D3S_ADC_R0_PAYLOAD 32'hffffffff
-`define ADDR_D3S_ADC_CSR               6'h20
+`define ADDR_D3S_ADC_CSR               6'h2c
 `define D3S_ADC_CSR_FULL_OFFSET 16
 `define D3S_ADC_CSR_FULL 32'h00010000
 `define D3S_ADC_CSR_EMPTY_OFFSET 17
