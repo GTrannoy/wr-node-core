@@ -11,15 +11,17 @@ library UNISIM;
 use UNISIM.vcomponents.all;
 
 entity wr_d3s_adc_slave is
+  generic (
+    g_clock_freq : integer := 125000000);
   port (
-    rst_n_sys_i   : in std_logic;
-	 clk_sys_i     : in std_logic;
-    clk_wr_o : out std_logic;
+    rst_n_sys_i : in  std_logic;
+    clk_sys_i   : in  std_logic;
+    clk_wr_o    : out std_logic;
 --    clk_125m_pllref_i : in std_logic;
 
     -- Timing (WRC)
     tm_link_up_i         : in  std_logic;
-	 tm_time_valid_i      : in  std_logic;
+    tm_time_valid_i      : in  std_logic;
     tm_tai_i             : in  std_logic_vector(39 downto 0);
     tm_cycles_i          : in  std_logic_vector(27 downto 0);
     tm_clk_aux_lock_en_o : out std_logic;
@@ -40,17 +42,17 @@ entity wr_d3s_adc_slave is
     -- VCXO PLL dedicated lines
     pll_vcxo_cs_n_o   : out std_logic;
     pll_vcxo_sync_n_o : out std_logic;
-    pll_vcxo_status_i : in  std_logic;   --FIXME! : not connected
+    pll_vcxo_status_i : in  std_logic;  --FIXME! : not connected
 
     -- SPI bus to both PLL chips
     pll_sclk_o : out   std_logic;
     pll_sdio_b : inout std_logic;
-    pll_sdo_i  : in    std_logic;    --FIXME! : not connected
- 	 
+    pll_sdo_i  : in    std_logic;       --FIXME! : not connected
+
     -- DDS Dac I/F (Maxim)
     dac_n_o : out std_logic_vector(13 downto 0);
     dac_p_o : out std_logic_vector(13 downto 0);
-    
+
     -- WR mezzanine DAC
     wr_dac_sclk_o   : out std_logic;
     wr_dac_din_o    : out std_logic;
@@ -100,13 +102,13 @@ architecture rtl of wr_d3s_adc_slave is
       phase_divided_o       : out std_logic_vector(4*14-1 downto 0);
       phase_divided_valid_o : out std_logic;
 
-      frev_ts_tai_i   : in std_logic_vector(31 downto 0);
-      frev_ts_nsec_i  : in std_logic_vector(31 downto 0);
-      frev_ts_valid_i : in std_logic;
+      frev_ts_tai_i   : in  std_logic_vector(31 downto 0);
+      frev_ts_nsec_i  : in  std_logic_vector(31 downto 0);
+      frev_ts_valid_i : in  std_logic;
       frev_ts_ready_o : out std_logic;
-      tm_time_valid_i : in std_logic;
-      tm_tai_i        : in std_logic_vector(31 downto 0);
-      tm_cycles_i     : in std_logic_vector(27 downto 0)
+      tm_time_valid_i : in  std_logic;
+      tm_tai_i        : in  std_logic_vector(31 downto 0);
+      tm_cycles_i     : in  std_logic_vector(27 downto 0)
       );
 
   end component d3s_upsample_divide;
@@ -122,7 +124,7 @@ architecture rtl of wr_d3s_adc_slave is
       tm_time_valid_i  : in  std_logic;
       tm_tai_i         : in  std_logic_vector(39 downto 0);
       tm_cycles_i      : in  std_logic_vector(27 downto 0);
-      fifo_payload_i     : in  std_logic_vector(31 downto 0);
+      fifo_payload_i   : in  std_logic_vector(31 downto 0);
       fifo_empty_i     : in  std_logic;
       fifo_rd_o        : out std_logic;
       phase_o          : out std_logic_vector(13 downto 0);
@@ -175,7 +177,7 @@ architecture rtl of wr_d3s_adc_slave is
 --
 --  -- Wishbone slave(s)
 --   constant c_ADC_slave    : integer := 0;  -- Fmc0: fmc-adc (d3s_adc core)
-  
+
 ------------------------------------------
 --        SIGNALS DECLARATION  
 ------------------------------------------
@@ -189,11 +191,11 @@ architecture rtl of wr_d3s_adc_slave is
 
 --  signal cnx_out       : t_wishbone_master_out_array(0 to c_CNX_MASTER_COUNT-1);
 --  signal cnx_in        : t_wishbone_master_in_array(0 to c_CNX_MASTER_COUNT-1);
-  
-  signal clk_wr                      : std_logic;
-  signal rst_n_wr, rst_wr            : std_logic;
-  signal fpll_reset                  : std_logic;
-  signal clk_dds_locked              : std_logic;
+
+  signal clk_wr           : std_logic;
+  signal rst_n_wr, rst_wr : std_logic;
+  signal fpll_reset       : std_logic;
+  signal clk_dds_locked   : std_logic;
 
   subtype t_phase_vec is std_logic_vector(13 downto 0);
 --  type t_phase_array is array(0 to 3) of t_phase_vec;
@@ -205,8 +207,8 @@ architecture rtl of wr_d3s_adc_slave is
   signal phase_dec_valid : std_logic;
 
   signal dac_data_par : std_logic_vector(4 * 14 - 1 downto 0);
-  
-  signal pll_sdio_val               : std_logic;
+
+  signal pll_sdio_val : std_logic;
 
 begin
 
@@ -272,7 +274,7 @@ begin
       synced_o => rst_n_wr);
 
   rst_wr <= not rst_n_wr;
-  
+
 --  U_Intercon : xwb_crossbar
 --    generic map (
 --      g_num_masters => 1,
@@ -293,25 +295,27 @@ begin
     port map (
       rst_n_i    => rst_n_sys_i,
       clk_sys_i  => clk_sys_i,
-      wb_adr_i   => slave_i.adr(5 downto 2),   -- cnx_out(c_ADC_slave).adr(4 downto 2),
-      wb_dat_i   => slave_i.dat,               --cnx_out(c_ADC_slave).dat,
-      wb_dat_o   => slave_o.dat,               --cnx_in(c_ADC_slave).dat,
-      wb_cyc_i   => slave_i.cyc,                --cnx_out(c_ADC_slave).cyc,
-      wb_sel_i   => slave_i.sel,               --cnx_out(c_ADC_slave).sel,
-      wb_stb_i   => slave_i.stb,               --cnx_out(c_ADC_slave).stb,
-      wb_we_i    => slave_i.we,                 --cnx_out(c_ADC_slave).we,
-      wb_ack_o   => slave_o.ack,               --cnx_in(c_ADC_slave).ack,
-      wb_stall_o => slave_o.stall,             --cnx_in(c_ADC_slave).stall,
+      wb_adr_i   => slave_i.adr(5 downto 2),  -- cnx_out(c_ADC_slave).adr(4 downto 2),
+      wb_dat_i   => slave_i.dat,        --cnx_out(c_ADC_slave).dat,
+      wb_dat_o   => slave_o.dat,        --cnx_in(c_ADC_slave).dat,
+      wb_cyc_i   => slave_i.cyc,        --cnx_out(c_ADC_slave).cyc,
+      wb_sel_i   => slave_i.sel,        --cnx_out(c_ADC_slave).sel,
+      wb_stb_i   => slave_i.stb,        --cnx_out(c_ADC_slave).stb,
+      wb_we_i    => slave_i.we,         --cnx_out(c_ADC_slave).we,
+      wb_ack_o   => slave_o.ack,        --cnx_in(c_ADC_slave).ack,
+      wb_stall_o => slave_o.stall,      --cnx_in(c_ADC_slave).stall,
       clk_wr_i   => clk_wr,
       regs_i     => regs_in,
       regs_o     => regs_out);
 
-    slave_o.err <= '0';
-    slave_o.rty <= '0';
+  slave_o.err <= '0';
+  slave_o.rty <= '0';
 --  cnx_in(0).err <= '0';
 --  cnx_in(0).rty <= '0';
 
   U_Phase_Dec : d3s_phase_decoder
+    generic map (
+      g_clock_freq => g_clock_freq)
     port map (
       clk_wr_i         => clk_wr,
       rst_n_wr_i       => rst_n_wr,
@@ -320,7 +324,7 @@ begin
       tm_time_valid_i  => tm_time_valid_i,
       tm_tai_i         => tm_tai_i,
       tm_cycles_i      => tm_cycles_i,
-      fifo_payload_i     => regs_out.phfifo_payload_o,
+      fifo_payload_i   => regs_out.phfifo_payload_o,
       fifo_empty_i     => regs_out.phfifo_rd_empty_o,
       fifo_rd_o        => regs_in.phfifo_rd_req_i,
       phase_o          => phase_dec,
@@ -337,7 +341,7 @@ begin
       frev_ts_tai_i         => regs_out.frev_ts_sec_o,
       frev_ts_nsec_i        => regs_out.frev_ts_ns_o,
       frev_ts_valid_i       => regs_out.frev_cr_valid_o,
-      frev_ts_ready_o => regs_in.frev_cr_ready_i,
+      frev_ts_ready_o       => regs_in.frev_cr_ready_i,
       tm_time_valid_i       => tm_time_valid_i,
       tm_tai_i              => tm_tai_i(31 downto 0),
       tm_cycles_i           => tm_cycles_i);
@@ -383,37 +387,37 @@ begin
       dac_cs_n_o(0) => wr_dac_sync_n_o,
       dac_sclk_o    => wr_dac_sclk_o,
       dac_sdata_o   => wr_dac_din_o);
-		
-   -- PLL SYS signals were not connected... 
-   pll_sys_cs_n_o    <= regs_out.gpior_pll_sys_cs_n_o;
-   pll_sys_reset_n_o <= regs_out.gpior_pll_sys_reset_n_o;
-   pll_sys_sync_n_o  <= '1';
 
-   pll_sclk_o <= regs_out.gpior_pll_sclk_o;
+  -- PLL SYS signals were not connected... 
+  pll_sys_cs_n_o    <= regs_out.gpior_pll_sys_cs_n_o;
+  pll_sys_reset_n_o <= regs_out.gpior_pll_sys_reset_n_o;
+  pll_sys_sync_n_o  <= '1';
 
-   pll_vcxo_cs_n_o   <= regs_out.gpior_pll_vcxo_cs_n_o;
-   pll_vcxo_sync_n_o <= '1';
+  pll_sclk_o <= regs_out.gpior_pll_sclk_o;
 
-   process(clk_sys_i)
-   begin
-     if rising_edge(clk_sys_i) then
-       if regs_out.gpior_pll_sdio_load_o = '1' then
-         pll_sdio_val             <= regs_out.gpior_pll_sdio_o;
-         regs_in.gpior_pll_sdio_i <= pll_sdio_b;
+  pll_vcxo_cs_n_o   <= regs_out.gpior_pll_vcxo_cs_n_o;
+  pll_vcxo_sync_n_o <= '1';
 
-       end if;
-     end if;
-   end process;
+  process(clk_sys_i)
+  begin
+    if rising_edge(clk_sys_i) then
+      if regs_out.gpior_pll_sdio_load_o = '1' then
+        pll_sdio_val             <= regs_out.gpior_pll_sdio_o;
+        regs_in.gpior_pll_sdio_i <= pll_sdio_b;
+
+      end if;
+    end if;
+  end process;
+
+  pll_sdio_b <= pll_sdio_val when regs_out.gpior_pll_sdio_dir_o = '1' else 'Z';
+
+  -- Driving timing signals
+  regs_in.tcr_wr_link_i       <= tm_link_up_i;
+  regs_in.tcr_wr_time_valid_i <= tm_time_valid_i;
+  regs_in.tcr_wr_locked_i     <= tm_clk_aux_locked_i;
+
+  tm_clk_aux_lock_en_o <= regs_out.tcr_wr_lock_en_o;
+
+  clk_wr_o <= clk_wr;
   
-   pll_sdio_b <= pll_sdio_val when regs_out.gpior_pll_sdio_dir_o = '1' else 'Z';
-	
-	-- Driving timing signals
-	regs_in.tcr_wr_link_i       <= tm_link_up_i;
-   regs_in.tcr_wr_time_valid_i <= tm_time_valid_i;
-   regs_in.tcr_wr_locked_i     <= tm_clk_aux_locked_i;
-
-   tm_clk_aux_lock_en_o <= regs_out.tcr_wr_lock_en_o;
-	
-	clk_wr_o   <= clk_wr;
-	
 end rtl;

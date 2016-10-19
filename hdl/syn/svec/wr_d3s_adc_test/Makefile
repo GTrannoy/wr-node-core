@@ -76,7 +76,7 @@ FILES := ../../../ip_cores/general-cores/modules/wishbone/wb_onewire_master/wb_o
 ../../../ip_cores/wr-cores/modules/wrc_core/wrcore_pkg.vhd \
 ../../../ip_cores/general-cores/modules/wishbone/wb_lm32/src/lm32_ram.vhd \
 ../../../ip_cores/general-cores/modules/wishbone/wb_lm32/src/lm32_mc_arithmetic.v \
-../../../rtl/wr_d3s_adc/d3s_acq_buffer_wbgen2_pkg.vhd \
+../../../rtl/wr_d3s_adc/d3s_predecode.vhd \
 ../../../top/svec/node_template/svec_node_pkg.vhd \
 ../../../ip_cores/general-cores/modules/wishbone/wb_dma/xwb_streamer.vhd \
 ../../../ip_cores/wr-cores/modules/wr_eca/eca.vhd \
@@ -173,7 +173,7 @@ svec_wr_d3s.xise \
 ../../../ip_cores/general-cores/modules/genrams/generic/generic_shiftreg_fifo.vhd \
 ../../../ip_cores/etherbone-core/hdl/eb_slave_core/eb_pass_fifo.vhd \
 ../../../rtl/wr_d3s/dds_core/dds_single_channel.v \
-../../../ip_cores/general-cores/platform/xilinx/wb_xilinx_fpga_loader/xwb_xilinx_fpga_loader.vhd \
+../../../rtl/wr_d3s_adc/d3s_acq_buffer_wbgen2_pkg.vhd \
 ../../../ip_cores/general-cores/modules/wishbone/wb_lm32/src/lm32_dp_ram.vhd \
 ../../../rtl/wr_d3s/dds_core/dds_stage.v \
 ../../../ip_cores/general-cores/modules/wishbone/wbgen2/wbgen2_fifo_sync.vhd \
@@ -394,6 +394,7 @@ run.tcl \
 ../../../ip_cores/wr-cores/modules/wr_tbi_phy/enc_8b10b.vhd \
 ../../../rtl/wrnc/cpu/wrn_cpu_iram.vhd \
 ../../../ip_cores/wr-cores/modules/wr_eca/eca_gpio_channel.vhd \
+../../../ip_cores/general-cores/platform/xilinx/wb_xilinx_fpga_loader/xwb_xilinx_fpga_loader.vhd \
 ../../../ip_cores/wr-cores/modules/wrc_core/xwr_core.vhd \
 ../../../ip_cores/general-cores/modules/wishbone/wb_async_bridge/xwb_async_bridge.vhd \
 ../../../ip_cores/general-cores/modules/wishbone/wb_uart/wb_simple_uart.vhd \

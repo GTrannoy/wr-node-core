@@ -109,6 +109,13 @@ module d3s_upsample_divide
   output 	    frev_ts_ready_o,
   
 
+/*  output [13:0]     r_zc_phase0_o,
+  output [13:0]     r_zc_phase1_o,
+  output [3:0] 	    r_zc_mask_o,
+
+  input [15:0] 	    r_harmonic_num_i,*/
+  
+  
   input 	    tm_time_valid_i,
   input [31:0] 	    tm_tai_i,
   input [27:0] 	    tm_cycles_i
@@ -472,7 +479,22 @@ module d3s_upsample_divide
 	
      end
 
-   integer one_cnt;
+
+/*   reg [15:0] h_count;
+
+   always@(posedge clk_i)
+     begin
+	if (!rst_n_i) begin
+	   h_count <= 0;
+	end else begin
+	   if (div_start_phase_sel_valid_d) begin
+	      h_count <= f_count_ones ( div_start_phase_sel_valid_d );
+	   end
+	   
+	end
+     end
+   
+  */
    
    
    always@(posedge clk_i)

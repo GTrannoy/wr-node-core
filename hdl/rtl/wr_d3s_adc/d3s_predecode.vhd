@@ -6,6 +6,8 @@ use work.genram_pkg.all;
 use work.wishbone_pkg.all;
 
 entity d3s_predecode is
+  generic (
+    g_clock_freq : integer := 125000000 );
   port (
     clk_wr_i : in std_logic;
 
@@ -89,7 +91,7 @@ begin
 --              report "fix phase: " & integer'image(to_integer(unsigned(ififo_payload_i(22 downto 0))));
               q_in.is_rl <= '0';
               q_in.ts    <= ts;
-              ts          <= f_clamp_add (ts, to_unsigned(1, 10), 125000000);
+              ts          <= f_clamp_add (ts, to_unsigned(1, 28), g_clock_freq);
               q_wr        <= got_ts;
               got_fix <= got_ts;
             when "01" =>                -- timestamp
@@ -103,7 +105,7 @@ begin
               q_in.phase <= unsigned(ififo_payload_i(18 downto 0)) & "0000";
               q_in.is_rl <= '1';
               q_wr        <= got_ts and got_fix;
-              ts          <= f_clamp_add (ts, unsigned(ififo_payload_i(30 downto 19)), 125000000);
+              ts          <= f_clamp_add (ts, unsigned(ififo_payload_i(30 downto 19)), g_clock_freq);
             when others => null;
           end case;
         end if;

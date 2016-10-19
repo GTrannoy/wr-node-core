@@ -372,6 +372,10 @@ endmodule // fake_dac
 module main;
 
    const real max_error_deg = 3.0;
+
+   parameter int g_clock_freq = 125000;
+   parameter g_h_divider = 2000;
+   parameter g_delay_us = 100;
    
    reg rst_n = 0;
    reg clk_adc = 0;
@@ -380,8 +384,7 @@ module main;
 
    reg frev_in = 0;
 
-   parameter g_h_divider = 2000;
-   parameter g_delay_us = 300;
+
 
    
    always #1ns clk_adc <= ~clk_adc; // 500 MHz ADC/DAC clock
@@ -408,7 +411,7 @@ module main;
    
    // 1GHz nsec counter
    always@(posedge clk_adc or negedge clk_adc) begin
-      if(tm_nsec == 1000000000-1) begin
+      if(tm_nsec == (g_clock_freq * 8 - 1)) begin
 	 tm_tai <= tm_tai + 1;
 	 tm_nsec <= 0;
       end      else
@@ -524,7 +527,8 @@ module main;
    
 
    wr_d3s_adc_slave
-      
+      #(
+	.g_clock_freq(g_clock_freq) )
      DUT_S 
        (
 	.rst_n_sys_i(rst_n),
@@ -712,7 +716,7 @@ module main;
       #5us;
       acc_slave.write(`ADDR_D3SS_RSTR, 'hffffffff); // reset
       acc_slave.write(`ADDR_D3SS_RSTR, 'h0); // un-reset
-      acc_slave.write(`ADDR_D3SS_REC_DELAY_COARSE, (100000/8)); // 200us reconstruction delay
+      acc_slave.write(`ADDR_D3SS_REC_DELAY_COARSE, (g_delay_us * 1000 /8)); // 200us reconstruction delay
       acc_slave.write(`ADDR_D3SS_CR, `D3SS_CR_ENABLE);
 
 

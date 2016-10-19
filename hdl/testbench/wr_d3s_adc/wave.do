@@ -56,70 +56,58 @@ add wave -noupdate -expand -group PhaseEncoder -expand /main/DUT_M/U_Phase_Enc/c
 add wave -noupdate -expand -group PhaseEncoder -expand /main/DUT_M/U_Phase_Enc/c1_d
 add wave -noupdate -expand -group PhaseEncoder /main/DUT_M/U_Phase_Enc/c1_d.valid
 add wave -noupdate -expand -group PhaseEncoder -expand /main/DUT_M/U_Phase_Enc/c2
-add wave -noupdate -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/clk_wr_i
-add wave -noupdate -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/rst_n_wr_i
-add wave -noupdate -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/r_enable_i
-add wave -noupdate -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/ififo_payload_i
-add wave -noupdate -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/ififo_empty_i
-add wave -noupdate -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/ififo_rd_o
-add wave -noupdate -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/ofifo_empty_o
-add wave -noupdate -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/ofifo_rd_i
-add wave -noupdate -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/ofifo_is_rl_o
-add wave -noupdate -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/ofifo_rl_o
-add wave -noupdate -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/ofifo_phase_o
-add wave -noupdate -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/ofifo_tstamp_o
-add wave -noupdate -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/q_in_packed
-add wave -noupdate -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/q_out_packed
-add wave -noupdate -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/q_wr
-add wave -noupdate -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/q_almost_full
-add wave -noupdate -group PhaseDecoder -group Predecoder -expand /main/DUT_S/U_Phase_Dec/U_Predecode/q_in
-add wave -noupdate -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/q_out
-add wave -noupdate -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/ififo_rd_d
-add wave -noupdate -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/ififo_rd
-add wave -noupdate -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/got_ts
-add wave -noupdate -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/ts
-add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/clk_wr_i
-add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/rst_n_wr_i
-add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/r_enable_i
-add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/r_delay_coarse_i
-add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/tm_time_valid_i
-add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/tm_tai_i
-add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/tm_cycles_i
-add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/fifo_payload_i
-add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/fifo_empty_i
-add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/fifo_rd_o
-add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/phase_o
-add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/phase_valid_o
-add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s2_valid_comb
-add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s2_valid
-add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s2_phase
-add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s2_is_rl
-add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s2_tstamp
-add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s2_rl
-add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s3_ts_match
-add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s3_ts_miss
-add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s3_valid
-add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s3_phase
-add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s3_dphase
-add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s3_count
-add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s3_state
-add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s1_phase
-add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s1_is_rl
-add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s1_valid
-add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s1_tstamp
-add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s1_rl
-add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/fifo_rd
-add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/fifo_rd_d
-add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/stall
-add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/got_fixup
-add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/tm_cycles_adj0
-add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/tm_cycles_adj1
-add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/ofifo_phase
-add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/ofifo_rl
-add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/ofifo_is_rl
-add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/ofifo_tstamp
-add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/ofifo_empty
-add wave -noupdate -group PhaseDecoder /main/DUT_S/U_Phase_Dec/ofifo_rd
+add wave -noupdate -expand -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/clk_wr_i
+add wave -noupdate -expand -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/rst_n_wr_i
+add wave -noupdate -expand -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/r_enable_i
+add wave -noupdate -expand -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/ififo_payload_i
+add wave -noupdate -expand -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/ififo_empty_i
+add wave -noupdate -expand -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/ififo_rd_o
+add wave -noupdate -expand -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/ofifo_empty_o
+add wave -noupdate -expand -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/ofifo_rd_i
+add wave -noupdate -expand -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/ofifo_is_rl_o
+add wave -noupdate -expand -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/ofifo_rl_o
+add wave -noupdate -expand -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/ofifo_phase_o
+add wave -noupdate -expand -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/ofifo_tstamp_o
+add wave -noupdate -expand -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/q_in_packed
+add wave -noupdate -expand -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/q_out_packed
+add wave -noupdate -expand -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/q_wr
+add wave -noupdate -expand -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/q_almost_full
+add wave -noupdate -expand -group PhaseDecoder -group Predecoder -expand /main/DUT_S/U_Phase_Dec/U_Predecode/q_in
+add wave -noupdate -expand -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/q_out
+add wave -noupdate -expand -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/ififo_rd_d
+add wave -noupdate -expand -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/ififo_rd
+add wave -noupdate -expand -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/got_ts
+add wave -noupdate -expand -group PhaseDecoder -group Predecoder /main/DUT_S/U_Phase_Dec/U_Predecode/ts
+add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/clk_wr_i
+add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/rst_n_wr_i
+add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/r_enable_i
+add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/r_delay_coarse_i
+add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/tm_time_valid_i
+add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/tm_tai_i
+add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/tm_cycles_i
+add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/fifo_payload_i
+add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/fifo_empty_i
+add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/fifo_rd_o
+add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/phase_o
+add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/phase_valid_o
+add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s3_ts_match
+add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s3_ts_miss
+add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s3_valid
+add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s3_phase
+add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s3_dphase
+add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s3_count
+add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/s3_state
+add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/fifo_rd_d
+add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/stall
+add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/got_fixup
+add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/tm_cycles_adj0
+add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/tm_cycles_adj1
+add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/ofifo_phase
+add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/ofifo_rl
+add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/ofifo_is_rl
+add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/ofifo_tstamp
+add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/ofifo_empty
+add wave -noupdate -expand -group PhaseDecoder /main/DUT_S/U_Phase_Dec/ofifo_rd
 add wave -noupdate -group Upsampler /main/DUT_S/U_Upsampler/clk_i
 add wave -noupdate -group Upsampler -expand -group {Interpolated phase (200 MHz)} -format Analog-Step -height 100 -max 360.0 /main/DUT_S/U_Upsampler/MonUndiv/ph_o
 add wave -noupdate -group Upsampler -expand -group {Interpolated phase (undersampled)} -format Analog-Step -height 100 -max 360.0 /main/DUT_S/U_Upsampler/MonInterp/ph_o
@@ -302,7 +290,7 @@ add wave -noupdate -expand -group DACModel /main/U_DAC/data_o
 add wave -noupdate -expand -group DACModel /main/U_DAC/y_over
 add wave -noupdate -expand -group DACModel /main/U_DAC/y_d
 TreeUpdate [SetDefaultTree]
-WaveRestoreCursors {{Cursor 1} {229773147 ps} 0}
+WaveRestoreCursors {{Cursor 1} {1102302719 ps} 0}
 configure wave -namecolwidth 406
 configure wave -valuecolwidth 156
 configure wave -justifyvalue left
@@ -317,4 +305,4 @@ configure wave -griddelta 40
 configure wave -timeline 0
 configure wave -timelineunits ns
 update
-WaveRestoreZoom {229708827 ps} {229837467 ps}
+WaveRestoreZoom {1102217275 ps} {1103246395 ps}

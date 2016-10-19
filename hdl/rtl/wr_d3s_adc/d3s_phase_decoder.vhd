@@ -40,6 +40,8 @@ architecture behavioral of d3s_phase_decoder is
 
 
   component d3s_predecode is
+    generic (
+      g_clock_freq : integer );
     port (
       clk_wr_i        : in  std_logic;
       rst_n_wr_i      : in  std_logic;
@@ -114,6 +116,9 @@ architecture behavioral of d3s_phase_decoder is
 begin
 
   U_Predecode : d3s_predecode
+    generic map (
+      g_clock_freq => g_clock_freq
+      )
     port map (
       clk_wr_i        => clk_wr_i,
       rst_n_wr_i      => rst_n_wr_i,
