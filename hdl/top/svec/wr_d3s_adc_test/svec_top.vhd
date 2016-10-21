@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2016-09-28
+-- Last update: 2016-10-21
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -402,7 +402,7 @@ architecture rtl of svec_top is
 ------------------------------------------
 
   -- Number of master port(s) on the wishbone crossbar
-  constant c_NUM_WB_MASTERS : integer := 2;
+  constant c_NUM_WB_MASTERS : integer := 3;
 
   -- Number of slave port(s) on the wishbone crossbar
   constant c_NUM_WB_SLAVES : integer := 3;
@@ -673,8 +673,10 @@ begin
       rst_n_i    => rst_n,
       slave_i(0) => fmc_dp_wb_out(0),
       slave_i(1) => fmc_dp_wb_out(1),
+      slave_i(2) => fmc_host_wb_out(0),
       slave_o(0) => fmc_dp_wb_in(0),
       slave_o(1) => fmc_dp_wb_in(1),
+      slave_o(2) => fmc_host_wb_in(0),
       master_o   => fmc_wb_muxed_out,
       master_i   => fmc_wb_muxed_in
       );
