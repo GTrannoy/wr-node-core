@@ -3,7 +3,7 @@
 `include "mqueue_host.svh"
 `include "vme64x_bfm.svh"
 `include "svec_vme_buffers.svh"
-
+`include "d3s_acq_buffer_wb.vh"
 
 module main;
 
@@ -99,6 +99,34 @@ module main;
 
       acc.set_default_modifiers(A24 | D32 | SINGLE);
    endtask // init_vme64x_core
+
+   task automatic take_acquisition ( CBusAccessor_VME64x acc, uint64_t base_addr, int size );
+      uint64_t rv;
+      int i;
+      
+	
+      acc.write(base_addr + `ADDR_ACQ_CR, `ACQ_CR_START );
+
+      while (1 ) begin
+	 acc.read(base_addr + `ADDR_ACQ_CR, rv );
+	 if (rv & `ACQ_CR_READY)
+	   break;
+      end
+
+      $display("%d samples acquired : ", size );
+      
+      for ( i = 0; i < size; i++)
+	begin
+	   acc.write(base_addr + `ADDR_ACQ_ADDR,i  );
+	   acc.read(base_addr + `ADDR_ACQ_DATA, rv  );
+	   $display("%d: %x", i, rv & 'hffff);
+
+	end
+      
+      
+
+   endtask // take_acquisition
+   
    
 
    reg force_irq = 0;
@@ -109,35 +137,19 @@ module main;
       NodeCPUControl cpu_csr;
       MQueueHost hmq;
       uint64_t d;
-      
+
+      // wait a bit for the VME core to start up
       #50us;
       
       init_vme64x_core(acc);
       acc_casted.set_default_xfer_size(A24|SINGLE|D32);
 
 
-      cpu_csr = new ( acc, 'hc2c000 );
+      // base address : c00000 (VME) + 10000 (FMC Host 0) + 100 (ACQ buffer 0 in the master)
+      take_acquisition(acc, 'hc10100, 128);
+      		
+      $stop;
       
-      cpu_csr.init();
-      cpu_csr.reset_core(0, 1);
-      cpu_csr.load_firmware (0, "../../sw/debug-test/debug-test.ram");
-      cpu_csr.reset_core(0, 0);
-
-//      acc.write('hc11000 + 0, 'h10000000); // RFREQL
-  //    acc.write('hc11000 + 'h4, 'h0); // RFREQH
-
-    //  acc.write('hc60200 + 'h24, (0 | (1<<16)));
-		
-      
-       
-      forever begin
-	 cpu_csr.update();
-
-	 #1us;
-	 
-      end
-      
-      #150us;
 
       
    end

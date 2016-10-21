@@ -1,2 +1,2 @@
 modules = { 
-"local" : [ "wrnc", "wr_d3s", "wr_d3s_adc" ]  }
+"local" : [ "wrnc", "wr_d3s_adc", "wr_d3s" ]  }

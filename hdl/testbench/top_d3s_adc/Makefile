@@ -70,7 +70,7 @@ VHDL_SRC := ../../ip_cores/general-cores/modules/wishbone/wb_onewire_master/wb_o
 ../../ip_cores/wr-cores/modules/wrc_core/wrcore_pkg.vhd \
 ../../ip_cores/general-cores/modules/wishbone/wb_lm32/src/lm32_ram.vhd \
 ../../ip_cores/wr-cores/modules/wr_endpoint/ep_tx_framer.vhd \
-../../rtl/wr_d3s_adc/d3s_acq_buffer_wbgen2_pkg.vhd \
+../../rtl/wr_d3s_adc/d3s_predecode.vhd \
 ../../top/svec/node_template/svec_node_pkg.vhd \
 ../../ip_cores/vme64x-core/hdl/vme64x-core/rtl/VME_CRAM.vhd \
 ../../ip_cores/wr-cores/modules/wr_eca/eca.vhd \
@@ -82,7 +82,7 @@ VHDL_SRC := ../../ip_cores/general-cores/modules/wishbone/wb_onewire_master/wb_o
 ../../ip_cores/wr-cores/modules/wr_endpoint/ep_rx_vlan_unit.vhd \
 ../../ip_cores/wr-cores/platform/xilinx/wr_gtp_phy/gtp_bitslide.vhd \
 ../../ip_cores/wr-cores/modules/timing/dmtd_phase_meas.vhd \
-../../rtl/wrnc/smem/wrn_shared_mem.vhd \
+../../ip_cores/wr-cores/modules/wr_endpoint/endpoint_pkg.vhd \
 ../../ip_cores/general-cores/platform/xilinx/wb_xilinx_fpga_loader/xloader_registers_pkg.vhd \
 ../../ip_cores/wr-cores/modules/fabric/xwb_fabric_source.vhd \
 ../../rtl/wrnc/cpu/wrn_cpu_csr_wb.vhd \
@@ -115,9 +115,7 @@ VHDL_SRC := ../../ip_cores/general-cores/modules/wishbone/wb_onewire_master/wb_o
 ../../ip_cores/general-cores/modules/wishbone/wb_spi/xwb_spi.vhd \
 ../../rtl/wr_d3s_adc/wr_d3s_adc_slave_wbgen2_pkg.vhd \
 ../../ip_cores/vme64x-core/hdl/vme64x-core/rtl/VME_Wb_master.vhd \
-../../ip_cores/wr-cores/modules/wr_endpoint/ep_pcs_tbi_mdio_wb.vhd \
 ../../ip_cores/wr-cores/modules/wr_pps_gen/pps_gen_wb.vhd \
-../../ip_cores/wr-cores/modules/wr_endpoint/endpoint_pkg.vhd \
 ../../ip_cores/general-cores/modules/wishbone/wb_i2c_master/xwb_i2c_master.vhd \
 ../../ip_cores/general-cores/modules/genrams/xilinx/generic_simple_dpram.vhd \
 ../../ip_cores/general-cores/platform/xilinx/wb_xil_multiboot/multiboot_regs.vhd \
@@ -145,8 +143,8 @@ VHDL_SRC := ../../ip_cores/general-cores/modules/wishbone/wb_onewire_master/wb_o
 ../../ip_cores/general-cores/modules/wishbone/wb_irq/wb_irq_lm32.vhd \
 ../../ip_cores/general-cores/modules/wishbone/wb_simple_timer/wb_tics.vhd \
 ../../rtl/wrnc/cpu/wrn_cpu_cb.vhd \
-../../rtl/wr_d3s_adc/d3s_acq_buffer_wb.vhd \
 ../../rtl/serdes-tdc/core/stdc_fifo.vhd \
+../../ip_cores/general-cores/modules/common/gc_delay_gen.vhd \
 ../../ip_cores/general-cores/platform/xilinx/wb_xilinx_fpga_loader/xloader_wb.vhd \
 ../../ip_cores/vme64x-core/hdl/vme64x-core/rtl/VME64xCore_Top.vhd \
 ../../ip_cores/general-cores/modules/common/gc_fsm_watchdog.vhd \
@@ -154,7 +152,7 @@ VHDL_SRC := ../../ip_cores/general-cores/modules/wishbone/wb_onewire_master/wb_o
 ../../ip_cores/general-cores/modules/genrams/generic/generic_shiftreg_fifo.vhd \
 ../../ip_cores/etherbone-core/hdl/eb_slave_core/eb_pass_fifo.vhd \
 ../../ip_cores/vme64x-core/hdl/vme64x-core/rtl/VME_SharedComps.vhd \
-../../ip_cores/general-cores/platform/xilinx/wb_xilinx_fpga_loader/xwb_xilinx_fpga_loader.vhd \
+../../rtl/wr_d3s_adc/d3s_acq_buffer_wbgen2_pkg.vhd \
 ../../ip_cores/wr-cores/modules/wr_pps_gen/wr_pps_gen.vhd \
 ../../rtl/wr_d3s/wb/dds_wbgen2_pkg.vhd \
 ../../ip_cores/wr-cores/modules/wrc_core/wrc_syscon_wb.vhd \
@@ -175,7 +173,7 @@ VHDL_SRC := ../../ip_cores/general-cores/modules/wishbone/wb_onewire_master/wb_o
 ../../ip_cores/general-cores/modules/wishbone/wb_lm32/src/lm32_dp_ram.vhd \
 ../../rtl/serdes-tdc/core/stdc_hostif.vhd \
 ../../ip_cores/etherbone-core/hdl/eb_slave_core/eb_hdr_pkg.vhd \
-../../ip_cores/wr-cores/modules/timing/multi_dmtd_with_deglitcher.vhd \
+../../ip_cores/wr-cores/modules/fabric/wr_fabric_pkg.vhd \
 ../../ip_cores/wr-cores/modules/wr_softpll_ng/wr_softpll_ng.vhd \
 ../../ip_cores/vme64x-core/hdl/vme64x-core/rtl/xvme64x_core_pkg.vhd \
 ../../ip_cores/general-cores/modules/wishbone/wb_onewire_master/xwb_onewire_master.vhd \
@@ -193,8 +191,9 @@ VHDL_SRC := ../../ip_cores/general-cores/modules/wishbone/wb_onewire_master/wb_o
 ../../ip_cores/general-cores/modules/wishbone/wb_irq/wb_irq_timer.vhd \
 ../../ip_cores/general-cores/modules/common/gc_serial_dac.vhd \
 ../../ip_cores/general-cores/modules/common/gc_crc_gen.vhd \
+../../ip_cores/general-cores/modules/wishbone/wb_i2c_master/i2c_master_top.vhd \
 ../../ip_cores/wr-cores/modules/wr_eca/eca_wb_channel.vhd \
-../../ip_cores/wr-cores/modules/wr_softpll_ng/spll_period_detect.vhd \
+../../ip_cores/general-cores/modules/genrams/generic/inferred_async_fifo.vhd \
 ../../ip_cores/general-cores/modules/common/gc_big_adder.vhd \
 ../../top/svec/wr_d3s_adc_test/synthesis_descriptor.vhd \
 ../../rtl/wr_d3s_adc/dc_block/MovingAvg.vhd \
@@ -230,7 +229,7 @@ VHDL_SRC := ../../ip_cores/general-cores/modules/wishbone/wb_onewire_master/wb_o
 ../../ip_cores/vme64x-core/hdl/vme64x-core/rtl/VME_swapper.vhd \
 ../../ip_cores/wr-cores/modules/wrc_core/wrc_syscon_pkg.vhd \
 ../../ip_cores/wr-cores/modules/wr_tbi_phy/wr_tbi_phy.vhd \
-../../ip_cores/wr-cores/modules/fabric/wr_fabric_pkg.vhd \
+../../ip_cores/wr-cores/modules/wr_endpoint/ep_pcs_tbi_mdio_wb.vhd \
 ../../rtl/wr_d3s_adc/coregen/fir_compiler_v5_0.vhd \
 ../../ip_cores/wr-cores/modules/wr_endpoint/ep_registers_pkg.vhd \
 ../../ip_cores/wr-cores/platform/xilinx/wr_gtp_phy/whiterabbitgtp_wrapper_tile.vhd \
@@ -255,7 +254,7 @@ VHDL_SRC := ../../ip_cores/general-cores/modules/wishbone/wb_onewire_master/wb_o
 ../../ip_cores/wr-cores/modules/timing/pulse_gen.vhd \
 ../../ip_cores/vme64x-core/hdl/vme64x-core/rtl/VME_Init.vhd \
 ../../ip_cores/etherbone-core/hdl/eb_slave_core/eb_checksum.vhd \
-../../ip_cores/general-cores/modules/common/gc_delay_gen.vhd \
+../../rtl/wr_d3s_adc/d3s_acq_buffer_wb.vhd \
 ../../ip_cores/general-cores/modules/common/gc_extend_pulse.vhd \
 ../../ip_cores/general-cores/modules/wishbone/wb_gpio_port/wb_gpio_port.vhd \
 ../../top/svec/node_template/bicolor_led_ctrl_pkg.vhd \
@@ -296,6 +295,7 @@ VHDL_SRC := ../../ip_cores/general-cores/modules/wishbone/wb_onewire_master/wb_o
 ../../ip_cores/general-cores/modules/wishbone/wb_uart/simple_uart_wb.vhd \
 ../../ip_cores/general-cores/modules/wishbone/wbgen2/wbgen2_pkg.vhd \
 ../../ip_cores/general-cores/modules/wishbone/wb_vic/wb_slave_vic.vhd \
+../../ip_cores/wr-cores/modules/wr_softpll_ng/spll_period_detect.vhd \
 ../../ip_cores/general-cores/modules/common/gc_sync_ffs.vhd \
 ../../ip_cores/wr-cores/modules/wr_endpoint/ep_rx_pcs_16bit.vhd \
 ../../ip_cores/general-cores/modules/wishbone/wb_i2c_master/i2c_master_byte_ctrl.vhd \
@@ -317,7 +317,7 @@ VHDL_SRC := ../../ip_cores/general-cores/modules/wishbone/wb_onewire_master/wb_o
 ../../ip_cores/wr-cores/modules/wr_softpll_ng/spll_wbgen2_pkg.vhd \
 ../../ip_cores/general-cores/modules/wishbone/wb_i2c_master/wb_i2c_master.vhd \
 ../../ip_cores/vme64x-core/hdl/vme64x-core/rtl/vme64x_pack.vhd \
-../../ip_cores/general-cores/modules/wishbone/wb_i2c_master/i2c_master_top.vhd \
+../../ip_cores/wr-cores/modules/timing/multi_dmtd_with_deglitcher.vhd \
 ../../ip_cores/wr-cores/modules/wr_eca/eca_flags.vhd \
 ../../rtl/wr_d3s/misc/ad7980_if.vhd \
 ../../ip_cores/general-cores/modules/wishbone/wb_crossbar/sdb_rom.vhd \
@@ -364,11 +364,12 @@ VHDL_SRC := ../../ip_cores/general-cores/modules/wishbone/wb_onewire_master/wb_o
 ../../rtl/wrnc/cpu/wrn_cpu_iram.vhd \
 ../../rtl/wrnc/mqueue/wrn_mqueue_etherbone_output.vhd \
 ../../ip_cores/general-cores/modules/common/gc_moving_average.vhd \
+../../ip_cores/general-cores/platform/xilinx/wb_xilinx_fpga_loader/xwb_xilinx_fpga_loader.vhd \
 ../../ip_cores/wr-cores/modules/timing/pulse_stamper.vhd \
 ../../ip_cores/wr-cores/modules/wrc_core/xwr_core.vhd \
 ../../ip_cores/general-cores/modules/wishbone/wb_async_bridge/xwb_async_bridge.vhd \
 ../../ip_cores/general-cores/modules/wishbone/wb_uart/wb_simple_uart.vhd \
-../../ip_cores/general-cores/modules/genrams/generic/inferred_async_fifo.vhd \
+../../rtl/wrnc/smem/wrn_shared_mem.vhd \
 
 VHDL_OBJ := work/wb_onewire_master/.wb_onewire_master_vhd \
 work/wb_serial_lcd/.wb_serial_lcd_vhd \
@@ -386,7 +387,7 @@ work/d3s_acq_buffer/.d3s_acq_buffer_vhd \
 work/wrcore_pkg/.wrcore_pkg_vhd \
 work/lm32_ram/.lm32_ram_vhd \
 work/ep_tx_framer/.ep_tx_framer_vhd \
-work/d3s_acq_buffer_wbgen2_pkg/.d3s_acq_buffer_wbgen2_pkg_vhd \
+work/d3s_predecode/.d3s_predecode_vhd \
 work/svec_node_pkg/.svec_node_pkg_vhd \
 work/VME_CRAM/.VME_CRAM_vhd \
 work/eca/.eca_vhd \
@@ -398,7 +399,7 @@ work/multiboot_fsm/.multiboot_fsm_vhd \
 work/ep_rx_vlan_unit/.ep_rx_vlan_unit_vhd \
 work/gtp_bitslide/.gtp_bitslide_vhd \
 work/dmtd_phase_meas/.dmtd_phase_meas_vhd \
-work/wrn_shared_mem/.wrn_shared_mem_vhd \
+work/endpoint_pkg/.endpoint_pkg_vhd \
 work/xloader_registers_pkg/.xloader_registers_pkg_vhd \
 work/xwb_fabric_source/.xwb_fabric_source_vhd \
 work/wrn_cpu_csr_wb/.wrn_cpu_csr_wb_vhd \
@@ -431,9 +432,7 @@ work/stdc_wbgen2_pkg/.stdc_wbgen2_pkg_vhd \
 work/xwb_spi/.xwb_spi_vhd \
 work/wr_d3s_adc_slave_wbgen2_pkg/.wr_d3s_adc_slave_wbgen2_pkg_vhd \
 work/VME_Wb_master/.VME_Wb_master_vhd \
-work/ep_pcs_tbi_mdio_wb/.ep_pcs_tbi_mdio_wb_vhd \
 work/pps_gen_wb/.pps_gen_wb_vhd \
-work/endpoint_pkg/.endpoint_pkg_vhd \
 work/xwb_i2c_master/.xwb_i2c_master_vhd \
 work/generic_simple_dpram/.generic_simple_dpram_vhd \
 work/multiboot_regs/.multiboot_regs_vhd \
@@ -461,8 +460,8 @@ work/inferred_sync_fifo/.inferred_sync_fifo_vhd \
 work/wb_irq_lm32/.wb_irq_lm32_vhd \
 work/wb_tics/.wb_tics_vhd \
 work/wrn_cpu_cb/.wrn_cpu_cb_vhd \
-work/d3s_acq_buffer_wb/.d3s_acq_buffer_wb_vhd \
 work/stdc_fifo/.stdc_fifo_vhd \
+work/gc_delay_gen/.gc_delay_gen_vhd \
 work/xloader_wb/.xloader_wb_vhd \
 work/VME64xCore_Top/.VME64xCore_Top_vhd \
 work/gc_fsm_watchdog/.gc_fsm_watchdog_vhd \
@@ -470,7 +469,7 @@ work/wb_i2c_bridge/.wb_i2c_bridge_vhd \
 work/generic_shiftreg_fifo/.generic_shiftreg_fifo_vhd \
 work/eb_pass_fifo/.eb_pass_fifo_vhd \
 work/VME_SharedComps/.VME_SharedComps_vhd \
-work/xwb_xilinx_fpga_loader/.xwb_xilinx_fpga_loader_vhd \
+work/d3s_acq_buffer_wbgen2_pkg/.d3s_acq_buffer_wbgen2_pkg_vhd \
 work/wr_pps_gen/.wr_pps_gen_vhd \
 work/dds_wbgen2_pkg/.dds_wbgen2_pkg_vhd \
 work/wrc_syscon_wb/.wrc_syscon_wb_vhd \
@@ -491,7 +490,7 @@ work/wr_node_core_with_etherbone/.wr_node_core_with_etherbone_vhd \
 work/lm32_dp_ram/.lm32_dp_ram_vhd \
 work/stdc_hostif/.stdc_hostif_vhd \
 work/eb_hdr_pkg/.eb_hdr_pkg_vhd \
-work/multi_dmtd_with_deglitcher/.multi_dmtd_with_deglitcher_vhd \
+work/wr_fabric_pkg/.wr_fabric_pkg_vhd \
 work/wr_softpll_ng/.wr_softpll_ng_vhd \
 work/xvme64x_core_pkg/.xvme64x_core_pkg_vhd \
 work/xwb_onewire_master/.xwb_onewire_master_vhd \
@@ -509,8 +508,9 @@ work/eca_adder/.eca_adder_vhd \
 work/wb_irq_timer/.wb_irq_timer_vhd \
 work/gc_serial_dac/.gc_serial_dac_vhd \
 work/gc_crc_gen/.gc_crc_gen_vhd \
+work/i2c_master_top/.i2c_master_top_vhd \
 work/eca_wb_channel/.eca_wb_channel_vhd \
-work/spll_period_detect/.spll_period_detect_vhd \
+work/inferred_async_fifo/.inferred_async_fifo_vhd \
 work/gc_big_adder/.gc_big_adder_vhd \
 work/synthesis_descriptor/.synthesis_descriptor_vhd \
 work/MovingAvg/.MovingAvg_vhd \
@@ -546,7 +546,7 @@ work/wr_si57x_interface/.wr_si57x_interface_vhd \
 work/VME_swapper/.VME_swapper_vhd \
 work/wrc_syscon_pkg/.wrc_syscon_pkg_vhd \
 work/wr_tbi_phy/.wr_tbi_phy_vhd \
-work/wr_fabric_pkg/.wr_fabric_pkg_vhd \
+work/ep_pcs_tbi_mdio_wb/.ep_pcs_tbi_mdio_wb_vhd \
 work/fir_compiler_v5_0/.fir_compiler_v5_0_vhd \
 work/ep_registers_pkg/.ep_registers_pkg_vhd \
 work/whiterabbitgtp_wrapper_tile/.whiterabbitgtp_wrapper_tile_vhd \
@@ -571,7 +571,7 @@ work/gc_shiftreg/.gc_shiftreg_vhd \
 work/pulse_gen/.pulse_gen_vhd \
 work/VME_Init/.VME_Init_vhd \
 work/eb_checksum/.eb_checksum_vhd \
-work/gc_delay_gen/.gc_delay_gen_vhd \
+work/d3s_acq_buffer_wb/.d3s_acq_buffer_wb_vhd \
 work/gc_extend_pulse/.gc_extend_pulse_vhd \
 work/wb_gpio_port/.wb_gpio_port_vhd \
 work/bicolor_led_ctrl_pkg/.bicolor_led_ctrl_pkg_vhd \
@@ -612,6 +612,7 @@ work/wrn_lm32_wrapper/.wrn_lm32_wrapper_vhd \
 work/simple_uart_wb/.simple_uart_wb_vhd \
 work/wbgen2_pkg/.wbgen2_pkg_vhd \
 work/wb_slave_vic/.wb_slave_vic_vhd \
+work/spll_period_detect/.spll_period_detect_vhd \
 work/gc_sync_ffs/.gc_sync_ffs_vhd \
 work/ep_rx_pcs_16bit/.ep_rx_pcs_16bit_vhd \
 work/i2c_master_byte_ctrl/.i2c_master_byte_ctrl_vhd \
@@ -633,7 +634,7 @@ work/simple_pwm_wb/.simple_pwm_wb_vhd \
 work/spll_wbgen2_pkg/.spll_wbgen2_pkg_vhd \
 work/wb_i2c_master/.wb_i2c_master_vhd \
 work/vme64x_pack/.vme64x_pack_vhd \
-work/i2c_master_top/.i2c_master_top_vhd \
+work/multi_dmtd_with_deglitcher/.multi_dmtd_with_deglitcher_vhd \
 work/eca_flags/.eca_flags_vhd \
 work/ad7980_if/.ad7980_if_vhd \
 work/sdb_rom/.sdb_rom_vhd \
@@ -680,11 +681,12 @@ work/enc_8b10b/.enc_8b10b_vhd \
 work/wrn_cpu_iram/.wrn_cpu_iram_vhd \
 work/wrn_mqueue_etherbone_output/.wrn_mqueue_etherbone_output_vhd \
 work/gc_moving_average/.gc_moving_average_vhd \
+work/xwb_xilinx_fpga_loader/.xwb_xilinx_fpga_loader_vhd \
 work/pulse_stamper/.pulse_stamper_vhd \
 work/xwr_core/.xwr_core_vhd \
 work/xwb_async_bridge/.xwb_async_bridge_vhd \
 work/wb_simple_uart/.wb_simple_uart_vhd \
-work/inferred_async_fifo/.inferred_async_fifo_vhd \
+work/wrn_shared_mem/.wrn_shared_mem_vhd \
 
 LIBS := work
 LIB_IND := work/.work
@@ -803,6 +805,7 @@ work/svec_top/.svec_top_vhd \
 ../include/wrn_cpu_csr_regs.vh \
 ../include/mqueue_host.svh \
 ../include/vme64x_bfm/svec_vme_buffers.svh \
+../include/d3s_acq_buffer_wb.vh \
 ../include/vme64x_bfm/vme64x_bfm.svh \
 ../include/cpu_csr_driver.svh \
 ../include/vme64x_bfm/components/sn74vmeh22501.v
@@ -994,7 +997,10 @@ work/gencores_pkg/.gencores_pkg_vhd
 		@mkdir -p $(dir $@) && touch $@ 
 
 
-work/d3s_acq_buffer_wbgen2_pkg/.d3s_acq_buffer_wbgen2_pkg_vhd: ../../rtl/wr_d3s_adc/d3s_acq_buffer_wbgen2_pkg.vhd
+work/d3s_predecode/.d3s_predecode_vhd: ../../rtl/wr_d3s_adc/d3s_predecode.vhd \
+work/wishbone_pkg/.wishbone_pkg_vhd \
+work/genram_pkg/.genram_pkg_vhd \
+work/generic_shiftreg_fifo/.generic_shiftreg_fifo_vhd
 		vcom $(VCOM_FLAGS)  -work work $< 
 		@mkdir -p $(dir $@) && touch $@ 
 
@@ -1038,8 +1044,8 @@ work/wbgen2_pkg/.wbgen2_pkg_vhd
 
 
 work/wr_d3s_adc_wb/.wr_d3s_adc_wb_vhd: ../../rtl/wr_d3s_adc/wr_d3s_adc_wb.vhd \
+work/wbgen2_fifo_async/.wbgen2_fifo_async_vhd \
 work/wr_d3s_adc_wbgen2_pkg/.wr_d3s_adc_wbgen2_pkg_vhd \
-work/wbgen2_fifo_sync/.wbgen2_fifo_sync_vhd \
 work/wbgen2_pkg/.wbgen2_pkg_vhd
 		vcom $(VCOM_FLAGS)  -work work $< 
 		@mkdir -p $(dir $@) && touch $@ 
@@ -1090,9 +1096,9 @@ work/gc_sync_ffs/.gc_sync_ffs_vhd
 		@mkdir -p $(dir $@) && touch $@ 
 
 
-work/wrn_shared_mem/.wrn_shared_mem_vhd: ../../rtl/wrnc/smem/wrn_shared_mem.vhd \
+work/endpoint_pkg/.endpoint_pkg_vhd: ../../ip_cores/wr-cores/modules/wr_endpoint/endpoint_pkg.vhd \
 work/wishbone_pkg/.wishbone_pkg_vhd \
-work/genram_pkg/.genram_pkg_vhd
+work/wr_fabric_pkg/.wr_fabric_pkg_vhd
 		vcom $(VCOM_FLAGS)  -work work $< 
 		@mkdir -p $(dir $@) && touch $@ 
 
@@ -1368,19 +1374,7 @@ work/vme64x_pack/.vme64x_pack_vhd
 		@mkdir -p $(dir $@) && touch $@ 
 
 
-work/ep_pcs_tbi_mdio_wb/.ep_pcs_tbi_mdio_wb_vhd: ../../ip_cores/wr-cores/modules/wr_endpoint/ep_pcs_tbi_mdio_wb.vhd
-		vcom $(VCOM_FLAGS)  -work work $< 
-		@mkdir -p $(dir $@) && touch $@ 
-
-
 work/pps_gen_wb/.pps_gen_wb_vhd: ../../ip_cores/wr-cores/modules/wr_pps_gen/pps_gen_wb.vhd
-		vcom $(VCOM_FLAGS)  -work work $< 
-		@mkdir -p $(dir $@) && touch $@ 
-
-
-work/endpoint_pkg/.endpoint_pkg_vhd: ../../ip_cores/wr-cores/modules/wr_endpoint/endpoint_pkg.vhd \
-work/wishbone_pkg/.wishbone_pkg_vhd \
-work/wr_fabric_pkg/.wr_fabric_pkg_vhd
 		vcom $(VCOM_FLAGS)  -work work $< 
 		@mkdir -p $(dir $@) && touch $@ 
 
@@ -1614,13 +1608,13 @@ work/gc_sync_ffs/.gc_sync_ffs_vhd
 		@mkdir -p $(dir $@) && touch $@ 
 
 
-work/d3s_acq_buffer_wb/.d3s_acq_buffer_wb_vhd: ../../rtl/wr_d3s_adc/d3s_acq_buffer_wb.vhd \
-work/d3s_acq_buffer_wbgen2_pkg/.d3s_acq_buffer_wbgen2_pkg_vhd
+work/stdc_fifo/.stdc_fifo_vhd: ../../rtl/serdes-tdc/core/stdc_fifo.vhd
 		vcom $(VCOM_FLAGS)  -work work $< 
 		@mkdir -p $(dir $@) && touch $@ 
 
 
-work/stdc_fifo/.stdc_fifo_vhd: ../../rtl/serdes-tdc/core/stdc_fifo.vhd
+work/gc_delay_gen/.gc_delay_gen_vhd: ../../ip_cores/general-cores/modules/common/gc_delay_gen.vhd \
+work/gencores_pkg/.gencores_pkg_vhd
 		vcom $(VCOM_FLAGS)  -work work $< 
 		@mkdir -p $(dir $@) && touch $@ 
 
@@ -1678,9 +1672,7 @@ work/VME_SharedComps/.VME_SharedComps_vhd: ../../ip_cores/vme64x-core/hdl/vme64x
 		@mkdir -p $(dir $@) && touch $@ 
 
 
-work/xwb_xilinx_fpga_loader/.xwb_xilinx_fpga_loader_vhd: ../../ip_cores/general-cores/platform/xilinx/wb_xilinx_fpga_loader/xwb_xilinx_fpga_loader.vhd \
-work/wishbone_pkg/.wishbone_pkg_vhd \
-work/wb_xilinx_fpga_loader/.wb_xilinx_fpga_loader_vhd
+work/d3s_acq_buffer_wbgen2_pkg/.d3s_acq_buffer_wbgen2_pkg_vhd: ../../rtl/wr_d3s_adc/d3s_acq_buffer_wbgen2_pkg.vhd
 		vcom $(VCOM_FLAGS)  -work work $< 
 		@mkdir -p $(dir $@) && touch $@ 
 
@@ -1867,9 +1859,7 @@ work/wishbone_pkg/.wishbone_pkg_vhd
 		@mkdir -p $(dir $@) && touch $@ 
 
 
-work/multi_dmtd_with_deglitcher/.multi_dmtd_with_deglitcher_vhd: ../../ip_cores/wr-cores/modules/timing/multi_dmtd_with_deglitcher.vhd \
-work/gencores_pkg/.gencores_pkg_vhd \
-work/gc_sync_ffs/.gc_sync_ffs_vhd
+work/wr_fabric_pkg/.wr_fabric_pkg_vhd: ../../ip_cores/wr-cores/modules/fabric/wr_fabric_pkg.vhd
 		vcom $(VCOM_FLAGS)  -work work $< 
 		@mkdir -p $(dir $@) && touch $@ 
 
@@ -1908,6 +1898,7 @@ work/gc_reset/.gc_reset_vhd: ../../ip_cores/general-cores/modules/common/gc_rese
 
 work/d3s_phase_decoder/.d3s_phase_decoder_vhd: ../../rtl/wr_d3s_adc/d3s_phase_decoder.vhd \
 work/wishbone_pkg/.wishbone_pkg_vhd \
+work/d3s_predecode/.d3s_predecode_vhd \
 work/genram_pkg/.genram_pkg_vhd
 		vcom $(VCOM_FLAGS)  -work work $< 
 		@mkdir -p $(dir $@) && touch $@ 
@@ -2002,6 +1993,12 @@ work/gencores_pkg/.gencores_pkg_vhd
 		@mkdir -p $(dir $@) && touch $@ 
 
 
+work/i2c_master_top/.i2c_master_top_vhd: ../../ip_cores/general-cores/modules/wishbone/wb_i2c_master/i2c_master_top.vhd \
+work/i2c_master_byte_ctrl/.i2c_master_byte_ctrl_vhd
+		vcom $(VCOM_FLAGS)  -work work $< 
+		@mkdir -p $(dir $@) && touch $@ 
+
+
 work/eca_wb_channel/.eca_wb_channel_vhd: ../../ip_cores/wr-cores/modules/wr_eca/eca_wb_channel.vhd \
 work/wishbone_pkg/.wishbone_pkg_vhd \
 work/eca_pkg/.eca_pkg_vhd
@@ -2009,10 +2006,11 @@ work/eca_pkg/.eca_pkg_vhd
 		@mkdir -p $(dir $@) && touch $@ 
 
 
-work/spll_period_detect/.spll_period_detect_vhd: ../../ip_cores/wr-cores/modules/wr_softpll_ng/spll_period_detect.vhd \
+work/inferred_async_fifo/.inferred_async_fifo_vhd: ../../ip_cores/general-cores/modules/genrams/generic/inferred_async_fifo.vhd \
+work/gc_sync_register/.gc_sync_register_vhd \
 work/gencores_pkg/.gencores_pkg_vhd \
-work/gc_sync_ffs/.gc_sync_ffs_vhd \
-work/gc_pulse_synchronizer/.gc_pulse_synchronizer_vhd
+work/genram_pkg/.genram_pkg_vhd \
+work/gc_sync_ffs/.gc_sync_ffs_vhd
 		vcom $(VCOM_FLAGS)  -work work $< 
 		@mkdir -p $(dir $@) && touch $@ 
 
@@ -2321,7 +2319,7 @@ work/gc_sync_ffs/.gc_sync_ffs_vhd
 		@mkdir -p $(dir $@) && touch $@ 
 
 
-work/wr_fabric_pkg/.wr_fabric_pkg_vhd: ../../ip_cores/wr-cores/modules/fabric/wr_fabric_pkg.vhd
+work/ep_pcs_tbi_mdio_wb/.ep_pcs_tbi_mdio_wb_vhd: ../../ip_cores/wr-cores/modules/wr_endpoint/ep_pcs_tbi_mdio_wb.vhd
 		vcom $(VCOM_FLAGS)  -work work $< 
 		@mkdir -p $(dir $@) && touch $@ 
 
@@ -2476,8 +2474,8 @@ work/eb_hdr_pkg/.eb_hdr_pkg_vhd
 		@mkdir -p $(dir $@) && touch $@ 
 
 
-work/gc_delay_gen/.gc_delay_gen_vhd: ../../ip_cores/general-cores/modules/common/gc_delay_gen.vhd \
-work/gencores_pkg/.gencores_pkg_vhd
+work/d3s_acq_buffer_wb/.d3s_acq_buffer_wb_vhd: ../../rtl/wr_d3s_adc/d3s_acq_buffer_wb.vhd \
+work/d3s_acq_buffer_wbgen2_pkg/.d3s_acq_buffer_wbgen2_pkg_vhd
 		vcom $(VCOM_FLAGS)  -work work $< 
 		@mkdir -p $(dir $@) && touch $@ 
 
@@ -2764,6 +2762,14 @@ work/wbgen2_pkg/.wbgen2_pkg_vhd
 		@mkdir -p $(dir $@) && touch $@ 
 
 
+work/spll_period_detect/.spll_period_detect_vhd: ../../ip_cores/wr-cores/modules/wr_softpll_ng/spll_period_detect.vhd \
+work/gencores_pkg/.gencores_pkg_vhd \
+work/gc_sync_ffs/.gc_sync_ffs_vhd \
+work/gc_pulse_synchronizer/.gc_pulse_synchronizer_vhd
+		vcom $(VCOM_FLAGS)  -work work $< 
+		@mkdir -p $(dir $@) && touch $@ 
+
+
 work/gc_sync_ffs/.gc_sync_ffs_vhd: ../../ip_cores/general-cores/modules/common/gc_sync_ffs.vhd
 		vcom $(VCOM_FLAGS)  -work work $< 
 		@mkdir -p $(dir $@) && touch $@ 
@@ -2921,8 +2927,9 @@ work/vme64x_pack/.vme64x_pack_vhd: ../../ip_cores/vme64x-core/hdl/vme64x-core/rt
 		@mkdir -p $(dir $@) && touch $@ 
 
 
-work/i2c_master_top/.i2c_master_top_vhd: ../../ip_cores/general-cores/modules/wishbone/wb_i2c_master/i2c_master_top.vhd \
-work/i2c_master_byte_ctrl/.i2c_master_byte_ctrl_vhd
+work/multi_dmtd_with_deglitcher/.multi_dmtd_with_deglitcher_vhd: ../../ip_cores/wr-cores/modules/timing/multi_dmtd_with_deglitcher.vhd \
+work/gencores_pkg/.gencores_pkg_vhd \
+work/gc_sync_ffs/.gc_sync_ffs_vhd
 		vcom $(VCOM_FLAGS)  -work work $< 
 		@mkdir -p $(dir $@) && touch $@ 
 
@@ -3207,7 +3214,7 @@ work/eb_wbm_fifo/.eb_wbm_fifo_vhd
 
 work/wr_d3s_adc_slave_wb/.wr_d3s_adc_slave_wb_vhd: ../../rtl/wr_d3s_adc/wr_d3s_adc_slave_wb.vhd \
 work/wr_d3s_adc_slave_wbgen2_pkg/.wr_d3s_adc_slave_wbgen2_pkg_vhd \
-work/wbgen2_fifo_sync/.wbgen2_fifo_sync_vhd \
+work/wbgen2_fifo_async/.wbgen2_fifo_async_vhd \
 work/wbgen2_pkg/.wbgen2_pkg_vhd
 		vcom $(VCOM_FLAGS)  -work work $< 
 		@mkdir -p $(dir $@) && touch $@ 
@@ -3275,6 +3282,13 @@ work/gc_delay_line/.gc_delay_line_vhd
 		@mkdir -p $(dir $@) && touch $@ 
 
 
+work/xwb_xilinx_fpga_loader/.xwb_xilinx_fpga_loader_vhd: ../../ip_cores/general-cores/platform/xilinx/wb_xilinx_fpga_loader/xwb_xilinx_fpga_loader.vhd \
+work/wishbone_pkg/.wishbone_pkg_vhd \
+work/wb_xilinx_fpga_loader/.wb_xilinx_fpga_loader_vhd
+		vcom $(VCOM_FLAGS)  -work work $< 
+		@mkdir -p $(dir $@) && touch $@ 
+
+
 work/pulse_stamper/.pulse_stamper_vhd: ../../ip_cores/wr-cores/modules/timing/pulse_stamper.vhd
 		vcom $(VCOM_FLAGS)  -work work $< 
 		@mkdir -p $(dir $@) && touch $@ 
@@ -3314,11 +3328,9 @@ work/uart_async_rx/.uart_async_rx_vhd
 		@mkdir -p $(dir $@) && touch $@ 
 
 
-work/inferred_async_fifo/.inferred_async_fifo_vhd: ../../ip_cores/general-cores/modules/genrams/generic/inferred_async_fifo.vhd \
-work/gc_sync_register/.gc_sync_register_vhd \
-work/gencores_pkg/.gencores_pkg_vhd \
-work/genram_pkg/.genram_pkg_vhd \
-work/gc_sync_ffs/.gc_sync_ffs_vhd
+work/wrn_shared_mem/.wrn_shared_mem_vhd: ../../rtl/wrnc/smem/wrn_shared_mem.vhd \
+work/wishbone_pkg/.wishbone_pkg_vhd \
+work/genram_pkg/.genram_pkg_vhd
 		vcom $(VCOM_FLAGS)  -work work $< 
 		@mkdir -p $(dir $@) && touch $@ 
 
