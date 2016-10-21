@@ -478,23 +478,35 @@ module d3s_upsample_divide
 	
 	
      end
+/*
 
-
-/*   reg [15:0] h_count;
+   reg [15:0] h_count;
 
    always@(posedge clk_i)
      begin
 	if (!rst_n_i) begin
 	   h_count <= 0;
 	end else begin
+
 	   if (div_start_phase_sel_valid_d) begin
-	      h_count <= f_count_ones ( div_start_phase_sel_valid_d );
+	      h_count <= 0;
+	   end else begin
+
+	      if (h_count > r_harmonic_num_i)
+		begin
+		   h_count <= h_count - r_harmonic_num_i;
+		end else begin
+		   h_count <= h_count + f_count_ones( zc_d, 4 );
+		end
+	      
 	   end
+
+	   
 	   
 	end
-     end
-   
-  */
+     end // always@ (posedge clk_i)
+  */ 
+  
    
    
    always@(posedge clk_i)

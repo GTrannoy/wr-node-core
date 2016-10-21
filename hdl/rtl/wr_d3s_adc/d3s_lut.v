@@ -20,6 +20,8 @@ module d3s_lut (
 
    parameter integer g_lut_sample_bits= 18;
    parameter integer g_lut_slope_bits = 18;
+   parameter integer g_output_bits = 14;
+
    
    reg [g_lut_sample_bits + g_lut_slope_bits-1:0]    lut01[0:2**g_lut_size_log2-1];
    reg [g_lut_sample_bits + g_lut_slope_bits-1:0]    lut23[0:2**g_lut_size_log2-1];
@@ -68,10 +70,10 @@ generate
 
    always@(posedge clk_i)
      begin
-	y0 <= st[0] ? -yt[0] : yt[0];
-	y1 <= st[1] ? -yt[1] : yt[1];
-	y2 <= st[2] ? -yt[2] : yt[2];
-	y3 <= st[3] ? -yt[3] : yt[3];
+	y0 <= (st[0] ? -yt[0] : yt[0]) + ( 1 << (g_output_bits - 1));
+	y1 <= (st[1] ? -yt[1] : yt[1]) + ( 1 << (g_output_bits - 1));
+	y2 <= (st[2] ? -yt[2] : yt[2]) + ( 1 << (g_output_bits - 1));
+	y3 <= (st[3] ? -yt[3] : yt[3]) + ( 1 << (g_output_bits - 1));
 	
      end // always@ (posedge clk_i)
    
