@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2016-05-27
+-- Last update: 2016-10-21
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -119,11 +119,10 @@ begin  -- rtl
         wr_mask <= (others => '1');
       elsif (op_sel = c_RANGE_DIRECT and slave_i.we = '1') then
         wr_mask <= slave_i.sel;
-        else
-          wr_mask <= (others => '0');
-          end if;
-       
-      end process;
+      else
+        wr_mask <= (others => '0');
+      end if;
+    end process;
           
   p_readout : process(clk_i)
   begin
@@ -180,7 +179,7 @@ begin  -- rtl
           when FETCH_IDLE =>
             slave_o.ack <= '0';
             if(slave_i.cyc = '1' and slave_i.stb = '1') then
-              if(slave_i.we = '1') then
+              if(slave_i.we = '1' and op_sel /= c_RANGE_DIRECT) then
                 state <= UPDATE;
               elsif (slave_i.we = '0' and op_sel = c_RANGE_TEST_AND_SET) then
                 state <= UPDATE;
