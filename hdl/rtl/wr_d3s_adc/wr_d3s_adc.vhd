@@ -578,9 +578,9 @@ begin
       fifo_payload_o  => regs_in.adc_payload_i,
       fifo_we_o       => regs_in.adc_wr_req_i,
       tm_cycles_i     => tm_cycles_i,
-      cnt_fixed_o => regs_in.cnt_fixed_i,
-      cnt_rl_o => regs_in.cnt_rl_i,
-      cnt_ts_o => regs_in.cnt_tstamp_i
+      cnt_fixed_o     => regs_in.cnt_fixed_i,
+      cnt_rl_o        => regs_in.cnt_rl_i,
+      cnt_ts_o        => regs_in.cnt_tstamp_i
       );
 
   u_mon_adc_clock : process(clk_wr)
@@ -692,13 +692,13 @@ begin
       TRIG2   => TRIG2,
       TRIG3   => TRIG3);
 
-      TRIG0(13 downto 0)  <= adc_data ;  -- phase encoder input
-      TRIG0(29 downto 14) <= raw_phase;
-      TRIG0(30)           <= regs_in.adc_wr_req_i;
-      TRIG2(31 downto 0)  <= regs_in.cnt_rl_i;
-		
-      TRIG1(15 downto 0)  <= raw_hp_data;
-      TRIG1(31)           <= regs_out.adc_wr_full_o;
+	TRIG0(13 downto 0)  <= adc_data ;  -- phase encoder input
+	TRIG0(29 downto 14) <= raw_phase;
+	TRIG0(30)           <= regs_in.adc_wr_req_i;
+	TRIG2(31 downto 0)  <= regs_in.cnt_rl_i;
+	
+	TRIG1(15 downto 0)  <= raw_hp_data;
+	TRIG1(31)           <= regs_out.adc_wr_full_o;
 
 
 end rtl;

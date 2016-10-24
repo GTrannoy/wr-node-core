@@ -33,6 +33,10 @@ entity wr_d3s_adc_slave is
     wr_ref_clk_n_i : in std_logic;
     wr_ref_clk_p_i : in std_logic;
 
+    -- Slave synthesized signal
+    synth_n_i 	: in    std_logic; 
+    synth_p_i 	: in    std_logic; 
+		
     -- System/WR PLL dedicated lines
     pll_sys_cs_n_o    : out std_logic;
     pll_sys_ld_i      : in  std_logic;
@@ -62,8 +66,7 @@ entity wr_d3s_adc_slave is
     slave_i : in  t_wishbone_slave_in;
     slave_o : out t_wishbone_slave_out;
 
-    -- debugging
-    debug_o : out std_logic_vector(3 downto 0)
+    rev_clk_o : out std_logic  -- Revolution clock signal
     );
 end wr_d3s_adc_slave;
 
@@ -161,23 +164,65 @@ architecture rtl of wr_d3s_adc_slave is
       IO_RESET             : in  std_logic);
   end component;
 
+  -- Trev generator component
+  component TrevGen_Module 
+    port(
+        -- System signals
+        rst_n_i    :  in std_logic;
+        clk_sys_i  :  in std_logic;     -- 62.5MHz
+        clk_125m_i : in std_logic;  -- 125MHz
+        -- Trev module signals
+        B_clk_i    :  in std_logic; 
+        WRcyc_i    :  in unsigned(27 downto 0); 
+        Rev_clk_o  :  out std_logic ;
+        -- Wishbone interface
+        wb_adr_i   :  in std_logic_vector(31 downto 0);
+        wb_dat_i  :  in std_logic_vector(31 downto 0);
+        wb_dat_o  :  out std_logic_vector(31 downto 0);
+        wb_cyc_i   :  in std_logic;
+        wb_sel_i   :  in std_logic_vector(3 downto 0);
+        wb_stb_i   :  in std_logic;
+        wb_we_i    :  in std_logic;
+        wb_ack_o   :  out std_logic;
+        wb_stall_o :  out std_logic );
+  end component;
+  
+  
+--  component chipscope_ila
+--    port (
+--      CONTROL : inout std_logic_vector(35 downto 0);
+--      CLK     : in    std_logic;
+--      TRIG0   : in    std_logic_vector(31 downto 0);
+--      TRIG1   : in    std_logic_vector(31 downto 0);
+--      TRIG2   : in    std_logic_vector(31 downto 0);
+--      TRIG3   : in    std_logic_vector(31 downto 0));
+--  end component;
+--
+--  component chipscope_icon
+--    port (
+--      CONTROL0 : inout std_logic_vector (35 downto 0));
+--  end component;
+  
 ------------------------------------------
 --        CONSTANTS DECLARATION  
 ------------------------------------------
 
---  constant c_CNX_MASTER_COUNT : integer := 1;
---
---  constant c_cnx_base_addr : t_wishbone_address_array(c_CNX_MASTER_COUNT-1 downto 0) :=
---    (x"00000000"                       -- Base regs
---     );
---
---  constant c_cnx_base_mask : t_wishbone_address_array(c_CNX_MASTER_COUNT-1 downto 0) :=
---    (x"00000700"
---     );
---
---  -- Wishbone slave(s)
---   constant c_ADC_slave    : integer := 0;  -- Fmc0: fmc-adc (d3s_adc core)
+  constant c_CNX_MASTER_COUNT : integer := 2;
 
+  constant c_cnx_base_addr : t_wishbone_address_array(c_CNX_MASTER_COUNT-1 downto 0) :=
+    (0 => x"00000000",                       -- Base regs
+     1 => x"00000100"                        -- Trev Generataor
+	  );
+
+  constant c_cnx_base_mask : t_wishbone_address_array(c_CNX_MASTER_COUNT-1 downto 0) :=
+    (0 => x"00000700",
+     1 => x"00000700"
+	  );
+
+  -- Wishbone slave(s)
+   constant c_ADC_slave    	   : integer := 0;  -- d3s_adc_slave core
+   constant c_SLAVE_TREVGEN    : integer := 1;  -- Trev generator
+	
 ------------------------------------------
 --        SIGNALS DECLARATION  
 ------------------------------------------
@@ -185,12 +230,13 @@ architecture rtl of wr_d3s_adc_slave is
   signal clk_wr_ref, clk_wr_ref_pllin            : std_logic;
   signal pllout_clk_fb_pllref, pllout_clk_wr_ref : std_logic;
   signal clk_dds_phy                             : std_logic;
+  signal synth_i				 : std_logic;
 
   signal regs_in  : t_d3ss_in_registers;
   signal regs_out : t_d3ss_out_registers;
 
---  signal cnx_out       : t_wishbone_master_out_array(0 to c_CNX_MASTER_COUNT-1);
---  signal cnx_in        : t_wishbone_master_in_array(0 to c_CNX_MASTER_COUNT-1);
+  signal cnx_out       : t_wishbone_master_out_array(0 to c_CNX_MASTER_COUNT-1);
+  signal cnx_in        : t_wishbone_master_in_array(0 to c_CNX_MASTER_COUNT-1);
 
   signal clk_wr           : std_logic;
   signal rst_n_wr, rst_wr : std_logic;
@@ -223,7 +269,18 @@ begin
     port map (
       O  => clk_wr_ref_pllin,           -- Buffer output
       I  => wr_ref_clk_p_i,  -- Diff_p buffer input (connect directly to top-level port)
-      IB => wr_ref_clk_n_i  -- Diff_n buffer input (connect directly to top-level port)
+      IB => wr_ref_clk_n_i   -- Diff_n buffer input (connect directly to top-level port)
+      );
+		
+  U_Buf_Synth_clk : IBUFDS
+    generic map (
+      DIFF_TERM    => true,
+      IBUF_LOW_PWR => false  -- Low power (TRUE) vs. performance (FALSE) setting for referenced
+      )
+    port map (
+      O  => synth_i,           -- Buffer output
+      I  => synth_p_i,  -- Diff_p buffer input (connect directly to top-level port)
+      IB => synth_n_i   -- Diff_n buffer input (connect directly to top-level port)
       );
 
   cmp_dds_clk_pll : PLL_BASE
@@ -275,43 +332,42 @@ begin
 
   rst_wr <= not rst_n_wr;
 
---  U_Intercon : xwb_crossbar
---    generic map (
---      g_num_masters => 1,
---      g_num_slaves  => c_CNX_MASTER_COUNT,
---      g_registered  => true,
---      g_address     => c_cnx_base_addr,
---      g_mask        => c_cnx_base_mask)
---    port map (
---      clk_sys_i  => clk_sys_i,
---      rst_n_i    => rst_n_sys_i,
---      slave_i(0) => slave_i,
---      slave_o(0) => slave_o,
---      master_i   => cnx_in,
---      master_o   => cnx_out);
-
+  U_Intercon : xwb_crossbar
+    generic map (
+      g_num_masters => 1,
+      g_num_slaves  => c_CNX_MASTER_COUNT,
+      g_registered  => true,
+      g_address     => c_cnx_base_addr,
+      g_mask        => c_cnx_base_mask)
+    port map (
+      clk_sys_i  => clk_sys_i,
+      rst_n_i    => rst_n_sys_i,
+      slave_i(0) => slave_i,
+      slave_o(0) => slave_o,
+      master_i   => cnx_in,
+      master_o   => cnx_out);
 
   U_CSR : d3ss_adc_slave_wb
     port map (
       rst_n_i    => rst_n_sys_i,
       clk_sys_i  => clk_sys_i,
-      wb_adr_i   => slave_i.adr(5 downto 2),  -- cnx_out(c_ADC_slave).adr(4 downto 2),
-      wb_dat_i   => slave_i.dat,        --cnx_out(c_ADC_slave).dat,
-      wb_dat_o   => slave_o.dat,        --cnx_in(c_ADC_slave).dat,
-      wb_cyc_i   => slave_i.cyc,        --cnx_out(c_ADC_slave).cyc,
-      wb_sel_i   => slave_i.sel,        --cnx_out(c_ADC_slave).sel,
-      wb_stb_i   => slave_i.stb,        --cnx_out(c_ADC_slave).stb,
-      wb_we_i    => slave_i.we,         --cnx_out(c_ADC_slave).we,
-      wb_ack_o   => slave_o.ack,        --cnx_in(c_ADC_slave).ack,
-      wb_stall_o => slave_o.stall,      --cnx_in(c_ADC_slave).stall,
+      wb_adr_i   => cnx_out(c_ADC_slave).adr(5 downto 2),
+      wb_dat_i   => cnx_out(c_ADC_slave).dat,
+      wb_dat_o   => cnx_in(c_ADC_slave).dat,
+      wb_cyc_i   => cnx_out(c_ADC_slave).cyc,
+      wb_sel_i   => cnx_out(c_ADC_slave).sel,
+      wb_stb_i   => cnx_out(c_ADC_slave).stb,
+      wb_we_i    => cnx_out(c_ADC_slave).we,
+      wb_ack_o   => cnx_in(c_ADC_slave).ack,
+      wb_stall_o => cnx_in(c_ADC_slave).stall,
       clk_wr_i   => clk_wr,
       regs_i     => regs_in,
       regs_o     => regs_out);
 
   slave_o.err <= '0';
   slave_o.rty <= '0';
---  cnx_in(0).err <= '0';
---  cnx_in(0).rty <= '0';
+--  cnx_in(c_ADC_slave).err <= '0';
+--  cnx_in(c_ADC_slave).rty <= '0';
 
   U_Phase_Dec : d3s_phase_decoder
     generic map (
@@ -419,5 +475,28 @@ begin
   tm_clk_aux_lock_en_o <= regs_out.tcr_wr_lock_en_o;
 
   clk_wr_o <= clk_wr;
+
+  ----------------------------------------------
+  --         T_REV GENERATOR MODULE
+  -----------------------------------------------	
+  cmp_TrevGen: TrevGen_Module 
+    port map( rst_n_i    => rst_n_wr,
+              clk_sys_i  => clk_sys_i,          -- 62.5 MHz
+              clk_125m_i => clk_wr,
+              B_clk_i    => synth_i,
+              WRcyc_i    => unsigned(tm_cycles_i),
+              Rev_clk_o  => rev_clk_o,
+				  wb_adr_i   => cnx_out(c_SLAVE_TREVGEN).adr,  
+				  wb_dat_i   => cnx_out(c_SLAVE_TREVGEN).dat,
+				  wb_dat_o   => cnx_in(c_SLAVE_TREVGEN).dat,
+				  wb_cyc_i   => cnx_out(c_SLAVE_TREVGEN).cyc,
+				  wb_sel_i   => cnx_out(c_SLAVE_TREVGEN).sel,
+				  wb_stb_i   => cnx_out(c_SLAVE_TREVGEN).stb,
+				  wb_we_i    => cnx_out(c_SLAVE_TREVGEN).we,
+				  wb_ack_o   => cnx_in(c_SLAVE_TREVGEN).ack,
+				  wb_stall_o => cnx_in(c_SLAVE_TREVGEN).stall);
+		 
+   --cnx_in(c_SLAVE_TREVGEN).err <= '0';
+   --cnx_in(c_SLAVE_TREVGEN).rty <= '0';
   
 end rtl;
