@@ -617,7 +617,7 @@ begin
       tai_i           => tm_tai_i,
       cycles_i        => tm_cycles_i,
       --stdc_data_o     => stdc_data,
-      trobe_o			 => s_stdc_strobe,
+      strobe_o			 => s_stdc_strobe,
       ts_nsec_o       => s_stdc_ts_nsec,
       ts_tai_o        => s_stdc_ts_tai
       -- ChipScope Signals

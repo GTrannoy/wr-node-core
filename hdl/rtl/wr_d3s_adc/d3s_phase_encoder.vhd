@@ -496,7 +496,7 @@ begin
       else
         if(c_out.valid = '1') then
           if (c_out.payload(31) = '1') then
-            cnt_fix <= cnt_rl + 1;
+            cnt_rl <= cnt_rl + 1;
           elsif (c_out.payload(31) = '0' and c_out.payload(30) = '1') then
             cnt_ts <= cnt_ts + 1;
           else

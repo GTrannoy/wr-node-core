@@ -324,8 +324,8 @@ architecture rtl of svec_top is
 --      gpio_dac_clr_n_o : out   std_logic;
 --      gpio_si570_oe_o  : out   std_logic;
       slave_i              : in    t_wishbone_slave_in;
-      slave_o              : out   t_wishbone_slave_out;
-      debug_o              : out   std_logic_vector(3 downto 0)
+      slave_o              : out   t_wishbone_slave_out
+--      debug_o              : out   std_logic_vector(3 downto 0)
 
       -- ChipScope Signals
 --      TRIG_O : out std_logic_vector(127 downto 0)
@@ -805,6 +805,14 @@ begin
   fp_gpio1_a2b_o  <= '1';  -- svec front panel LEMO L2 set as output
   fp_gpio2_a2b_o  <= '1';  -- svec front panel LEMO L1 set as output
   fp_gpio34_a2b_o <= '1';  -- svec front panel LEMOs L3 and L4 set as output
+  
+  dbg_led0_o  <= '0';
+  dbg_led1_o  <= '0'; 
+  dbg_led2_o  <= '0';
+  dbg_led3_o  <= '0';
+  
+  adc0_gpio_led_trig_o <= '0';
+  adc0_gpio_led_acq_o <= '0';
   
 end rtl;
 
