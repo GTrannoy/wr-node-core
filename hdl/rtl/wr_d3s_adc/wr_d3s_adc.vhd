@@ -18,18 +18,19 @@ entity wr_d3s_adc is
   port (
     rst_n_sys_i       : in  std_logic;
     clk_sys_i         : in  std_logic;
-    clk_125m_pllref_i : in  std_logic;
+--    clk_125m_pllref_i : in  std_logic;
     clk_wr_o          : out std_logic;
 
     tm_link_up_i         : in  std_logic;
     tm_time_valid_i      : in  std_logic;
+    tm_tai_i             : in  std_logic_vector(39 downto 0);
     tm_cycles_i          : in  std_logic_vector(27 downto 0);
     tm_clk_aux_lock_en_o : out std_logic;
     tm_clk_aux_locked_i  : in  std_logic;
 
     fake_data_i : in std_logic_vector(13 downto 0) := "00000000000000";
 
--- ADC Mezzanine I/F
+    -- ADC Mezzanine I/F
     spi_din_i       : in  std_logic;    -- SPI data from FMC
     spi_dout_o      : out std_logic;    -- SPI data to FMC
     spi_sck_o       : out std_logic;    -- SPI clock
@@ -51,19 +52,14 @@ entity wr_d3s_adc is
     adc_outb_p_i : in std_logic_vector(3 downto 0);  -- ADC serial data (even bits)
     adc_outb_n_i : in std_logic_vector(3 downto 0);
 
-    adc0_ext_trigger_p_i : in std_logic;
-    adc0_ext_trigger_n_i : in std_logic;
+    adc_ext_trigger_p_i : in std_logic;
+    adc_ext_trigger_n_i : in std_logic;
 
 --    gpio_dac_clr_n_o : out std_logic;   -- offset DACs clear (active low)
 --    gpio_si570_oe_o  : out std_logic;  -- Si570 (programmable oscillator) output enable
 
     slave_i : in  t_wishbone_slave_in;
-    slave_o : out t_wishbone_slave_out;
-
-    debug_o : out std_logic_vector(3 downto 0);
-
-    -- ChipScope Signals
-    TRIG_O : out std_logic_vector(127 downto 0)
+    slave_o : out t_wishbone_slave_out
     );
 
 end wr_d3s_adc;
@@ -157,7 +153,8 @@ architecture rtl of wr_d3s_adc is
 
   component stdc_hostif is
     generic(
-      D_DEPTH : positive
+      D_DEPTH : positive;
+      D_WIDTH : positive
       );
     port(
       sys_rst_n_i : in std_logic;
@@ -178,17 +175,34 @@ architecture rtl of wr_d3s_adc is
       wb_stall_o : out std_logic;
 
       stdc_input_i : in std_logic;
-
+		
+      tai_i    : in  std_logic_vector(39 downto 0);
       cycles_i : in std_logic_vector(27 downto 0);
 
       -- TDC outputs                    
-      strobe_o    : out std_logic;
-      stdc_data_o : out std_logic_vector(31 downto 0);
+      strobe_o  : out std_logic;
+      ts_nsec_o : out std_logic_vector(30 downto 0);  -- before was "stdc_data_o"
+      ts_tai_o  : out std_logic_vector(39 downto 0)
 
       -- ChipScope Signals
-      TRIG_O : out std_logic_vector(127 downto 0)
+--      TRIG_O : out std_logic_vector(127 downto 0)
       );
   end component;
+
+    component chipscope_ila
+    port (
+      CONTROL : inout std_logic_vector(35 downto 0);
+      CLK     : in    std_logic;
+      TRIG0   : in    std_logic_vector(31 downto 0);
+      TRIG1   : in    std_logic_vector(31 downto 0);
+      TRIG2   : in    std_logic_vector(31 downto 0);
+      TRIG3   : in    std_logic_vector(31 downto 0));
+    end component;
+
+    component chipscope_icon
+    port (
+      CONTROL0 : inout std_logic_vector (35 downto 0));
+    end component;
 
 ------------------------------------------
 --        CONSTANTS DECLARATION  
@@ -234,10 +248,9 @@ architecture rtl of wr_d3s_adc is
   signal bitslip_sreg        : std_logic_vector(7 downto 0);
 
   --  Signals for SERDES-TDC  -----------------
-
-
-
-  signal stdc_data   : std_logic_vector(31 downto 0);
+  signal	s_stdc_strobe : std_logic;
+  signal s_stdc_ts_nsec : std_logic_vector(30 downto 0);
+  signal s_stdc_ts_tai : std_logic_vector(39 downto 0);
   signal ext_trigger : std_logic;
   ----------------------------------------------
 
@@ -261,6 +274,13 @@ architecture rtl of wr_d3s_adc is
   signal cnx_out : t_wishbone_master_out_array(0 to c_CNX_MASTER_COUNT-1);
   signal cnx_in  : t_wishbone_master_in_array(0 to c_CNX_MASTER_COUNT-1);
 
+--   Chip scope signals
+  signal CONTROL : std_logic_vector(35 downto 0);
+  signal CLK     : std_logic;
+  signal TRIG0   : std_logic_vector(31 downto 0);
+  signal TRIG1   : std_logic_vector(31 downto 0);
+  signal TRIG2   : std_logic_vector(31 downto 0);
+  signal TRIG3   : std_logic_vector(31 downto 0);
   
 begin
   
@@ -339,8 +359,8 @@ begin
       DIFF_TERM  => true,               -- Differential termination
       IOSTANDARD => "LVDS_25")
     port map (
-      I  => adc0_ext_trigger_p_i,
-      IB => adc0_ext_trigger_n_i,
+      I  => adc_ext_trigger_p_i,
+      IB => adc_ext_trigger_n_i,
       O  => ext_trigger
       );
 
@@ -571,13 +591,13 @@ begin
     
   end process;
 
-  debug_o(0) <= clk_wr_div2;
   clk_wr_o   <= clk_wr;
 
   ----- Adding the new component: stdc_hostif  ----
   cmp_stdc : stdc_hostif
     generic map (
-      D_DEPTH => 4)  -- Length of the fifo storing the event time stamps
+      D_WIDTH => 72, -- Length of the fifo words
+      D_DEPTH => 4)  -- Depth of the fifo storing the event time stamps
     port map(
       sys_rst_n_i     => rst_n_sys_i,
       clk_sys_i       => clk_sys_i,     -- 62.5 MHz
@@ -594,10 +614,14 @@ begin
       wb_ack_o        => cnx_in(4).ack,
       wb_stall_o      => cnx_in(4).stall,
       stdc_input_i    => ext_trigger,
+      tai_i           => tm_tai_i,
       cycles_i        => tm_cycles_i,
-      stdc_data_o     => stdc_data,
+      --stdc_data_o     => stdc_data,
+      trobe_o			 => s_stdc_strobe,
+      ts_nsec_o       => s_stdc_ts_nsec,
+      ts_tai_o        => s_stdc_ts_tai
       -- ChipScope Signals
-      TRIG_O          => TRIG_O
+--      TRIG_O          => TRIG_O
       );    
 
   cnx_in(4).err <= '0';
@@ -649,4 +673,32 @@ begin
 --      LOCK         => open,
 --      LOCKED       => pllout_stdc_locked,   -- LOCKED signal from PLL
 --      SERDESSTROBE => stdc_serdes_strobe);  --  used to drive IOSERDES2(IOCE)-
+
+
+
+--------------------------------------------
+--         Chip Scope
+--------------------------------------------
+  chipscope_icon_1: chipscope_icon
+    port map (
+      CONTROL0 => CONTROL);
+
+  chipscope_ila_1: chipscope_ila
+    port map (
+      CONTROL => CONTROL,
+      CLK     => clk_wr,
+      TRIG0   => TRIG0,
+      TRIG1   => TRIG1,
+      TRIG2   => TRIG2,
+      TRIG3   => TRIG3);
+
+      TRIG0(13 downto 0)  <= adc_data ;  -- phase encoder input
+      TRIG0(29 downto 14) <= raw_phase;
+      TRIG0(30)           <= regs_in.adc_wr_req_i;
+      TRIG2(31 downto 0)  <= regs_in.cnt_rl_i;
+		
+      TRIG1(15 downto 0)  <= raw_hp_data;
+      TRIG1(31)           <= regs_out.adc_wr_full_o;
+
+
 end rtl;

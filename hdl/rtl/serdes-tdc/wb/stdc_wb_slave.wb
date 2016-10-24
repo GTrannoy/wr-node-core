@@ -70,20 +70,32 @@ peripheral {
 			};
 	};
 	reg {
-			prefix = "TDC_DATA";
+			prefix = "TDC_TS_TAI";
+			name = "FIFO timestamp element";
+			description = "Time stamp of a transition expresed as TAI";
+			field {
+				 name = "FIFO timestamp TAI element";
+				 type = SLV;
+				 size = 32;
+				 access_bus = READ_ONLY;
+				 access_dev = WRITE_ONLY;
+			};
+	};
+		reg {
+			prefix = "TDC_TS_NS";
 			name = "FIFO timestamp element";
 			description = "Time stamp of a transition: \
-					MSB: 1 bit for transation polarity \
-					28 bits for cycle tick \
+					28 bits for WR cycle tick \
 					3 LSB bits for 1/8th of a cycle";
 			field {
 				 name = "FIFO timestamp element";
 				 type = SLV;
-				 size = 32;
+				 size = 31;
 				 access_bus = READ_ONLY;
-         access_dev = WRITE_ONLY;
+				 access_dev = WRITE_ONLY;
 			};
 	};
+
 };
 
 

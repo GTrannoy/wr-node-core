@@ -11,8 +11,15 @@
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
 -- Description: 
--- RF DDS distribution Node for the the Fmc-adc card.
--- 
+--
+-- WR RF DDS distribution Node. It was designed to be implemented in a SVEC 
+-- card (VME carrier card) with two Fmc cards: a Fmc-adc-subsamp-125m14b4ch card
+-- which works as WR master node at the fmc slot 0 and a Fmc-dac-600m12b1cha-DDS 
+-- card working as WR node at the fmc slot 1. 
+-- The master node samples an RF signal, calculates its phase, and compresses and 
+-- sends this information through a WR network. The slave node receives this
+-- information, uncompresses it, and uses a DDS to reproduce the initial Rf signal.
+--
 -------------------------------------------------------------------------------
 --
 -- Copyright (c) 2014 CERN
@@ -158,6 +165,7 @@ entity svec_top is
     ----------------------------------------
 
     ----    FMC 0: Adc-fmc type    ---------
+	 
     adc0_ext_trigger_p_i : in std_logic;
     adc0_ext_trigger_n_i : in std_logic;
 
@@ -165,6 +173,7 @@ entity svec_top is
     adc0_dco_n_i  : in std_logic;
     adc0_fr_p_i   : in std_logic;       -- ADC frame start
     adc0_fr_n_i   : in std_logic;
+	 
     adc0_outa_p_i : in std_logic_vector(3 downto 0);  -- ADC serial data (odd bits)
     adc0_outa_n_i : in std_logic_vector(3 downto 0);
     adc0_outb_p_i : in std_logic_vector(3 downto 0);  -- ADC serial data (even bits)
@@ -265,6 +274,7 @@ architecture rtl of svec_top is
 ------------------------------------------
 --        FUNCTIONS DECLARATION 
 ------------------------------------------
+  -- FIXME: this function is not used in this file
   function f_int_to_bool (x : integer) return boolean is
   begin
     if (x = 0) then
@@ -273,6 +283,7 @@ architecture rtl of svec_top is
       return true;
     end if;
   end function;
+  
 ------------------------------------------
 --        COMPONENTs DECLARATION  
 ------------------------------------------
@@ -281,10 +292,11 @@ architecture rtl of svec_top is
       rst_n_sys_i       : in  std_logic;
       clk_sys_i         : in  std_logic;
       clk_wr_o          : out std_logic;
-      clk_125m_pllref_i : in  std_logic;
+--      clk_125m_pllref_i : in  std_logic;
 
       tm_link_up_i         : in  std_logic;
       tm_time_valid_i      : in  std_logic;
+      tm_tai_i             : in  std_logic_vector(39 downto 0);
       tm_cycles_i          : in  std_logic_vector(27 downto 0);
       tm_clk_aux_lock_en_o : out std_logic;
       tm_clk_aux_locked_i  : in  std_logic;
@@ -307,16 +319,16 @@ architecture rtl of svec_top is
       adc_outa_n_i         : in    std_logic_vector(3 downto 0);
       adc_outb_p_i         : in    std_logic_vector(3 downto 0);
       adc_outb_n_i         : in    std_logic_vector(3 downto 0);
-      adc0_ext_trigger_p_i : in    std_logic;
-      adc0_ext_trigger_n_i : in    std_logic;
+      adc_ext_trigger_p_i : in    std_logic;
+      adc_ext_trigger_n_i : in    std_logic;
 --      gpio_dac_clr_n_o : out   std_logic;
 --      gpio_si570_oe_o  : out   std_logic;
       slave_i              : in    t_wishbone_slave_in;
       slave_o              : out   t_wishbone_slave_out;
-      debug_o              : out   std_logic_vector(3 downto 0);
+      debug_o              : out   std_logic_vector(3 downto 0)
 
       -- ChipScope Signals
-      TRIG_O : out std_logic_vector(127 downto 0)
+--      TRIG_O : out std_logic_vector(127 downto 0)
       );
   end component wr_d3s_adc;
 
@@ -360,9 +372,9 @@ architecture rtl of svec_top is
       wr_dac_sync_n_o   : out   std_logic;
       -- WB interface
       slave_i           : in    t_wishbone_slave_in;
-      slave_o           : out   t_wishbone_slave_out;
+      slave_o           : out   t_wishbone_slave_out
       -- debug
-      debug_o           : out   std_logic_vector(3 downto 0)
+--      debug_o           : out   std_logic_vector(3 downto 0)
       );
   end component wr_d3s_adc_slave;
 
@@ -518,21 +530,7 @@ architecture rtl of svec_top is
   signal scl_pad_oen, sda_pad_oen : std_logic;
   signal clk_125m_pllref          : std_logic;
 
-    component chipscope_ila
-    port (
-      CONTROL : inout std_logic_vector(35 downto 0);
-      CLK     : in    std_logic;
-      TRIG0   : in    std_logic_vector(31 downto 0);
-      TRIG1   : in    std_logic_vector(31 downto 0);
-      TRIG2   : in    std_logic_vector(31 downto 0);
-      TRIG3   : in    std_logic_vector(31 downto 0));
-  end component;
-
-  component chipscope_icon
-    port (
-      CONTROL0 : inout std_logic_vector (35 downto 0));
-  end component;
-
+  -- Chip scope signals
   signal CONTROL : std_logic_vector(35 downto 0);
   signal CLK     : std_logic;
   signal TRIG0   : std_logic_vector(31 downto 0);
@@ -542,18 +540,18 @@ architecture rtl of svec_top is
 
 begin
 
-  chipscope_icon_1: chipscope_icon
-    port map (
-      CONTROL0 => CONTROL);
-
-  chipscope_ila_1: chipscope_ila
-    port map (
-      CONTROL => CONTROL,
-      CLK     => clk_sys,
-      TRIG0   => TRIG0,
-      TRIG1   => TRIG1,
-      TRIG2   => TRIG2,
-      TRIG3   => TRIG3);
+--  chipscope_icon_1: chipscope_icon
+--    port map (
+--      CONTROL0 => CONTROL);
+--
+--  chipscope_ila_1: chipscope_ila
+--    port map (
+--      CONTROL => CONTROL,
+--      CLK     => clk_sys,
+--      TRIG0   => TRIG0,
+--      TRIG1   => TRIG1,
+--      TRIG2   => TRIG2,
+--      TRIG3   => TRIG3);
   
   U_Node_Template : svec_node_template
     generic map (
@@ -574,7 +572,7 @@ begin
       clk_125m_pllref_n_i => clk_125m_pllref_n_i,
       clk_125m_gtp_p_i    => clk_125m_gtp_p_i,
       clk_125m_gtp_n_i    => clk_125m_gtp_n_i,
-      clk_125m_pllref_o   => clk_125m_pllref,
+      clk_125m_pllref_o   => clk_125m_pllref,  -- Not used by the FMCs... (?)
       fp_led_line_oen_o   => fp_led_line_oen_o,
       fp_led_line_o       => fp_led_line_o,
       fp_led_column_o     => fp_led_column_o,
@@ -608,6 +606,7 @@ begin
       VME_DATA_OE_N_o     => VME_DATA_OE_N_o,
       VME_ADDR_DIR_o      => VME_ADDR_DIR_o,
       VME_ADDR_OE_N_o     => VME_ADDR_OE_N_o,
+		
       sfp_txp_o           => sfp_txp_o,
       sfp_txn_o           => sfp_txn_o,
       sfp_rxp_i           => sfp_rxp_i,
@@ -619,9 +618,11 @@ begin
       sfp_tx_fault_i      => sfp_tx_fault_i,
       sfp_tx_disable_o    => sfp_tx_disable_o,
       sfp_los_i           => sfp_los_i,
+		
       pll20dac_din_o      => pll20dac_din_o,
       pll20dac_sclk_o     => pll20dac_sclk_o,
       pll20dac_sync_n_o   => pll20dac_sync_n_o,
+		
       pll25dac_din_o      => pll25dac_din_o,
       pll25dac_sclk_o     => pll25dac_sclk_o,
       pll25dac_sync_n_o   => pll25dac_sync_n_o,
@@ -695,10 +696,11 @@ begin
       rst_n_sys_i       => rst_n,
       clk_sys_i         => clk_sys,
       clk_wr_o          => fmc0_clk_wr,
-      clk_125m_pllref_i => clk_125m_pllref,
+--      clk_125m_pllref_i => clk_125m_pllref,
 
       tm_link_up_i         => tm_link_up,
       tm_time_valid_i      => tm_time_valid,
+      tm_tai_i             => tm_tai,
       tm_cycles_i          => tm_cycles,
       tm_clk_aux_lock_en_o => tm_clk_aux_lock_en(0),
       tm_clk_aux_locked_i  => tm_clk_aux_locked(0),
@@ -720,11 +722,11 @@ begin
       adc_outa_n_i         => adc0_outa_n_i,
       adc_outb_p_i         => adc0_outb_p_i,
       adc_outb_n_i         => adc0_outb_n_i,
-      adc0_ext_trigger_p_i => adc0_ext_trigger_p_i,
-      adc0_ext_trigger_n_i => adc0_ext_trigger_n_i,
+      adc_ext_trigger_p_i  => adc0_ext_trigger_p_i,
+      adc_ext_trigger_n_i  => adc0_ext_trigger_n_i,
       slave_i              => fmc_wb_muxed_out(c_FMC_0),
-      slave_o              => fmc_wb_muxed_in(c_FMC_0),
-      debug_o              => debug
+      slave_o              => fmc_wb_muxed_in(c_FMC_0)
+--      debug_o              => debug
       -- ChipScope Signals
 --      TRIG_O               => TRIG
       );
@@ -772,8 +774,8 @@ begin
       dac_p_o           => fmc1_dac_p_o,
       -- WB interface
       slave_i           => fmc_wb_muxed_out(c_FMC_1),
-      slave_o           => fmc_wb_muxed_in(c_FMC_1),
-      debug_o           => debug
+      slave_o           => fmc_wb_muxed_in(c_FMC_1)
+--      debug_o           => debug
       );  
 
   U_Silabs_IF : xwr_si57x_interface
@@ -790,25 +792,6 @@ begin
       sda_pad_i         => adc0_si570_sda_b,
       slave_i           => fmc_wb_muxed_out(c_SI57x),
       slave_o           => fmc_wb_muxed_in(c_SI57x));
-
-
-  trig0(0) <= tm_dac_wr(0);
-  trig0(1) <= scl_pad_oen;
-  trig0(2) <= sda_pad_oen;
-  trig0(3) <= adc0_si570_scl_b;
-  trig0(4) <= adc0_si570_sda_b;
-
-  trig0(5) <= fmc_wb_muxed_out(c_SI57x).cyc;
-  trig0(6) <= fmc_wb_muxed_out(c_SI57x).stb;
-  trig0(7) <= fmc_wb_muxed_out(c_SI57x).we;
-  trig0(8) <= fmc_wb_muxed_in(c_SI57x).ack;
-  trig0(9) <= fmc_wb_muxed_in(c_SI57x).stall;
-  
-  trig1 <= fmc_wb_muxed_out(c_SI57x).adr;
-  trig2 <= fmc_wb_muxed_out(c_SI57x).dat;
-  trig3 <= fmc_wb_muxed_in(c_SI57x).dat;
-  
-  
 
   adc0_si570_sda_b <= '0' when sda_pad_oen = '0' else 'Z';
   adc0_si570_scl_b <= '0' when scl_pad_oen = '0' else 'Z';
