@@ -19,7 +19,9 @@ entity d3s_acq_buffer is
     clk_acq_i   : in std_logic;
 
     data_i : in std_logic_vector(g_data_width-1 downto 0);
-
+    
+	 freeze_i: in std_logic; -- Signal for freeezing a circular buffer
+	 
     slave_i : in  t_wishbone_slave_in;
     slave_o : out t_wishbone_slave_out
     );
@@ -114,9 +116,12 @@ begin
         if(regs_out.cr_start_o = '1') then
           wr_addr         <= (others => '0');
           acq_in_progress <= '1';
-        elsif (acq_in_progress = '1')then
-          if (wr_addr = g_size-1) then
-            acq_in_progress <= '0';
+        elsif (freeze_i = '1') then  -- new freeze feature
+		    acq_in_progress <= '0';     -- new
+		  elsif (acq_in_progress = '1') then
+          if (wr_addr = g_size-2) then    -- changed g_size-1 by g_size-2
+			   wr_addr  <= (others => '0');  -- Let's make the buffer circular till a 'freeze' signal is received
+            -- acq_in_progress <= '0';
           end if;
 
           wr_addr <= wr_addr + 1;
@@ -125,6 +130,6 @@ begin
     end if;
   end process;
 
-  regs_in.cr_ready_i <= not acq_in_progress;
+  regs_in.cr_ready_i <= not acq_in_progress and freeze_i;
   
 end rtl;
