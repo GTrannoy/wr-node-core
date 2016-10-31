@@ -29,6 +29,7 @@ entity wr_d3s_adc is
     tm_clk_aux_locked_i  : in  std_logic;
 
     fake_data_i : in std_logic_vector(13 downto 0) := "00000000000000";
+    enc_started_o        : out std_logic;  -- for testbench
 
     -- ADC Mezzanine I/F
     spi_din_i       : in  std_logic;    -- SPI data from FMC
@@ -96,17 +97,20 @@ architecture rtl of wr_d3s_adc is
       raw_phase_o      : out std_logic_vector(15 downto 0);
       raw_hp_data_o    : out std_logic_vector(15 downto 0);
       r_max_run_len_i  : in  std_logic_vector(15 downto 0);
-      r_max_error_i    : in  std_logic_vector(22 downto 0);
-      r_min_error_i    : in  std_logic_vector(22 downto 0);
+      lt_max_error_i   : in  std_logic_vector(22 downto 0);
+      lt_min_error_i   : in  std_logic_vector(22 downto 0);
+      st_max_error_i   : in  std_logic_vector(22 downto 0);
+      st_min_error_i   : in  std_logic_vector(22 downto 0);
       r_record_count_o : out std_logic_vector(31 downto 0);
       fifo_en_i        : in  std_logic;
-      fifo_full_i      : in  std_logic;
-      fifo_lost_o      : out std_logic;
+      fifo_full_i      : in  std_logic;                     
+      fifo_lost_o      : out std_logic;              
       fifo_payload_o   : out std_logic_vector(31 downto 0);
       fifo_we_o        : out std_logic;
       tm_cycles_i      : in  std_logic_vector(27 downto 0);
       cnt_fixed_o      : out std_logic_vector(31 downto 0);
-      cnt_rl_o         : out std_logic_vector(31 downto 0);
+      lt_cnt_rl_o      : out std_logic_vector(31 downto 0);
+      st_cnt_rl_o      : out std_logic_vector(31 downto 0);
       cnt_ts_o         : out std_logic_vector(31 downto 0));
 
   end component d3s_phase_encoder;
@@ -120,6 +124,7 @@ architecture rtl of wr_d3s_adc is
       clk_sys_i   : in  std_logic;
       clk_acq_i   : in  std_logic;
       data_i      : in  std_logic_vector(g_data_width-1 downto 0);
+		freeze_i    : in std_logic;
       slave_i     : in  t_wishbone_slave_in;
       slave_o     : out t_wishbone_slave_out);
   end component d3s_acq_buffer;
@@ -234,8 +239,9 @@ architecture rtl of wr_d3s_adc is
   signal regs_out : t_d3s_out_registers;
 
   signal adc_data  : std_logic_vector(13 downto 0);
-  signal adc_data2 : std_logic_vector(13 downto 0);
+  signal adc_data2 : std_logic_vector(13 downto 0); -- FIXME: not used anymore
 
+  --  Signals for SERDES-ADC  -----------------
   signal serdes_in_p         : std_logic_vector(8 downto 0);
   signal serdes_in_n         : std_logic_vector(8 downto 0);
   signal serdes_out_raw      : std_logic_vector(71 downto 0);
@@ -274,73 +280,23 @@ architecture rtl of wr_d3s_adc is
   signal cnx_out : t_wishbone_master_out_array(0 to c_CNX_MASTER_COUNT-1);
   signal cnx_in  : t_wishbone_master_in_array(0 to c_CNX_MASTER_COUNT-1);
 
---   Chip scope signals
+  -- signal enc_fifo_count : std_logic_vector(13 downto 0);
+
+  --  Signals for chip Scope  -----------------
   signal CONTROL : std_logic_vector(35 downto 0);
   signal CLK     : std_logic;
   signal TRIG0   : std_logic_vector(31 downto 0);
   signal TRIG1   : std_logic_vector(31 downto 0);
   signal TRIG2   : std_logic_vector(31 downto 0);
   signal TRIG3   : std_logic_vector(31 downto 0);
+  ---------------------------------------------
   
 begin
   
-  U_Intercon : xwb_crossbar
-    generic map (
-      g_num_masters => 1,
-      g_num_slaves  => c_CNX_MASTER_COUNT,
-      g_registered  => true,
-      g_address     => c_cnx_base_addr,
-      g_mask        => c_cnx_base_mask)
-    port map (
-      clk_sys_i  => clk_sys_i,
-      rst_n_i    => rst_n_sys_i,
-      slave_i(0) => slave_i,
-      slave_o(0) => slave_o,
-      master_i   => cnx_in,
-      master_o   => cnx_out);
-
-  regs_in.tcr_wr_link_i       <= tm_link_up_i;
-  regs_in.tcr_wr_time_valid_i <= tm_time_valid_i;
-  regs_in.tcr_wr_locked_i     <= tm_clk_aux_locked_i;
-
-  tm_clk_aux_lock_en_o <= regs_out.tcr_wr_lock_en_o;
-
-  regs_in.gpior_si57x_scl_i <= si570_scl_b;
-  regs_in.gpior_si57x_sda_i <= si570_sda_b;
-
-  process(clk_sys_i)
-  begin
-    if rising_edge(clk_sys_i) then
-      if rst_n_sys_i = '0' then
-        scl_out <= '1';
-        sda_out <= '1';
-      else
-        if(regs_out.gpior_si57x_sda_load_o = '1') then
-          sda_out <= regs_out.gpior_si57x_sda_o;
-        end if;
-        if(regs_out.gpior_si57x_scl_load_o = '1') then
-          scl_out <= regs_out.gpior_si57x_scl_o;
-        end if;
-      end if;
-    end if;
-  end process;
-
-  si570_sda_b <= '0' when sda_out = '0' else 'Z';
-  si570_scl_b <= '0' when scl_out = '0' else 'Z';
-
-  spi_cs_adc_n_o           <= regs_out.gpior_spi_cs_adc_o;
-  spi_dout_o               <= regs_out.gpior_spi_mosi_o;
-  spi_sck_o                <= regs_out.gpior_spi_sck_o;
-  regs_in.gpior_spi_miso_i <= spi_din_i;
-
-  sys_rst <= not rst_n_sys_i;
-
-  spi_cs_dac1_n_o <= '1';
-  spi_cs_dac2_n_o <= '1';
-  spi_cs_dac3_n_o <= '1';
-  spi_cs_dac4_n_o <= '1';
-
-  --- ADC Mezzanine stuff
+  ------------------------------------------
+  -- Differential input buffers
+  ------------------------------------------
+  -- FMCadc data clock ouput
   cmp_dco_buf : IBUFGDS
     generic map (
       DIFF_TERM  => true,               -- Differential termination
@@ -351,9 +307,7 @@ begin
       O  => dco_clk_buf
       );
 
--- Serializer TDC data input buffer:
-
---        1st attempt
+  -- STDC trigger input
   cmp_trig_buf : IBUFDS
     generic map (
       DIFF_TERM  => true,               -- Differential termination
@@ -364,6 +318,9 @@ begin
       O  => ext_trigger
       );
 
+  ------------------------------------------
+  -- PLL
+  ------------------------------------------
   cmp_serdes_clk_pll : PLL_BASE
     generic map (
       BANDWIDTH          => "OPTIMIZED",
@@ -394,16 +351,129 @@ begin
       RST      => sys_rst,
       -- Input clock control
       CLKFBIN  => clk_fb,
-      CLKIN    => dco_clk_buf);
+      CLKIN    => dco_clk_buf);          -- 500 MHz
 
   cmp_wr_ref_buf : BUFG
     port map (
       O => clk_wr,
       I => fs_clk_buf);
 
+  clk_wr_o   <= clk_wr;
+
+  -- PLL reset  (used in the PLL and in the serdes)
+  sys_rst <= not rst_n_sys_i;  
+  
+  ------------------------------------------
+  -- Sync reset
+  ------------------------------------------
+  U_Sync_Reset : gc_sync_ffs
+    generic map (
+      g_sync_edge => "positive")
+    port map (
+      clk_i    => clk_wr,
+      rst_n_i  => '1',
+      data_i   => rst_n_sys_i and locked_out,
+      synced_o => rst_n_wr);
+		
+  ------------------------------------------
+  --     WB crossbar  
+  ------------------------------------------
+  U_Intercon : xwb_crossbar
+    generic map (
+      g_num_masters => 1,
+      g_num_slaves  => c_CNX_MASTER_COUNT,
+      g_registered  => true,
+      g_address     => c_cnx_base_addr,
+      g_mask        => c_cnx_base_mask)
+    port map (
+      clk_sys_i  => clk_sys_i,
+      rst_n_i    => rst_n_sys_i,
+      slave_i(0) => slave_i,
+      slave_o(0) => slave_o,
+      master_i   => cnx_in,
+      master_o   => cnx_out);
+
+  ------------------------------------------
+  --     WB D3S interface  
+  ------------------------------------------
+  U_CSR : d3s_adc_wb
+    port map (
+      rst_n_i    => rst_n_sys_i,
+      clk_sys_i  => clk_sys_i,
+      wb_adr_i   => cnx_out(0).adr(5 downto 2),
+      wb_dat_i   => cnx_out(0).dat,
+      wb_dat_o   => cnx_in(0).dat,
+      wb_cyc_i   => cnx_out(0).cyc,
+      wb_sel_i   => cnx_out(0).sel,
+      wb_stb_i   => cnx_out(0).stb,
+      wb_we_i    => cnx_out(0).we,
+      wb_ack_o   => cnx_in(0).ack,
+      wb_stall_o => cnx_in(0).stall,
+      clk_wr_i   => clk_wr,
+      regs_i     => regs_in,
+      regs_o     => regs_out);
+
+  cnx_in(0).err <= '0';
+  cnx_in(0).rty <= '0';
+  		
+  ------------------------------------------
+  --  Driving TCR register of WB d3s_adc core
+  ------------------------------------------
+  regs_in.tcr_wr_link_i       <= tm_link_up_i;
+  regs_in.tcr_wr_time_valid_i <= tm_time_valid_i;
+  regs_in.tcr_wr_locked_i     <= tm_clk_aux_locked_i;
+  tm_clk_aux_lock_en_o   <= regs_out.tcr_wr_lock_en_o;
+  
+  ------------------------------------------
+  --  Control of I2C Si57x lines through WB registers
+  ------------------------------------------
+
+  regs_in.gpior_si57x_scl_i <= si570_scl_b;
+  regs_in.gpior_si57x_sda_i <= si570_sda_b;
+  
+  si570_sda_b <= '0' when sda_out = '0' else 'Z';
+  si570_scl_b <= '0' when scl_out = '0' else 'Z';
+  
+  process(clk_sys_i)
+  begin
+    if rising_edge(clk_sys_i) then
+      if rst_n_sys_i = '0' then
+        scl_out <= '1';
+        sda_out <= '1';
+      else
+        if(regs_out.gpior_si57x_sda_load_o = '1') then
+          sda_out <= regs_out.gpior_si57x_sda_o;
+        end if;
+        if(regs_out.gpior_si57x_scl_load_o = '1') then
+          scl_out <= regs_out.gpior_si57x_scl_o;
+        end if;
+      end if;
+    end if;
+  end process;
+
+  ------------------------------------------
+  --  Control of SPI signals
+  ------------------------------------------
+  -- To be removed with the future next Fmc adc subsamplig card
+  
+  spi_cs_adc_n_o           <= regs_out.gpior_spi_cs_adc_o;
+  spi_dout_o               <= regs_out.gpior_spi_mosi_o;
+  spi_sck_o                <= regs_out.gpior_spi_sck_o;
+  regs_in.gpior_spi_miso_i <= spi_din_i;
+
+  spi_cs_dac1_n_o <= '1';
+  spi_cs_dac2_n_o <= '1';
+  spi_cs_dac3_n_o <= '1';
+  spi_cs_dac4_n_o <= '1';
+
+  ------------------------------------------
+  --     ADC serdes
+  --  It contains the BUFPLL that will also feed the STDC oserdes
+  --  Would not be more clear to place it out of this component ?
+  ------------------------------------------
   cmp_adc_serdes : adc_serdes
     port map(
-      DATA_IN_FROM_PINS_P => serdes_in_p,
+      DATA_IN_FROM_PINS_P => serdes_in_p,  -- Diff. input buffers inside
       DATA_IN_FROM_PINS_N => serdes_in_n,
       DATA_IN_TO_DEVICE   => serdes_out_raw,
       BITSLIP             => serdes_auto_bitslip,
@@ -416,7 +486,6 @@ begin
       CLK_RESET           => '0',       -- unused
       IO_RESET            => sys_rst
       );
-
 
   -- serdes bitslip generation
   p_auto_bitslip : process (clk_wr, rst_n_sys_i)
@@ -497,44 +566,19 @@ begin
   adc_data <= serdes_out_data(15 downto 2) when g_use_fake_data = false else fake_data_i;
 --  adc_data2 <= serdes_out_data(16+15 downto 2);
 
-  U_Sync_Reset : gc_sync_ffs
-    generic map (
-      g_sync_edge => "positive")
-    port map (
-      clk_i    => clk_wr,
-      rst_n_i  => '1',
-      data_i   => rst_n_sys_i and locked_out,
-      synced_o => rst_n_wr);
-
-  U_CSR : d3s_adc_wb
-    port map (
-      rst_n_i    => rst_n_sys_i,
-      clk_sys_i  => clk_sys_i,
-      wb_adr_i   => cnx_out(0).adr(5 downto 2),
-      wb_dat_i   => cnx_out(0).dat,
-      wb_dat_o   => cnx_in(0).dat,
-      wb_cyc_i   => cnx_out(0).cyc,
-      wb_sel_i   => cnx_out(0).sel,
-      wb_stb_i   => cnx_out(0).stb,
-      wb_we_i    => cnx_out(0).we,
-      wb_ack_o   => cnx_in(0).ack,
-      wb_stall_o => cnx_in(0).stall,
-      clk_wr_i   => clk_wr,
-      regs_i     => regs_in,
-      regs_o     => regs_out);
-
-  cnx_in(0).err <= '0';
-  cnx_in(0).rty <= '0';
-
+  ------------------------------------------
+  --  Acquisition buffers (for debugging purposes)
+  ------------------------------------------
   U_Acq : d3s_acq_buffer
     generic map (
       g_data_width => 14,
-      g_size       => 1024)
+      g_size       => 32768)  --16384) --1024)
     port map (
       rst_n_sys_i => rst_n_sys_i,
       clk_sys_i   => clk_sys_i,
       clk_acq_i   => clk_wr,
       data_i      => adc_data,
+		freeze_i    => regs_out.adc_wr_full_o,  -- Freeze if FIFO gets full (circular otherwise), to diagnose only
       slave_i     => cnx_out(1),
       slave_o     => cnx_in(1));
 
@@ -547,53 +591,74 @@ begin
       clk_sys_i   => clk_sys_i,
       clk_acq_i   => clk_wr,
       data_i      => raw_hp_data,
+		freeze_i    => regs_out.adc_wr_full_o,  -- Freeze if FIFO gets full, to diagnose only
       slave_i     => cnx_out(2),
       slave_o     => cnx_in(2));
 
   U_Acq3 : d3s_acq_buffer
     generic map (
       g_data_width => 16,
-      g_size       => 1024)
+      g_size       => 16384) --1024)
     port map (
       rst_n_sys_i => rst_n_sys_i,
       clk_sys_i   => clk_sys_i,
       clk_acq_i   => clk_wr,
       data_i      => raw_phase,
+		freeze_i    => regs_out.adc_wr_full_o,  -- Freeze if FIFO gets full, to diagnose only
       slave_i     => cnx_out(3),
       slave_o     => cnx_in(3));
-
+		
+  ------------------------------------------
+  --  Phase encoder: 
+  --  Removes DC from the signal, 
+  --  Calculates its Hilber transform (Q component)
+  --  Calculates the phase of the signal (atan(Q/I)) with cordic
+  --  Compress the information
+  --  Stores the compressed inforamtion in a FIFO
+  --  Data in the fifo will be read by MT real time task and send through WR
+  ------------------------------------------
   U_Phase_Enc : d3s_phase_encoder
     port map (
       clk_i           => clk_wr,
       rst_n_i         => rst_n_wr,
       adc_data_i      => adc_data,
       r_max_run_len_i => regs_out.rl_length_max_o(15 downto 0),
-      r_max_error_i   => regs_out.rl_err_max_o(22 downto 0),
-      r_min_error_i   => regs_out.rl_err_min_o(22 downto 0),
+      lt_max_error_i  => regs_out.lt_rl_err_max_o(22 downto 0),
+      lt_min_error_i  => regs_out.lt_rl_err_min_o(22 downto 0),
+      st_max_error_i  => regs_out.st_rl_err_max_o(22 downto 0),
+      st_min_error_i  => regs_out.st_rl_err_min_o(22 downto 0),
       raw_hp_data_o   => raw_hp_data,
       raw_phase_o     => raw_phase,
       fifo_en_i       => regs_out.cr_enable_o,
-      fifo_full_i     => regs_out.adc_wr_full_o,
-      fifo_lost_o     => open,
+      fifo_full_i     => regs_out.adc_wr_full_o,    
+      fifo_lost_o     => open,                      
       fifo_payload_o  => regs_in.adc_payload_i,
       fifo_we_o       => regs_in.adc_wr_req_i,
       tm_cycles_i     => tm_cycles_i,
       cnt_fixed_o     => regs_in.cnt_fixed_i,
-      cnt_rl_o        => regs_in.cnt_rl_i,
+      lt_cnt_rl_o     => regs_in.lt_cnt_rl_i,
+      st_cnt_rl_o     => regs_in.st_cnt_rl_i,
       cnt_ts_o        => regs_in.cnt_tstamp_i
       );
+
+  enc_started_o  <= regs_out.cr_enable_o;
+  -- enc_fifo_count <= regs_out.d3s_adc_usedw_int;  -- Not exported
+
+
 
   u_mon_adc_clock : process(clk_wr)
   begin
     if rising_edge(clk_wr) then
       clk_wr_div2 <= not clk_wr_div2;
-    end if;
-    
+    end if;    
   end process;
 
-  clk_wr_o   <= clk_wr;
-
-  ----- Adding the new component: stdc_hostif  ----
+  ------------------------------------------
+  --  STDC interace: 
+  --  Time stamps the triggers received with a resolution of 1ns 
+  --  It uses a serdes clocked at 1GHz
+  ------------------------------------------
+  
   cmp_stdc : stdc_hostif
     generic map (
       D_WIDTH => 72, -- Length of the fifo words
@@ -679,26 +744,30 @@ begin
 --------------------------------------------
 --         Chip Scope
 --------------------------------------------
-  chipscope_icon_1: chipscope_icon
-    port map (
-      CONTROL0 => CONTROL);
+--  chipscope_icon_1: chipscope_icon
+--    port map (
+--      CONTROL0 => CONTROL);
+--
+--  chipscope_ila_1: chipscope_ila
+--    port map (
+--      CONTROL => CONTROL,
+--      CLK     => clk_wr,
+--      TRIG0   => TRIG0,
+--      TRIG1   => TRIG1,
+--      TRIG2   => TRIG2,
+--      TRIG3   => TRIG3);
 
-  chipscope_ila_1: chipscope_ila
-    port map (
-      CONTROL => CONTROL,
-      CLK     => clk_wr,
-      TRIG0   => TRIG0,
-      TRIG1   => TRIG1,
-      TRIG2   => TRIG2,
-      TRIG3   => TRIG3);
-
-	TRIG0(13 downto 0)  <= adc_data ;  -- phase encoder input
-	TRIG0(29 downto 14) <= raw_phase;
-	TRIG0(30)           <= regs_in.adc_wr_req_i;
-	TRIG2(31 downto 0)  <= regs_in.cnt_rl_i;
-	
-	TRIG1(15 downto 0)  <= raw_hp_data;
-	TRIG1(31)           <= regs_out.adc_wr_full_o;
-
-
+--	TRIG0(13 downto 0)  <= adc_data ;  -- phase encoder input
+--	TRIG0(29 downto 14) <= raw_phase;
+--	TRIG0(30)           <= regs_in.adc_wr_req_i;
+--	TRIG0(31)           <= regs_out.cr_enable_o;
+--	
+--	TRIG2(31 downto 0)  <= regs_in.cnt_rl_i;
+--	
+--	TRIG1(15 downto 0)  <= raw_hp_data;
+--	TRIG1(31)           <= regs_out.adc_wr_full_o;  -- FIXME: not used.
+--	
+--   TRIG3(31 downto 0)  <= regs_in.adc_payload_i;
+      
+ 
 end rtl;
