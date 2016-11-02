@@ -111,6 +111,24 @@ architecture rtl of d3s_phase_encoder is
       y_o     : out std_logic_vector(g_data_bits-1 downto 0));
   end component d3s_highpass_filter;
 
+  component chipscope_ila
+    port (
+      CONTROL : inout std_logic_vector(35 downto 0);
+      CLK     : in    std_logic;
+      TRIG0   : in    std_logic_vector(31 downto 0);
+      TRIG1   : in    std_logic_vector(31 downto 0);
+      TRIG2   : in    std_logic_vector(31 downto 0);
+      TRIG3   : in    std_logic_vector(31 downto 0));
+  end component;
+
+  component chipscope_icon
+    port (
+      CONTROL0 : inout std_logic_vector (35 downto 0));
+  end component;
+	 
+  ------------------------------------------
+  --        CONSTANTS DECLARATION  
+  ------------------------------------------
   constant c_HILBERT_GROUP_DELAY     : integer := 71 + 64;
   constant c_TIMESTAMP_REPORT_PERIOD : integer := 10000;
 
@@ -163,6 +181,15 @@ architecture rtl of d3s_phase_encoder is
   signal cnt_fix, lt_cnt_rl, st_cnt_rl, cnt_ts : unsigned(31 downto 0);
 
   constant c_ACC_SHIFT : integer := 4;
+  
+  --  Signals for chip Scope  -----------------
+  signal CONTROL : std_logic_vector(35 downto 0);
+  signal CLK     : std_logic;
+  signal TRIG0   : std_logic_vector(31 downto 0);
+  signal TRIG1   : std_logic_vector(31 downto 0);
+  signal TRIG2   : std_logic_vector(31 downto 0);
+  signal TRIG3   : std_logic_vector(31 downto 0);
+  ---------------------------------------------
   
 begin
 
@@ -526,5 +553,46 @@ begin
   fifo_we_o      <= c_out.valid and fifo_en_i;
   fifo_payload_o <= c_out.payload;
 
-  
+  --------------------------------------------
+  --         Chip Scope
+  --------------------------------------------
+
+  chipscope_icon_1: chipscope_icon
+    port map (
+      CONTROL0 => CONTROL);
+
+  chipscope_ila_1: chipscope_ila
+    port map (
+      CONTROL => CONTROL,
+      CLK     => clk_i,
+      TRIG0   => TRIG0,
+      TRIG1   => TRIG1,
+      TRIG2   => TRIG2,
+      TRIG3   => TRIG3);
+	
+	 TRIG0(22 downto 0)  <= std_logic_vector(rl_phase_ext);  -- 22 downto 0
+	 TRIG0(31 downto 23) <= std_logic_vector(rl_integ(8 downto 0));  -- rl_integ range (22 downto 0)
+
+    TRIG1(13 downto 0)  <= std_logic_vector(rl_integ(22 downto 9));
+    TRIG1(29 downto 14) <= std_logic_vector(rl_length);  -- (15 downto 0)
+    TRIG1(30)    <= c1.valid;
+    TRIG1(31)    <= c2.valid;
+	 
+    TRIG2(22 downto 0)  <= std_logic_vector(avg_st); -- (22 downto 0)
+    TRIG2(31 downto 23) <= std_logic_vector(rl_integ_next(8 downto 0)); -- 22 downto 0
+    
+    TRIG3(27 downto 23) <= std_logic_vector(rl_integ_next(13 downto 9)); -- 22 downto 0  -- TRUNCATED TO 14 bits!
+    TRIG3(22 downto 0)  <= std_logic_vector(avg_lt); -- (22 downto 0); 
+    
+	 TRIG3(31) <= err_lt_bound;
+	 TRIG3(30) <= err_st_bound;
+    TRIG3(29 downto 28) <= std_logic_vector(to_unsigned(t_state'pos(rl_state),2)); -- 4 states
+
+
+	
+	
+   
+	
+	
+	
 end rtl;
