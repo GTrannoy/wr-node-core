@@ -332,42 +332,43 @@ begin
 
   rst_wr <= not rst_n_wr;
 
-  U_Intercon : xwb_crossbar
-    generic map (
-      g_num_masters => 1,
-      g_num_slaves  => c_CNX_MASTER_COUNT,
-      g_registered  => true,
-      g_address     => c_cnx_base_addr,
-      g_mask        => c_cnx_base_mask)
-    port map (
-      clk_sys_i  => clk_sys_i,
-      rst_n_i    => rst_n_sys_i,
-      slave_i(0) => slave_i,
-      slave_o(0) => slave_o,
-      master_i   => cnx_in,
-      master_o   => cnx_out);
+--  U_Intercon : xwb_crossbar
+--    generic map (
+--      g_num_masters => 1,
+--      g_num_slaves  => c_CNX_MASTER_COUNT,
+--      g_registered  => true,
+--      g_address     => c_cnx_base_addr,
+--      g_mask        => c_cnx_base_mask)
+--    port map (
+--      clk_sys_i  => clk_sys_i,
+--      rst_n_i    => rst_n_sys_i,
+--      slave_i(0) => slave_i,
+--      slave_o(0) => slave_o,
+--      master_i   => cnx_in,
+--      master_o   => cnx_out);
+
 
   U_CSR : d3ss_adc_slave_wb
     port map (
       rst_n_i    => rst_n_sys_i,
       clk_sys_i  => clk_sys_i,
-      wb_adr_i   => cnx_out(c_ADC_slave).adr(5 downto 2),
-      wb_dat_i   => cnx_out(c_ADC_slave).dat,
-      wb_dat_o   => cnx_in(c_ADC_slave).dat,
-      wb_cyc_i   => cnx_out(c_ADC_slave).cyc,
-      wb_sel_i   => cnx_out(c_ADC_slave).sel,
-      wb_stb_i   => cnx_out(c_ADC_slave).stb,
-      wb_we_i    => cnx_out(c_ADC_slave).we,
-      wb_ack_o   => cnx_in(c_ADC_slave).ack,
-      wb_stall_o => cnx_in(c_ADC_slave).stall,
+      wb_adr_i   => slave_i.adr(5 downto 2),  -- cnx_out(c_ADC_slave).adr(4 downto 2),
+      wb_dat_i   => slave_i.dat,        --cnx_out(c_ADC_slave).dat,
+      wb_dat_o   => slave_o.dat,        --cnx_in(c_ADC_slave).dat,
+      wb_cyc_i   => slave_i.cyc,        --cnx_out(c_ADC_slave).cyc,
+      wb_sel_i   => slave_i.sel,        --cnx_out(c_ADC_slave).sel,
+      wb_stb_i   => slave_i.stb,        --cnx_out(c_ADC_slave).stb,
+      wb_we_i    => slave_i.we,         --cnx_out(c_ADC_slave).we,
+      wb_ack_o   => slave_o.ack,        --cnx_in(c_ADC_slave).ack,
+      wb_stall_o => slave_o.stall,      --cnx_in(c_ADC_slave).stall,
       clk_wr_i   => clk_wr,
       regs_i     => regs_in,
       regs_o     => regs_out);
 
   slave_o.err <= '0';
   slave_o.rty <= '0';
---  cnx_in(c_ADC_slave).err <= '0';
---  cnx_in(c_ADC_slave).rty <= '0';
+--  cnx_in(0).err <= '0';
+--  cnx_in(0).rty <= '0';
 
   U_Phase_Dec : d3s_phase_decoder
     generic map (
@@ -479,23 +480,26 @@ begin
   ----------------------------------------------
   --         T_REV GENERATOR MODULE
   -----------------------------------------------	
-  cmp_TrevGen: TrevGen_Module 
-    port map( rst_n_i    => rst_n_wr,
-              clk_sys_i  => clk_sys_i,          -- 62.5 MHz
-              clk_125m_i => clk_wr,
-              B_clk_i    => synth_i,
-              WRcyc_i    => unsigned(tm_cycles_i),
-              Rev_clk_o  => rev_clk_o,
-				  wb_adr_i   => cnx_out(c_SLAVE_TREVGEN).adr,  
-				  wb_dat_i   => cnx_out(c_SLAVE_TREVGEN).dat,
-				  wb_dat_o   => cnx_in(c_SLAVE_TREVGEN).dat,
-				  wb_cyc_i   => cnx_out(c_SLAVE_TREVGEN).cyc,
-				  wb_sel_i   => cnx_out(c_SLAVE_TREVGEN).sel,
-				  wb_stb_i   => cnx_out(c_SLAVE_TREVGEN).stb,
-				  wb_we_i    => cnx_out(c_SLAVE_TREVGEN).we,
-				  wb_ack_o   => cnx_in(c_SLAVE_TREVGEN).ack,
-				  wb_stall_o => cnx_in(c_SLAVE_TREVGEN).stall);
-		 
+
+rev_clk_o <= '0';  -- To remove later
+
+--  cmp_TrevGen: TrevGen_Module 
+--    port map( rst_n_i    => rst_n_wr,
+--              clk_sys_i  => clk_sys_i,          -- 62.5 MHz
+--              clk_125m_i => clk_wr,
+--              B_clk_i    => synth_i,
+--              WRcyc_i    => unsigned(tm_cycles_i),
+--              Rev_clk_o  => rev_clk_o,
+--				  wb_adr_i   => cnx_out(c_SLAVE_TREVGEN).adr,  
+--				  wb_dat_i   => cnx_out(c_SLAVE_TREVGEN).dat,
+--				  wb_dat_o   => cnx_in(c_SLAVE_TREVGEN).dat,
+--				  wb_cyc_i   => cnx_out(c_SLAVE_TREVGEN).cyc,
+--				  wb_sel_i   => cnx_out(c_SLAVE_TREVGEN).sel,
+--				  wb_stb_i   => cnx_out(c_SLAVE_TREVGEN).stb,
+--				  wb_we_i    => cnx_out(c_SLAVE_TREVGEN).we,
+--				  wb_ack_o   => cnx_in(c_SLAVE_TREVGEN).ack,
+---				  wb_stall_o => cnx_in(c_SLAVE_TREVGEN).stall);
+--		 
    --cnx_in(c_SLAVE_TREVGEN).err <= '0';
    --cnx_in(c_SLAVE_TREVGEN).rty <= '0';
   
