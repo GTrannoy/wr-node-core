@@ -24,8 +24,8 @@ entity d3s_phase_encoder is
 
 
     fifo_en_i   : in  std_logic;
-    fifo_full_i : in  std_logic;
-    fifo_lost_o : out std_logic;
+    fifo_full_i : in  std_logic;  
+    fifo_lost_o : out std_logic;  
 
     fifo_payload_o : out std_logic_vector(31 downto 0);
 
@@ -42,6 +42,10 @@ entity d3s_phase_encoder is
 end d3s_phase_encoder;
 
 architecture rtl of d3s_phase_encoder is
+
+------------------------------------------
+--        COMPONENTs DECLARATION  
+------------------------------------------ 
 
   component fir_compiler_v5_0 is
     port (
@@ -132,6 +136,17 @@ architecture rtl of d3s_phase_encoder is
   constant c_HILBERT_GROUP_DELAY     : integer := 71 + 64;
   constant c_TIMESTAMP_REPORT_PERIOD : integer := 10000;
 
+  ------------------------------------------
+  --        SIGNALS DECLARATION  
+  ------------------------------------------
+  
+  type t_state is (STARTUP, IDLE, RL_SHORT, RL_LONG);
+  
+  type t_comp_record is record
+    valid   : std_logic;
+    payload : std_logic_vector(31 downto 0);
+  end record;
+  
   signal adc_i, adc_i_pre : std_logic_vector(15 downto 0);
   signal adc_q, adc_q_pre : std_logic_vector(15 downto 0);
   signal adc_phase        : std_logic_vector(15 downto 0);
@@ -148,8 +163,6 @@ architecture rtl of d3s_phase_encoder is
 
   --signal avg_lt_trunc, avg_st_trunc : std_logic_vector(15 downto 0);
 
-  type t_state is (STARTUP, IDLE, RL_SHORT, RL_LONG);
-
   signal rl_phase : std_logic_vector(15 downto 0);
 
   signal err_bound_st_lo : unsigned (22 downto 0);
@@ -157,21 +170,16 @@ architecture rtl of d3s_phase_encoder is
   signal err_bound_lt_lo : unsigned (22 downto 0);
   signal err_bound_lt_hi : unsigned (22 downto 0);
 
+  signal rl_state                              : t_state;
   signal rl_integ, rl_integ_next, rl_phase_ext : unsigned(22 downto 0);
   signal rl_length                             : unsigned(15 downto 0);
-  signal rl_state                              : t_state;
   signal rl_cycles_start                       : std_logic_vector(27 downto 0);
-  signal err_st                                : signed(22 downto 0);
-  signal err_lt                                : signed(22 downto 0);
+  signal err_st                                : signed(22 downto 0);  -- FIXME: not used
+  signal err_lt                                : signed(22 downto 0);  -- FIXME: not used
   signal err_lt_bound, err_st_bound            : std_logic;
 
   signal adc_hp_out   : std_logic_vector(15 downto 0);
   signal adc_data_reg : std_logic_vector(13 downto 0);
-
-  type t_comp_record is record
-    valid   : std_logic;
-    payload : std_logic_vector(31 downto 0);
-  end record;
 
   signal c1, c2, c1_d, c2_d, c_out                  : t_comp_record;
   signal c2_pending                                 : std_logic;
@@ -193,7 +201,7 @@ architecture rtl of d3s_phase_encoder is
   
 begin
 
-  process(clk_i)
+  p_input_reg: process(clk_i)
   begin
     if rising_edge(clk_i) then
       adc_data_reg <= adc_data_i;
@@ -217,7 +225,7 @@ begin
     port map (
       clk_i     => clk_i,
       rst_n_i   => rst_n_i,
-      x_valid_i => '1',
+      x_valid_i => '1',  
       x_i       => (adc_data_reg(13) & adc_data_reg(13) & adc_data_reg),
       y_valid_o => open,
       y_o       => adc_hp_out);
@@ -248,6 +256,16 @@ begin
 
   adc_i <= adc_i_pre(15) & adc_i_pre(15) & adc_i_pre(15 downto 2);
 
+  -------------------------------------------------------------------
+  --  This module calculates the phase as arc_tan(y_in/x_in)
+  --  x_in and y_in should be between -1 and 1.
+  --  adc_phase is expressed as normalized radians (value between -1 and 1)
+  --  that is : -1=-PI, +1=PI
+  --  x_in and y_in: are fixed-point 2's complement number with 1QN format
+  --       1 sign bit + 1 bit for interger part + 14 bits for fractional part.
+  --  adc_pahse is a fixed-point 2's complement with 2QN format
+  --       1 bit sign + 2 bits for integer part + 13 bits for fractional part.
+  -------------------------------------------------------------------
   U_ArcTangent : cordic_v4_0
     port map (
       x_in      => adc_i,
@@ -523,7 +541,7 @@ begin
           c_out.valid <= '0';
         end if;
 
-        c2_pending <= c2.valid and c1_d.valid;
+        c2_pending <= c2.valid and c1_d.valid;   --c2_pending is read nowhere. Is it for debugging?
         
       end if;
     end if;
