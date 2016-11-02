@@ -66,8 +66,8 @@ entity TrevGen_Module is
         Rev_clk_o  :  out std_logic ;
         -- Wishbone interface
         wb_adr_i   :  in std_logic_vector(31 downto 0);
-        wb_data_i  :  in std_logic_vector(31 downto 0);
-        wb_data_o  :  out std_logic_vector(31 downto 0);
+        wb_dat_i  :  in std_logic_vector(31 downto 0);
+        wb_dat_o  :  out std_logic_vector(31 downto 0);
         wb_cyc_i   :  in std_logic;
         wb_sel_i   :  in std_logic_vector(3 downto 0);
         wb_stb_i   :  in std_logic;
@@ -110,8 +110,8 @@ architecture rtl of TrevGen_Module is
         rst_n_i     =>  rst_n_i,
         clk_sys_i   =>  clk_sys_i,
         wb_adr_i    =>  wb_adr_i(4 downto 2),
-        wb_dat_i    =>  wb_data_i,
-        wb_dat_o    =>  wb_data_o,
+        wb_dat_i    =>  wb_dat_i,
+        wb_dat_o    =>  wb_dat_o,
         wb_cyc_i    =>  wb_cyc_i,
         wb_sel_i    =>  wb_sel_i,
         wb_stb_i    =>  wb_stb_i,
