@@ -387,7 +387,9 @@ begin
             c1.valid                <= '1';
             c2.valid                <= '0';
 
-            if (err_lt_bound = '1') then
+            if (fifo_en_i = '0') then 
+              rl_state      <= STARTUP;
+            elsif (err_lt_bound = '1') then
               rl_state      <= RL_LONG;
               rl_integ      <= rl_phase_ext;
               rl_integ_next <= rl_phase_ext + avg_lt;
@@ -403,13 +405,17 @@ begin
             ts_report_cnt <= ts_report_cnt + 1;
             
           when RL_SHORT =>
+
             c1.valid <= '0';
             c2.valid <= '0';
 
 
             rl_integ_next <= rl_integ_next + avg_st_d;
 
-            if (err_st_bound = '1' and rl_length < unsigned(r_max_run_len_i)) then
+            if (fifo_en_i = '0') then 
+              rl_state      <= STARTUP;
+            
+            elsif (err_st_bound = '1' and rl_length < unsigned(r_max_run_len_i)) then
               rl_length <= rl_length + 1;
               rl_integ  <= rl_integ_next;
               rl_state  <= RL_SHORT;
@@ -454,7 +460,10 @@ begin
             rl_integ_next <= rl_integ_next + avg_lt_d;
 
 
-            if (err_lt_bound = '1' and rl_length < unsigned(r_max_run_len_i)) then
+            if (fifo_en_i = '0') then 
+              rl_state      <= STARTUP;
+           
+            elsif (err_lt_bound = '1' and rl_length < unsigned(r_max_run_len_i)) then
               rl_length <= rl_length + 1;
               rl_state  <= RL_LONG;
               rl_integ  <= rl_integ_next;
@@ -550,8 +559,8 @@ begin
   cnt_ts_o        <= std_logic_vector(cnt_ts);
 
 
-  fifo_we_o      <= c_out.valid and fifo_en_i;
-  fifo_payload_o <= c_out.payload;
+  fifo_we_o      <=  c_out.valid and fifo_en_i;
+  fifo_payload_o <=  c_out.payload;
 
   --------------------------------------------
   --         Chip Scope
