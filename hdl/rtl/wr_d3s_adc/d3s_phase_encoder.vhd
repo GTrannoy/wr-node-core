@@ -16,8 +16,10 @@ entity d3s_phase_encoder is
     raw_hp_data_o : out std_logic_vector(15 downto 0);
 
     r_max_run_len_i  : in  std_logic_vector(15 downto 0);
-    r_max_error_i    : in  std_logic_vector(22 downto 0);
-    r_min_error_i    : in  std_logic_vector(22 downto 0);
+    lt_max_error_i   : in  std_logic_vector(22 downto 0);
+    lt_min_error_i   : in  std_logic_vector(22 downto 0);
+    st_max_error_i   : in  std_logic_vector(22 downto 0);
+    st_min_error_i   : in  std_logic_vector(22 downto 0);
     r_record_count_o : out std_logic_vector(31 downto 0);
 
 
@@ -328,23 +330,27 @@ begin
         
         
         case (rl_state) is
+
           when STARTUP =>
+
             rl_length <= (others => '0');
             rl_integ  <= rl_phase_ext;
             if(fifo_en_i = '1') then
               rl_state <= IDLE;
             end if;
+
           when IDLE =>
+
             rl_cycles_start <= std_logic_vector(unsigned(tm_cycles_i) + 1);
             rl_length       <= (others => '0');
 
             avg_st_d <= avg_st;
             avg_lt_d <= avg_lt;
 
-            err_bound_st_lo <= avg_st + unsigned(r_min_error_i);
-            err_bound_st_hi <= avg_st + unsigned(r_max_error_i);
-            err_bound_lt_lo <= avg_lt + unsigned(r_min_error_i);
-            err_bound_lt_hi <= avg_lt + unsigned(r_max_error_i);
+            err_bound_st_lo <= avg_st + unsigned(st_min_error_i);  
+            err_bound_st_hi <= avg_st + unsigned(st_max_error_i);
+            err_bound_lt_lo <= avg_lt + unsigned(lt_min_error_i);
+            err_bound_lt_hi <= avg_lt + unsigned(lt_max_error_i);
 
 
             c1.payload(31)          <= '0';

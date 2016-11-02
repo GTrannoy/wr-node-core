@@ -155,8 +155,40 @@ peripheral {
 	 };
 
 	 reg {
-			name = "Error min";
-			prefix = "RL_ERR_MIN";
+			name = "LT RL Error min";
+			prefix = "LT_RL_ERR_MIN";
+
+			field {
+				 name = "MinError";
+				 description = "Lower error bound (negative) for phase error for the compression algorithm";
+				 type = SLV;
+				 size = 32;
+				 access_dev = READ_ONLY;
+				 access_bus = READ_WRITE;
+				 clock = "clk_wr_i";
+			};
+
+	 };
+	 
+     reg {
+			name = "LT RL Error max";
+			prefix = "LT_RL_ERR_MAX";
+
+			field {
+				 name = "MaxError";
+				 description = "Upper error bound (positive) for phase error for the compression algorithm";
+				 type = SLV;
+				 size = 32;
+				 access_dev = READ_ONLY;
+				 access_bus = READ_WRITE;
+				 clock = "clk_wr_i";
+			};
+
+	 };
+
+     reg {
+			name = "ST RL Error min";
+			prefix = "ST_RL_ERR_MIN";
 
 			field {
 				 name = "MinError";
@@ -170,8 +202,8 @@ peripheral {
 
 	 };
 	 reg {
-			name = "Error max";
-			prefix = "RL_ERR_MAX";
+			name = "ST RL Error max";
+			prefix = "ST_RL_ERR_MAX";
 
 			field {
 				 name = "MaxError";
