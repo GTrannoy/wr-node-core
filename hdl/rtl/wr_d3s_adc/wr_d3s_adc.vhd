@@ -124,7 +124,8 @@ architecture rtl of wr_d3s_adc is
       clk_sys_i   : in  std_logic;
       clk_acq_i   : in  std_logic;
       data_i      : in  std_logic_vector(g_data_width-1 downto 0);
-		freeze_i    : in std_logic;
+		mode_i      : in std_logic; -- if ='1' circular buffer
+		freeze_i    : in std_logic;  -- if circular buffer, ='1' freezes the acq.
       slave_i     : in  t_wishbone_slave_in;
       slave_o     : out t_wishbone_slave_out);
   end component d3s_acq_buffer;
@@ -212,18 +213,20 @@ architecture rtl of wr_d3s_adc is
 ------------------------------------------
 --        CONSTANTS DECLARATION  
 ------------------------------------------
-  constant c_CNX_MASTER_COUNT : integer := 5;
+  constant c_CNX_MASTER_COUNT : integer := 6;
 
   constant c_cnx_base_addr : t_wishbone_address_array(c_CNX_MASTER_COUNT-1 downto 0) :=
     (x"00000000",                       -- Base regs
      x"00000100",                       -- AcqBuf1
      x"00000200",                       -- AcqBuf2
      x"00000300",                       -- AcqBuf3
-     x"00000400"                        -- Serdes TDC
+     x"00000400",                       -- Serdes TDC
+     x"00000500"                        -- AcqBuf4
      );
 
   constant c_cnx_base_mask : t_wishbone_address_array(c_CNX_MASTER_COUNT-1 downto 0) :=
     (x"00000700",
+     x"00000700",
      x"00000700",
      x"00000700",
      x"00000700",
@@ -571,42 +574,59 @@ begin
   ------------------------------------------
   U_Acq : d3s_acq_buffer
     generic map (
-      g_data_width => 14,
-      g_size       => 32768)  --16384) --1024)
+      g_data_width => 14,  --16,  --14,
+      g_size       => 2048)  -- 32768)  --16384) --1024)
     port map (
       rst_n_sys_i => rst_n_sys_i,
       clk_sys_i   => clk_sys_i,
       clk_acq_i   => clk_wr,
-      data_i      => adc_data,
+      data_i      => regs_out.d3s_adc_usedw_int_o, --raw_phase,  --adc_data,
+		mode_i      => '0',
 		freeze_i    => regs_out.adc_wr_full_o,  -- Freeze if FIFO gets full (circular otherwise), to diagnose only
       slave_i     => cnx_out(1),
       slave_o     => cnx_in(1));
 
   U_Acq2 : d3s_acq_buffer
     generic map (
-      g_data_width => 16,
-      g_size       => 1024)
+      g_data_width => 32,  --16,
+      g_size       => 2048)
     port map (
       rst_n_sys_i => rst_n_sys_i,
       clk_sys_i   => clk_sys_i,
       clk_acq_i   => clk_wr,
-      data_i      => raw_hp_data,
+      data_i      => regs_in.cnt_fixed_i,  --raw_hp_data,
+		mode_i      => '0',
 		freeze_i    => regs_out.adc_wr_full_o,  -- Freeze if FIFO gets full, to diagnose only
       slave_i     => cnx_out(2),
       slave_o     => cnx_in(2));
 
   U_Acq3 : d3s_acq_buffer
     generic map (
-      g_data_width => 16,
-      g_size       => 16384) --1024)
+      g_data_width => 32,  --16,
+      g_size       => 2048) --1024)
     port map (
       rst_n_sys_i => rst_n_sys_i,
       clk_sys_i   => clk_sys_i,
       clk_acq_i   => clk_wr,
-      data_i      => raw_phase,
+      data_i      => regs_in.lt_cnt_rl_i,  --raw_phase,
+		mode_i      => '0',
 		freeze_i    => regs_out.adc_wr_full_o,  -- Freeze if FIFO gets full, to diagnose only
       slave_i     => cnx_out(3),
       slave_o     => cnx_in(3));
+
+  U_Acq4 : d3s_acq_buffer
+    generic map (
+      g_data_width => 32,  --16,
+      g_size       => 2048) --1024)
+    port map (
+      rst_n_sys_i => rst_n_sys_i,
+      clk_sys_i   => clk_sys_i,
+      clk_acq_i   => clk_wr,
+      mode_i      => '0',
+		data_i      => regs_in.st_cnt_rl_i,  --raw_phase,
+		freeze_i    => regs_out.adc_wr_full_o,  -- Freeze if FIFO gets full, to diagnose only
+      slave_i     => cnx_out(5),
+      slave_o     => cnx_in(5));
 		
   ------------------------------------------
   --  Phase encoder: 
