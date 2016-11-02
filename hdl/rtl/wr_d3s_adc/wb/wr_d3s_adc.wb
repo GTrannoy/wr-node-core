@@ -2,15 +2,15 @@
 
 peripheral {
 	 name = "WR D3S WB (master)";
-   prefix="d3s";
+     prefix="d3s";
 
 	 hdl_entity="d3s_adc_wb";
 	 
-   reg {
+     reg {
 			prefix = "TCR";
 			name = "Time Control Register";
       
-      field {
+            field {
 				 prefix = "WR_LOCK_EN";
 				 name = "WR Lock Enable";
 				 description = "write 1: enable locking of the ADC clock to WR. Enable only after Si57x has been initialized.";
@@ -30,13 +30,13 @@ peripheral {
 			};
 			field {
 				 prefix = "WR_TIME_VALID";
-         name = "WR Time Valid";
+                 name = "WR Time Valid";
 				 description = "when 1, the WR Core is synchronized with the WR network";
 				 type = BIT;
 				 access_dev = WRITE_ONLY;
 				 access_bus = READ_ONLY;
 			};
-      field {
+            field {
 				 prefix = "WR_LINK";
 				 name = "WR Link";
 				 description = "when 1, WR link is up";
@@ -50,7 +50,7 @@ peripheral {
 			name = "GPIO register";
 			prefix = "GPIOR";
 			
-      field {
+            field {
 				 prefix = "SI57X_SCL";
 				 name = "SI57X_SCL";
 				 description = "GPIO controlling the state of the SCL line of the Silabs Si57p oscillator on the ADC mezzanine."; 
@@ -103,7 +103,7 @@ peripheral {
 	 };
  
 	 fifo_reg {
-			size = 1024; -- or more. We'll see :)
+			size = 16384;  -- or more. We'll see :)
 			direction = CORE_TO_BUS;
 			prefix = "adc";
 			name = "ADC Data FIFO";
