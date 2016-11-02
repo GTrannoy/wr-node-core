@@ -20,7 +20,8 @@ entity d3s_acq_buffer is
 
     data_i : in std_logic_vector(g_data_width-1 downto 0);
     
-	 freeze_i: in std_logic; -- Signal for freeezing a circular buffer
+	 mode_i  : in std_logic; -- If='1', enables the buffer works in circular mode
+	 freeze_i: in std_logic; -- Signal for freeezing a circular buffer, ineffective otherwise
 	 
     slave_i : in  t_wishbone_slave_in;
     slave_o : out t_wishbone_slave_out
@@ -112,24 +113,40 @@ begin
       if rst_n_acq = '0' then
         acq_in_progress <= '0';
         wr_addr         <= (others => '0');
+		  wr_addr_o       <= (others => '0');
+		  
       else
-        if(regs_out.cr_start_o = '1') then
+        if(regs_out.cr_start_o = '1') then   -- cr_start_o is MONOSTABLE
           wr_addr         <= (others => '0');
           acq_in_progress <= '1';
-        elsif (freeze_i = '1') then  -- new freeze feature
-		    acq_in_progress <= '0';     -- new
-		  elsif (acq_in_progress = '1') then
-          if (wr_addr = g_size-2) then    -- changed g_size-1 by g_size-2
-			   wr_addr  <= (others => '0');  -- Let's make the buffer circular till a 'freeze' signal is received
-            -- acq_in_progress <= '0';
-          end if;
-
-          wr_addr <= wr_addr + 1;
+          wr_addr_o       <= (others => '0');
+			 
+		  elsif ((mode_i or regs_out.mode_o) = '1')  then -- circular buffer mode
+		    if ((freeze_i or regs_out.freeze_o) = '1') then  
+		       acq_in_progress <= '0';
+				 wr_addr_o       <= wr_addr; -- last address accessed in the circular buffer
+		    
+			 elsif (acq_in_progress = '1') then
+            if (wr_addr = g_size-1) then    
+			     wr_addr  <= (others => '0');  -- Write to the first address again
+            else
+				  wr_addr <= wr_addr + 1;				
+            end if;
+			 end if;
+        
+		  else	-- non-circular buffer, single acquisition
+		    if (acq_in_progress = '1') then
+            if (wr_addr = g_size-1) then    
+			     acq_in_progress <= '0';
+				else
+				  wr_addr <= wr_addr + 1;
+            end if;
+		    end if;
         end if;
       end if;
     end if;
   end process;
 
-  regs_in.cr_ready_i <= not acq_in_progress and freeze_i;
+  regs_in.cr_ready_i <= not acq_in_progress;
   
 end rtl;
