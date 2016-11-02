@@ -235,11 +235,11 @@ entity svec_top is
 --    fmc1_pd_data_b           : inout std_logic;
 --    fmc1_pd_le_o             : out std_logic;
     -- WR reference clock from FMC's PLL (AD9516)
-    fmc1_wr_ref_clk_n_i    : in     std_logic;
-    fmc1_wr_ref_clk_p_i    : in     std_logic;
+      fmc1_wr_ref_clk_n_i    : in     std_logic;
+      fmc1_wr_ref_clk_p_i    : in     std_logic;
 
---    fmc1_synth_clk_n_i       : in std_logic;
---    fmc1_synth_clk_p_i       : in std_logic;
+      fmc1_synth_clk_n_i       : in std_logic;
+      fmc1_synth_clk_p_i       : in std_logic;
 
 --    fmc1_rf_clk_n_i          : in std_logic;
 --    fmc1_rf_clk_p_i          : in std_logic;
@@ -292,7 +292,6 @@ architecture rtl of svec_top is
       rst_n_sys_i       : in  std_logic;
       clk_sys_i         : in  std_logic;
       clk_wr_o          : out std_logic;
---      clk_125m_pllref_i : in  std_logic;
 
       tm_link_up_i         : in  std_logic;
       tm_time_valid_i      : in  std_logic;
@@ -350,7 +349,10 @@ architecture rtl of svec_top is
       -- WR reference clock from FMC's PLL (AD9516)
       wr_ref_clk_n_i    : in    std_logic;
       wr_ref_clk_p_i    : in    std_logic;
-      -- System/WR PLL dedicated lines
+      -- Slave synthesized signal
+      synth_n_i 	      : in    std_logic; 
+      synth_p_i 	      : in    std_logic; 
+	   -- System/WR PLL dedicated lines
       pll_sys_cs_n_o    : out   std_logic;
       pll_sys_ld_i      : in    std_logic;
       pll_sys_reset_n_o : out   std_logic;
@@ -372,9 +374,8 @@ architecture rtl of svec_top is
       wr_dac_sync_n_o   : out   std_logic;
       -- WB interface
       slave_i           : in    t_wishbone_slave_in;
-      slave_o           : out   t_wishbone_slave_out
-      -- debug
---      debug_o           : out   std_logic_vector(3 downto 0)
+      slave_o           : out   t_wishbone_slave_out;
+      rev_clk_o         : out std_logic  -- Revolution clock signal
       );
   end component wr_d3s_adc_slave;
 
@@ -530,6 +531,8 @@ architecture rtl of svec_top is
   signal scl_pad_oen, sda_pad_oen : std_logic;
   signal clk_125m_pllref          : std_logic;
 
+  signal rev_clk_o : std_logic;  -- Revolution clock signal
+  
   -- Chip scope signals
   signal CONTROL : std_logic_vector(35 downto 0);
   signal CLK     : std_logic;
@@ -696,7 +699,6 @@ begin
       rst_n_sys_i       => rst_n,
       clk_sys_i         => clk_sys,
       clk_wr_o          => fmc0_clk_wr,
---      clk_125m_pllref_i => clk_125m_pllref,
 
       tm_link_up_i         => tm_link_up,
       tm_time_valid_i      => tm_time_valid,
@@ -755,7 +757,9 @@ begin
 
       wr_ref_clk_n_i => fmc1_wr_ref_clk_n_i,
       wr_ref_clk_p_i => fmc1_wr_ref_clk_p_i,
-
+      -- Slave synthesized signal
+      synth_n_i 	   => fmc1_synth_clk_n_i,
+      synth_p_i 	   => fmc1_synth_clk_n_i, 
       -- System/WR PLL dedicated lines
       pll_sys_cs_n_o    => fmc1_pll_sys_cs_n_o,
       pll_sys_ld_i      => fmc1_pll_sys_ld_i,
@@ -774,8 +778,8 @@ begin
       dac_p_o           => fmc1_dac_p_o,
       -- WB interface
       slave_i           => fmc_wb_muxed_out(c_FMC_1),
-      slave_o           => fmc_wb_muxed_in(c_FMC_1)
---      debug_o           => debug
+      slave_o           => fmc_wb_muxed_in(c_FMC_1),
+      rev_clk_o         => rev_clk_o
       );  
 
   U_Silabs_IF : xwr_si57x_interface
