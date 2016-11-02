@@ -545,7 +545,7 @@ begin
       wr_empty_o           => regs_o.adc_wr_empty_o,
       rd_full_o            => d3s_adc_full_int,
       rd_empty_o           => d3s_adc_empty_int,
-      rd_usedw_o           => d3s_adc_usedw_int,
+      rd_usedw_o           => regs_o.d3s_adc_usedw_int_o,  -- Manually modified
       rd_req_i             => d3s_adc_rdreq_int,
       rst_n_i              => d3s_adc_rst_n,
       wr_clk_i             => clk_wr_i,
