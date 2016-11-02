@@ -375,23 +375,26 @@ module read_file
      integer data_file, scan_file;
      logic  signed[13:0] captdata;
      integer sample_n;
+     integer read;
      
      initial begin
          data_file = $fopen("adc.dat", "r"); //place here file with acq.samples
          if (data_file == 0) begin
              $display("ERROR : CAN NOT OPEN THE FILE");
              $finish;
-         end
+         end else 
+             read = 0;
      end
      
      always @(posedge clk_wr) begin
-         if (enc_started == 1) begin
+         if ((enc_started == 1) && (read==0)) begin
              if (!$feof(data_file)) begin 
                 scan_file = $fscanf(data_file, "%d %d\n", sample_n, sine2);
-                $display("Data read from file: %d\n",sine2);
+                //$display("Data read from file: %d\n",sine2);
              end else begin 
                 $fclose(data_file);
                 sine2 <= 0;
+                read = 1;
                 //$finish;
              end
          end
@@ -541,8 +544,8 @@ module main;
 	.adc_dco_n_i(~clk_adc),
 	.tm_cycles_i(tm_nsec[30:3]),
 	
-	.fake_data_i(sine2),
-    .enc_started_o(enc_started),
+	.fake_data_i(sine),
+  .enc_started_o(enc_started),  
   
 	.slave_i(Host1.master.out),
 	.slave_o(Host1.master.in)
