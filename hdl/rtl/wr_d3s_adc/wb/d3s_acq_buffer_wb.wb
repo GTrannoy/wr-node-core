@@ -25,6 +25,22 @@ peripheral {
 				 access_dev = WRITE_ONLY;
 
 			};
+			field {
+				 name = "Circular buffer mode";
+				 type = BIT;
+				 clock = "clk_acq_i";
+				 prefix = "MODE";
+				 access_bus = READ_WRITE;
+				 access_dev = READ_ONLY;
+			};
+			field {
+				 name = "Stop circular acquisition";
+				 type = BIT;
+				 clock = "clk_acq_i";
+				 prefix = "FREEZE";
+				 access_bus = READ_WRITE;
+				 access_dev = READ_ONLY;
+			};
 	 };
 
 	 reg {
@@ -46,6 +62,19 @@ peripheral {
 				 name = "Data";
 				 size = 32;
 				 type = SLV;
+				 access_bus = READ_ONLY;
+				 access_dev = WRITE_ONLY;
+			};
+	 };
+	 
+	 reg {
+			name = "Circular buffer pointer";
+			prefix = "POINTER";
+			field {
+				 name = "Address";
+				 size = 32;
+				 type = SLV;
+				 clock = "clk_acq_i";
 				 access_bus = READ_ONLY;
 				 access_dev = WRITE_ONLY;
 			};
