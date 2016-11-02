@@ -34,7 +34,8 @@ entity d3s_phase_encoder is
     tm_cycles_i : in std_logic_vector(27 downto 0);
 
     cnt_fixed_o : out std_logic_vector(31 downto 0);
-    cnt_rl_o    : out std_logic_vector(31 downto 0);
+    lt_cnt_rl_o : out std_logic_vector(31 downto 0);
+    st_cnt_rl_o : out std_logic_vector(31 downto 0);
     cnt_ts_o    : out std_logic_vector(31 downto 0)
     );
 
@@ -159,7 +160,7 @@ architecture rtl of d3s_phase_encoder is
   signal ts_report_cnt                              : unsigned(15 downto 0);
   signal err_st_lo, err_st_hi, err_lt_lo, err_lt_hi : signed(22 downto 0);
 
-  signal cnt_fix, cnt_rl, cnt_ts : unsigned(31 downto 0);
+  signal cnt_fix, lt_cnt_rl, st_cnt_rl, cnt_ts : unsigned(31 downto 0);
 
   constant c_ACC_SHIFT : integer := 4;
   
@@ -496,13 +497,16 @@ begin
   begin
     if rising_edge(clk_i) then
       if rst_n_i = '0' or fifo_en_i = '0' then
-        cnt_ts  <= (others => '0');
-        cnt_fix <= (others => '0');
-        cnt_rl  <= (others => '0');
+        cnt_ts     <= (others => '0');
+        cnt_fix    <= (others => '0');
+        lt_cnt_rl  <= (others => '0');
+        st_cnt_rl  <= (others => '0');
       else
         if(c_out.valid = '1') then
-          if (c_out.payload(31) = '1') then
-            cnt_rl <= cnt_rl + 1;
+          if (c_out.payload(31) = '1') and (rl_state/=RL_LONG) then
+            st_cnt_rl <= st_cnt_rl + 1;
+          elsif (c_out.payload(31) = '1') and (rl_state/=RL_SHORT) then
+            lt_cnt_rl <= lt_cnt_rl + 1;
           elsif (c_out.payload(31) = '0' and c_out.payload(30) = '1') then
             cnt_ts <= cnt_ts + 1;
           else
@@ -513,9 +517,10 @@ begin
     end if;
   end process;
 
-  cnt_fixed_o  <= std_logic_vector(cnt_fix);
-  cnt_rl_o     <= std_logic_vector(cnt_rl);
-  cnt_ts_o <= std_logic_vector(cnt_ts);
+  cnt_fixed_o     <= std_logic_vector(cnt_fix);
+  st_cnt_rl_o     <= std_logic_vector(st_cnt_rl);
+  lt_cnt_rl_o     <= std_logic_vector(lt_cnt_rl);
+  cnt_ts_o        <= std_logic_vector(cnt_ts);
 
 
   fifo_we_o      <= c_out.valid and fifo_en_i;
