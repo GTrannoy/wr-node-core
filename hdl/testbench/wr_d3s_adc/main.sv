@@ -655,8 +655,10 @@ module main;
       $display ("Starting DDS Master");
       
       
-      acc.write(`ADDR_D3S_RL_ERR_MIN, -max_err);
-      acc.write(`ADDR_D3S_RL_ERR_MAX, max_err);
+      acc.write(`ADDR_D3S_LT_RL_ERR_MIN, -max_err);
+      acc.write(`ADDR_D3S_LT_RL_ERR_MAX, max_err);
+      acc.write(`ADDR_D3S_ST_RL_ERR_MIN, -max_err);
+      acc.write(`ADDR_D3S_ST_RL_ERR_MAX, max_err);
       acc.write(`ADDR_D3S_RL_LENGTH_MAX, 4000);
       acc.write(`ADDR_D3S_CR, `D3S_CR_ENABLE);
       
