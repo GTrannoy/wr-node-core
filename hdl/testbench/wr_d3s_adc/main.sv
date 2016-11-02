@@ -440,6 +440,7 @@ module main;
    
    IVHDWishboneMaster Host1 ( clk_sys, rst_n );
    IVHDWishboneMaster Host2 ( clk_sys, rst_n );
+   //IVHDWishboneMaster Host3 ( clk_sys, rst_n );
 
    reg [39:0]  tm_tai = 100;
    reg [31:0]  tm_nsec = 0;
@@ -551,6 +552,27 @@ module main;
 	.slave_o(Host1.master.in)
 	);
 
+//  wr_d3s_adc
+//      
+//     #(
+//       .g_use_fake_data(1)
+//       )
+//   DUT_Mrealdata (
+//	.rst_n_sys_i(rst_n),
+//	.clk_sys_i (clk_sys),
+//	.adc_dco_p_i(clk_adc),
+//	.adc_dco_n_i(~clk_adc),
+//	.tm_cycles_i(tm_nsec[30:3]),
+//	
+//	.fake_data_i(sine2),          // 'sine2' for data from file, and 'sine' for the TB generator
+//  .enc_started_o(enc_started),  // to start reading the sampled data when ready
+//  
+//	.slave_i(Host3.master.out),
+//	.slave_o(Host3.master.in)
+//	);
+   
+
+
    wire [14-1: 0] dac_p;
 
    fake_dac U_DAC(clk_adc, dac_p);
@@ -624,6 +646,7 @@ module main;
    initial begin
       uint64_t rv;
       automatic CBusAccessor acc = Host1.get_accessor();
+      //automatic CBusAccessor acc3 = Host3.get_accessor();
       automatic int max_err = int' ( real'(1<<(9+14))  * real'(max_error_deg) / 360.0 );
       automatic int 	last_ts_cycles = -1;
       
@@ -636,6 +659,11 @@ module main;
       acc.write(`ADDR_D3S_RL_ERR_MAX, max_err);
       acc.write(`ADDR_D3S_RL_LENGTH_MAX, 4000);
       acc.write(`ADDR_D3S_CR, `D3S_CR_ENABLE);
+      
+      //acc3.write(`ADDR_D3S_RL_ERR_MIN, -max_err);
+//      acc3.write(`ADDR_D3S_RL_ERR_MAX, max_err);
+//      acc3.write(`ADDR_D3S_RL_LENGTH_MAX, 4000);
+//      acc3.write(`ADDR_D3S_CR, `D3S_CR_ENABLE);
       		     
       while(1)
 	    begin
