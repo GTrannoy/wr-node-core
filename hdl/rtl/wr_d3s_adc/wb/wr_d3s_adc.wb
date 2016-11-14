@@ -7,6 +7,21 @@ peripheral {
 	 hdl_entity="d3s_adc_wb";
 	 
      reg {
+      name = "Reset Register";
+      prefix = "RSTR";
+      field {
+         name = "FPGA REF/Serdes PLL Reset";
+         prefix = "PLL_RST";
+				 description = "write 1: resets the internal PLL producing the DDS DAC serdes clock\
+                        write 0: un-reset";
+         type = BIT;
+         access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+         
+      };
+		};
+
+		reg {
 			prefix = "TCR";
 			name = "Time Control Register";
       
@@ -100,6 +115,15 @@ peripheral {
 				 access_dev = WRITE_ONLY;
 				 access_bus = READ_ONLY;
 			};
+      field {
+         name = "Serdes PLL locked";
+         prefix = "SERDES_PLL_LOCKED";
+				 description = "read 1: FPGA internal PLL for deriving 1000 MHz ADC serdes serdes clock is locked.";
+
+         type = BIT;
+         access_bus = READ_ONLY;
+         access_dev = WRITE_ONLY;
+      };
 	 };
  
 	 fifo_reg {
