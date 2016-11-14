@@ -315,7 +315,8 @@ begin
       CLKFBIN  => pllout_clk_fb_pllref,
       CLKIN    => clk_wr_ref_pllin);  
 
-
+  regs_in.gpior_serdes_pll_locked_i <= clk_dds_locked;
+  
   cmp_dds_ref_buf : BUFG
     port map (
       O => clk_wr,
