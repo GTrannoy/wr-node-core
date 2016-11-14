@@ -364,6 +364,8 @@ begin
       CLKFBIN  => clk_fb,
       CLKIN    => dco_clk_buf);          -- 500 MHz
 
+  regs_in.gpior_serdes_pll_locked_i <= locked_in;
+  
   cmp_wr_ref_buf : BUFG
     port map (
       O => clk_wr,
@@ -372,7 +374,7 @@ begin
   clk_wr_o   <= clk_wr;
 
   -- PLL reset  (used in the PLL and in the serdes)
-  sys_rst <= not rst_n_sys_i;  
+  sys_rst <= regs_out.rstr_pll_rst_o or (not rst_n_sys_i); -- PLL reset WB register just added
   
   ------------------------------------------
   -- Sync reset
@@ -433,7 +435,7 @@ begin
   regs_in.tcr_wr_link_i       <= tm_link_up_i;
   regs_in.tcr_wr_time_valid_i <= tm_time_valid_i;
   regs_in.tcr_wr_locked_i     <= tm_clk_aux_locked_i;
-  tm_clk_aux_lock_en_o   <= regs_out.tcr_wr_lock_en_o;
+  tm_clk_aux_lock_en_o        <= regs_out.tcr_wr_lock_en_o;
   
   ------------------------------------------
   --  Control of I2C Si57x lines through WB registers
