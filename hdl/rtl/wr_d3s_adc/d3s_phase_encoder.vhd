@@ -36,7 +36,8 @@ entity d3s_phase_encoder is
     cnt_fixed_o : out std_logic_vector(31 downto 0);
     lt_cnt_rl_o : out std_logic_vector(31 downto 0);
     st_cnt_rl_o : out std_logic_vector(31 downto 0);
-    cnt_ts_o    : out std_logic_vector(31 downto 0)
+    cnt_ts_o    : out std_logic_vector(31 downto 0);
+	 rl_state_o  :  out std_logic_vector(1 downto 0)
     );
 
 end d3s_phase_encoder;
@@ -579,7 +580,9 @@ begin
 
   fifo_we_o      <=  c_out.valid and fifo_en_i;
   fifo_payload_o <=  c_out.payload;
-
+  rl_state_o     <=  std_logic_vector(to_unsigned(t_state'pos(rl_state),2));
+  
+  
   --------------------------------------------
   --         Chip Scope
   --------------------------------------------
