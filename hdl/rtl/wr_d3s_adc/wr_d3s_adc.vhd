@@ -111,7 +111,8 @@ architecture rtl of wr_d3s_adc is
       cnt_fixed_o      : out std_logic_vector(31 downto 0);
       lt_cnt_rl_o      : out std_logic_vector(31 downto 0);
       st_cnt_rl_o      : out std_logic_vector(31 downto 0);
-      cnt_ts_o         : out std_logic_vector(31 downto 0));
+      cnt_ts_o         : out std_logic_vector(31 downto 0);
+		rl_state_o       : out std_logic_vector(1 downto 0) );
 
   end component d3s_phase_encoder;
 
@@ -124,9 +125,12 @@ architecture rtl of wr_d3s_adc is
       clk_sys_i   : in  std_logic;
       clk_acq_i   : in  std_logic;
       data_i      : in  std_logic_vector(g_data_width-1 downto 0);
-		mode_i      : in std_logic; -- if ='1' circular buffer
-		freeze_i    : in std_logic;  -- if circular buffer, ='1' freezes the acq.
-      slave_i     : in  t_wishbone_slave_in;
+		mode_i      : in  std_logic; -- if ='1' circular buffer
+		freeze_i    : in  std_logic;  -- if circular buffer, ='1' freezes the acq.
+		acq_start_i : in  std_logic;
+	   acq_start_o : out std_logic;
+		
+		slave_i     : in  t_wishbone_slave_in;
       slave_o     : out t_wishbone_slave_out);
   end component d3s_acq_buffer;
 
@@ -283,6 +287,10 @@ architecture rtl of wr_d3s_adc is
   signal cnx_out : t_wishbone_master_out_array(0 to c_CNX_MASTER_COUNT-1);
   signal cnx_in  : t_wishbone_master_in_array(0 to c_CNX_MASTER_COUNT-1);
 
+  signal rl_state : std_logic_vector(1 downto 0);
+  
+  signal acq_start : std_logic;  -- signal to daisy chain the acq_buffers
+  
   -- signal enc_fifo_count : std_logic_vector(13 downto 0);
 
   --  Signals for chip Scope  -----------------
@@ -574,57 +582,65 @@ begin
   ------------------------------------------
   U_Acq : d3s_acq_buffer
     generic map (
-      g_data_width => 14,  --16,  --14,
-      g_size       => 2048)  -- 32768)  --16384) --1024)
+      g_data_width => 14,
+      g_size       => 2048)  
     port map (
       rst_n_sys_i => rst_n_sys_i,
       clk_sys_i   => clk_sys_i,
       clk_acq_i   => clk_wr,
-      data_i      => regs_out.d3s_adc_usedw_int_o, --raw_phase,  --adc_data,
-		mode_i      => '0',
+      data_i      => adc_data,  
+		mode_i      => '0',  -- if mode=1 circular buffer
+		acq_start_i => '0',  -- Acq. started by SW
+		acq_start_o => acq_start,  -- signal to daisy chain the other buffers
 		freeze_i    => regs_out.adc_wr_full_o,  -- Freeze if FIFO gets full (circular otherwise), to diagnose only
       slave_i     => cnx_out(1),
       slave_o     => cnx_in(1));
 
   U_Acq2 : d3s_acq_buffer
     generic map (
-      g_data_width => 32,  --16,
+      g_data_width => 16,  
       g_size       => 2048)
     port map (
       rst_n_sys_i => rst_n_sys_i,
       clk_sys_i   => clk_sys_i,
       clk_acq_i   => clk_wr,
-      data_i      => regs_in.cnt_fixed_i,  --raw_hp_data,
+      data_i      => raw_hp_data,  
 		mode_i      => '0',
-		freeze_i    => regs_out.adc_wr_full_o,  -- Freeze if FIFO gets full, to diagnose only
+		acq_start_i => acq_start,  
+		acq_start_o => open,
+		freeze_i    => regs_out.adc_wr_full_o,  
       slave_i     => cnx_out(2),
       slave_o     => cnx_in(2));
 
   U_Acq3 : d3s_acq_buffer
     generic map (
-      g_data_width => 32,  --16,
-      g_size       => 2048) --1024)
+      g_data_width => 16,  
+      g_size       => 2048) 
     port map (
       rst_n_sys_i => rst_n_sys_i,
       clk_sys_i   => clk_sys_i,
       clk_acq_i   => clk_wr,
-      data_i      => regs_in.lt_cnt_rl_i,  --raw_phase,
+      data_i      => raw_phase,  
 		mode_i      => '0',
-		freeze_i    => regs_out.adc_wr_full_o,  -- Freeze if FIFO gets full, to diagnose only
+   	acq_start_i => acq_start,  
+		acq_start_o => open,
+		freeze_i    => regs_out.adc_wr_full_o,  
       slave_i     => cnx_out(3),
       slave_o     => cnx_in(3));
 
   U_Acq4 : d3s_acq_buffer
     generic map (
-      g_data_width => 32,  --16,
+      g_data_width => 2,  --16,
       g_size       => 2048) --1024)
     port map (
       rst_n_sys_i => rst_n_sys_i,
       clk_sys_i   => clk_sys_i,
       clk_acq_i   => clk_wr,
-      mode_i      => '0',
-		data_i      => regs_in.st_cnt_rl_i,  --raw_phase,
-		freeze_i    => regs_out.adc_wr_full_o,  -- Freeze if FIFO gets full, to diagnose only
+      data_i      => rl_state,  --regs_in.st_cnt_rl_i,  --raw_phase,
+		mode_i      => '0',
+      acq_start_i => acq_start,  
+		acq_start_o => open,  
+   	freeze_i    => regs_out.adc_wr_full_o,  -- Freeze if FIFO gets full, to diagnose only
       slave_i     => cnx_out(5),
       slave_o     => cnx_in(5));
 		
@@ -658,7 +674,8 @@ begin
       cnt_fixed_o     => regs_in.cnt_fixed_i,
       lt_cnt_rl_o     => regs_in.lt_cnt_rl_i,
       st_cnt_rl_o     => regs_in.st_cnt_rl_i,
-      cnt_ts_o        => regs_in.cnt_tstamp_i
+      cnt_ts_o        => regs_in.cnt_tstamp_i,
+		rl_state_o      => rl_state
       );
 
   enc_started_o  <= regs_out.cr_enable_o;
@@ -787,7 +804,7 @@ begin
 --	TRIG1(15 downto 0)  <= raw_hp_data;
 --	TRIG1(31)           <= regs_out.adc_wr_full_o;  -- FIXME: not used.
 --	
---   TRIG3(31 downto 0)  <= regs_in.adc_payload_i;
+-- TRIG3(31 downto 0)  <= regs_in.adc_payload_i;
       
  
 end rtl;

@@ -20,8 +20,10 @@ entity d3s_acq_buffer is
 
     data_i : in std_logic_vector(g_data_width-1 downto 0);
     
-	 mode_i  : in std_logic; -- If='1', enables the buffer works in circular mode
-	 freeze_i: in std_logic; -- Signal for freeezing a circular buffer, ineffective otherwise
+	 mode_i       : in std_logic; -- If='1', enables the buffer works in circular mode
+	 freeze_i     : in std_logic; -- Signal for freeezing a circular buffer, ineffective otherwise
+	 acq_start_i  : in std_logic;
+	 acq_start_o  : out std_logic;  -- it would allow daisy chain start signal among several buffers
 	 
     slave_i : in  t_wishbone_slave_in;
     slave_o : out t_wishbone_slave_out
@@ -113,18 +115,15 @@ begin
       if rst_n_acq = '0' then
         acq_in_progress <= '0';
         wr_addr         <= (others => '0');
-		  wr_addr_o       <= (others => '0');
 		  
       else
-        if(regs_out.cr_start_o = '1') then   -- cr_start_o is MONOSTABLE
+        if(regs_out.cr_start_o = '1' or acq_start_i = '1') then   -- cr_start_o is MONOSTABLE
           wr_addr         <= (others => '0');
           acq_in_progress <= '1';
-          wr_addr_o       <= (others => '0');
 			 
-		  elsif ((mode_i or regs_out.mode_o) = '1')  then -- circular buffer mode
-		    if ((freeze_i or regs_out.freeze_o) = '1') then  
+		  elsif ((regs_out.cr_mode_o or mode_i)  = '1')  then -- circular buffer mode
+		    if (freeze_i = '1') then  
 		       acq_in_progress <= '0';
-				 wr_addr_o       <= wr_addr; -- last address accessed in the circular buffer
 		    
 			 elsif (acq_in_progress = '1') then
             if (wr_addr = g_size-1) then    
@@ -148,5 +147,7 @@ begin
   end process;
 
   regs_in.cr_ready_i <= not acq_in_progress;
+  regs_in.pointer_i  <= std_logic_vector(resize(wr_addr,regs_in.pointer_i'length));
+  acq_start_o        <= regs_out.cr_start_o or acq_start_i;
   
 end rtl;
