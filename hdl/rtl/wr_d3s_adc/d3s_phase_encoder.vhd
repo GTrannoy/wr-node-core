@@ -368,7 +368,7 @@ begin
   p_compress_fsm : process (clk_i)
   begin
     if rising_edge(clk_i) then
-      if rst_n_i = '0' then
+      if rst_n_i = '0' or fifo_en_i = '0' then
         rl_state      <= STARTUP;
         c1.valid      <= '0';
         c2.valid      <= '0';
