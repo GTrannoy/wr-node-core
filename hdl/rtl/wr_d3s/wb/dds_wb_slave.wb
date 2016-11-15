@@ -40,6 +40,15 @@ write 0: disable sampling";
 				 access_bus = READ_WRITE;
          access_dev = READ_ONLY;
 			};
+
+			field {
+				 name = "RT D3S running";
+				 prefix = "RT_D3S_RUNNING";
+				 type = BIT;
+				 clock = "clk_dds_i";
+				 access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+			};
 	 };
 
 	 reg {

@@ -109,6 +109,7 @@ entity wr_d3s_core is
 -- Core control
 -------------------------------------------------
 
+    rt_d3s_running_o : std_logic;
 
     slave_i : in  t_wishbone_slave_in;
     slave_o : out t_wishbone_slave_out;
@@ -919,5 +920,7 @@ begin  -- behavioral
     end if;
   end process;
 
-  
+-- can inform other cores that RFoWR lm32 cpu is running
+  rt_d3s_running_o <= regs_out.cr_rt_d3s_running_o;
+
 end behavioral;
