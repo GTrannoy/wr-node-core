@@ -96,7 +96,8 @@ architecture rtl of wr_d3s_adc is
       adc_data_i       : in  std_logic_vector(13 downto 0);
       raw_phase_o      : out std_logic_vector(15 downto 0);
       raw_hp_data_o    : out std_logic_vector(15 downto 0);
-      r_max_run_len_i  : in  std_logic_vector(15 downto 0);
+      adc_dphase_o     : out std_logic_vector(15 downto 0);
+		r_max_run_len_i  : in  std_logic_vector(15 downto 0);
       lt_max_error_i   : in  std_logic_vector(22 downto 0);
       lt_min_error_i   : in  std_logic_vector(22 downto 0);
       st_max_error_i   : in  std_logic_vector(22 downto 0);
@@ -112,7 +113,7 @@ architecture rtl of wr_d3s_adc is
       lt_cnt_rl_o      : out std_logic_vector(31 downto 0);
       st_cnt_rl_o      : out std_logic_vector(31 downto 0);
       cnt_ts_o         : out std_logic_vector(31 downto 0);
-		rl_state_o       : out std_logic_vector(1 downto 0) );
+		rl_state_o       : out std_logic_vector(15 downto 0) );
 
   end component d3s_phase_encoder;
 
@@ -213,7 +214,7 @@ architecture rtl of wr_d3s_adc is
     port (
       CONTROL0 : inout std_logic_vector (35 downto 0));
     end component;
-
+signal acq_trig : std_logic;
 ------------------------------------------
 --        CONSTANTS DECLARATION  
 ------------------------------------------
@@ -282,12 +283,12 @@ architecture rtl of wr_d3s_adc is
 
   signal scl_out, sda_out : std_logic;
 
-  signal raw_hp_data, raw_phase : std_logic_vector(15 downto 0);
+  signal raw_hp_data, raw_phase, raw_dphase : std_logic_vector(15 downto 0);
 
   signal cnx_out : t_wishbone_master_out_array(0 to c_CNX_MASTER_COUNT-1);
   signal cnx_in  : t_wishbone_master_in_array(0 to c_CNX_MASTER_COUNT-1);
 
-  signal rl_state : std_logic_vector(1 downto 0);
+  signal rl_state : std_logic_vector(15 downto 0);
   
   signal acq_start : std_logic;  -- signal to daisy chain the acq_buffers
   
@@ -585,7 +586,7 @@ begin
   U_Acq : d3s_acq_buffer
     generic map (
       g_data_width => 14,
-      g_size       => 2048)  
+      g_size       => 8192)  
     port map (
       rst_n_sys_i => rst_n_sys_i,
       clk_sys_i   => clk_sys_i,
@@ -601,12 +602,12 @@ begin
   U_Acq2 : d3s_acq_buffer
     generic map (
       g_data_width => 16,  
-      g_size       => 2048)
+      g_size       => 8192)
     port map (
       rst_n_sys_i => rst_n_sys_i,
       clk_sys_i   => clk_sys_i,
       clk_acq_i   => clk_wr,
-      data_i      => raw_hp_data,  
+      data_i      => raw_dphase,   --raw_hp_data,  
 		mode_i      => '0',
 		acq_start_i => acq_start,  
 		acq_start_o => open,
@@ -617,7 +618,7 @@ begin
   U_Acq3 : d3s_acq_buffer
     generic map (
       g_data_width => 16,  
-      g_size       => 2048) 
+      g_size       => 8192) 
     port map (
       rst_n_sys_i => rst_n_sys_i,
       clk_sys_i   => clk_sys_i,
@@ -632,8 +633,8 @@ begin
 
   U_Acq4 : d3s_acq_buffer
     generic map (
-      g_data_width => 2,  --16,
-      g_size       => 2048) --1024)
+      g_data_width => 16,  --16,
+      g_size       => 8192) --1024)
     port map (
       rst_n_sys_i => rst_n_sys_i,
       clk_sys_i   => clk_sys_i,
@@ -667,7 +668,8 @@ begin
       st_min_error_i  => regs_out.st_rl_err_min_o(22 downto 0),
       raw_hp_data_o   => raw_hp_data,
       raw_phase_o     => raw_phase,
-      fifo_en_i       => regs_out.cr_enable_o,
+      adc_dphase_o    => raw_dphase,
+		fifo_en_i       => regs_out.cr_enable_o,
       fifo_full_i     => regs_out.adc_wr_full_o,    
       fifo_lost_o     => open,                      
       fifo_payload_o  => regs_in.adc_payload_i,

@@ -14,6 +14,7 @@ entity d3s_phase_encoder is
 
     raw_phase_o   : out std_logic_vector(15 downto 0);
     raw_hp_data_o : out std_logic_vector(15 downto 0);
+	 adc_dphase_o  : out std_logic_vector(15 downto 0);
 
     r_max_run_len_i  : in  std_logic_vector(15 downto 0);
     lt_max_error_i   : in  std_logic_vector(22 downto 0);
@@ -37,7 +38,7 @@ entity d3s_phase_encoder is
     lt_cnt_rl_o : out std_logic_vector(31 downto 0);
     st_cnt_rl_o : out std_logic_vector(31 downto 0);
     cnt_ts_o    : out std_logic_vector(31 downto 0);
-	 rl_state_o  :  out std_logic_vector(1 downto 0)
+	 rl_state_o  :  out std_logic_vector(15 downto 0)
     );
 
 end d3s_phase_encoder;
@@ -291,6 +292,8 @@ begin
     end if;
   end process;
 
+  adc_dphase_o  <= std_logic_vector(adc_dphase);
+  
   U_Avg_LT : gc_moving_average          -- 128 taps LT average
     generic map (
       g_data_width => 16,
@@ -580,43 +583,47 @@ begin
 
   fifo_we_o      <=  c_out.valid and fifo_en_i;
   fifo_payload_o <=  c_out.payload;
-  rl_state_o     <=  std_logic_vector(to_unsigned(t_state'pos(rl_state),2));
+  rl_state_o( 1 downto 0)     <=  std_logic_vector(to_unsigned(t_state'pos(rl_state),2));
+  rl_state_o(2) <= c_out.valid and fifo_en_i;
+  rl_state_o(3) <= fifo_full_i;
+  rl_state_o(4) <= err_st_bound;
+  rl_state_o(5) <= err_lt_bound;
   
   
   --------------------------------------------
   --         Chip Scope
   --------------------------------------------
 
-  chipscope_icon_1: chipscope_icon
-    port map (
-      CONTROL0 => CONTROL);
-
-  chipscope_ila_1: chipscope_ila
-    port map (
-      CONTROL => CONTROL,
-      CLK     => clk_i,
-      TRIG0   => TRIG0,
-      TRIG1   => TRIG1,
-      TRIG2   => TRIG2,
-      TRIG3   => TRIG3);
-	
-	 TRIG0(22 downto 0)  <= std_logic_vector(rl_phase_ext);  -- 22 downto 0
-	 TRIG0(31 downto 23) <= std_logic_vector(rl_integ(8 downto 0));  -- rl_integ range (22 downto 0)
-
-    TRIG1(13 downto 0)  <= std_logic_vector(rl_integ(22 downto 9));
-    TRIG1(29 downto 14) <= std_logic_vector(rl_length);  -- (15 downto 0)
-    TRIG1(30)    <= c1.valid;
-    TRIG1(31)    <= c2.valid;
-	 
-    TRIG2(22 downto 0)  <= std_logic_vector(avg_st); -- (22 downto 0)
-    TRIG2(31 downto 23) <= std_logic_vector(rl_integ_next(8 downto 0)); -- 22 downto 0
-    
-    TRIG3(27 downto 23) <= std_logic_vector(rl_integ_next(13 downto 9)); -- 22 downto 0  -- TRUNCATED TO 14 bits!
-    TRIG3(22 downto 0)  <= std_logic_vector(avg_lt); -- (22 downto 0); 
-    
-	 TRIG3(31) <= err_lt_bound;
-	 TRIG3(30) <= err_st_bound;
-    TRIG3(29 downto 28) <= std_logic_vector(to_unsigned(t_state'pos(rl_state),2)); -- 4 states
+--  chipscope_icon_1: chipscope_icon
+--    port map (
+--      CONTROL0 => CONTROL);
+--
+--  chipscope_ila_1: chipscope_ila
+--    port map (
+--      CONTROL => CONTROL,
+--      CLK     => clk_i,
+--      TRIG0   => TRIG0,
+--      TRIG1   => TRIG1,
+--      TRIG2   => TRIG2,
+--      TRIG3   => TRIG3);
+--	
+--	 TRIG0(22 downto 0)  <= std_logic_vector(rl_phase_ext);  -- 22 downto 0
+--	 TRIG0(31 downto 23) <= std_logic_vector(rl_integ(8 downto 0));  -- rl_integ range (22 downto 0)
+--
+--    TRIG1(13 downto 0)  <= std_logic_vector(rl_integ(22 downto 9));
+--    TRIG1(29 downto 14) <= std_logic_vector(rl_length);  -- (15 downto 0)
+--    TRIG1(30)    <= c1.valid;
+--    TRIG1(31)    <= c2.valid;
+--	 
+--    TRIG2(22 downto 0)  <= std_logic_vector(avg_st); -- (22 downto 0)
+--    TRIG2(31 downto 23) <= std_logic_vector(rl_integ_next(8 downto 0)); -- 22 downto 0
+--    
+--    TRIG3(27 downto 23) <= std_logic_vector(rl_integ_next(13 downto 9)); -- 22 downto 0  -- TRUNCATED TO 14 bits!
+--    TRIG3(22 downto 0)  <= std_logic_vector(avg_lt); -- (22 downto 0); 
+--    
+--	 TRIG3(31) <= err_lt_bound;
+--	 TRIG3(30) <= err_st_bound;
+--    TRIG3(29 downto 28) <= std_logic_vector(to_unsigned(t_state'pos(rl_state),2)); -- 4 states
 
 
 	

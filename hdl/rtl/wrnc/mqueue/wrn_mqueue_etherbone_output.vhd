@@ -65,7 +65,9 @@ entity wrn_mqueue_etherbone_output is
     ebm_i : in  t_wishbone_master_in := cc_dummy_master_in;
 
     host_slave_i : in  t_wishbone_slave_in;
-    host_slave_o : out t_wishbone_slave_out
+    host_slave_o : out t_wishbone_slave_out;
+	 
+	 debug_o : out std_logic_vector(31 downto 0)
     );
 
 end wrn_mqueue_etherbone_output;
@@ -223,6 +225,11 @@ begin  -- rtl
     end if;
   end process;
 
+	debug_o(0) <= slot_ready;
+	debug_o(1) <= slot_done;
+	debug_o(2 downto 2) <= slot_sel;
+	debug_o(8) <= stat_i(0).ready;
+
   p_pick_slot : process(slots_i, stat_i, slot_out, slot_sel, slot_ready, slot_discard)
     variable idx : integer;
     variable tmp : std_logic_vector(g_config.out_slot_count-1 downto 0);
@@ -259,10 +266,11 @@ begin  -- rtl
         slot_done    <= '0';
         rq_wr        <= '0';
         rq_rd        <= '0';
-        
+			debug_o(7 downto 4) <= "0000";
       else
         case eb_state is
           when EB_WAIT_SLOT =>
+			 debug_o(7 downto 4) <= "0001";
             slot_done    <= '0';
             slot_discard <= '0';
             slot_addr    <= to_unsigned(4, 10);
@@ -279,12 +287,14 @@ begin  -- rtl
             end if;
             
           when EB_SET_TARGET_IP =>
+			 debug_o(7 downto 4) <= "0010";
               rq_adr    <= std_logic_vector(to_unsigned(c_DST_IPV4, 32));
               rq_wr     <= '1';
               slot_addr <= slot_addr + 4;
               eb_state  <= EB_SET_TARGET_PORT;
 
           when EB_SET_TARGET_PORT =>
+			 debug_o(7 downto 4) <= "0011";
             if(rq_done = '1') then
               rq_adr   <= std_logic_vector(to_unsigned(c_DST_UDP_PORT, 32));
               rq_dat_wr   <= slot_in.dat;
@@ -295,6 +305,7 @@ begin  -- rtl
             end if;
 
           when EB_SET_MAX_OPS =>
+			 debug_o(7 downto 4) <= "0100";
             if(rq_done = '1') then
 
               rq_adr <= std_logic_vector(to_unsigned(c_OPS_MAX, 32));
@@ -306,6 +317,7 @@ begin  -- rtl
 
             
           when EB_SET_TARGET_BASE =>
+			 debug_o(7 downto 4) <= "0101";
             rq_wr <= '0';
 
             eb_write_addr  <= unsigned(slot_in.dat(23 downto 0)) + 8;
@@ -313,6 +325,7 @@ begin  -- rtl
             eb_state       <= EB_SET_XFER_SIZE;
 
           when EB_SET_XFER_SIZE =>
+			 debug_o(7 downto 4) <= "0110";
             if(rq_done = '1') then
 
               rq_adr <= std_logic_vector(to_unsigned(c_PAC_LEN, 32));
@@ -324,6 +337,7 @@ begin  -- rtl
 
 
           when EB_SEND_CLAIM =>
+			 debug_o(7 downto 4) <= "0111";
             if(rq_done = '1') then
               rq_adr <= std_logic_vector(resize(eb_write_start, 32)) or x"03000000";
               rq_dat_wr <= x"01000000";
@@ -336,6 +350,7 @@ begin  -- rtl
             
 
           when EB_WRITE_DATA =>
+			 debug_o(7 downto 4) <= "1000";
             if(rq_done = '1') then
               if(msg_remaining = 0) then
                 rq_adr <= std_logic_vector(resize(eb_write_start, 32)) or x"03000000";
@@ -358,6 +373,7 @@ begin  -- rtl
             end if;
 
           when EB_DUMMY_WAIT =>
+			 debug_o(7 downto 4) <= "1001";
             rq_wr <= '0';
             rq_rd <= '0';
 
@@ -366,6 +382,7 @@ begin  -- rtl
             
             
           when EB_SEND_READY =>
+			 debug_o(7 downto 4) <= "1010";
             if(rq_done = '1') then
               rq_adr   <= std_logic_vector(to_unsigned(c_FLUSH, 32));
               rq_dat_wr   <= x"00000001";
@@ -374,6 +391,7 @@ begin  -- rtl
             end if;
             
           when EB_FLUSH_XFER =>
+			 debug_o(7 downto 4) <= "1011";
             rq_wr <= '0';
             if(rq_done = '1') then
 --  slot_discard <= '1';
@@ -381,7 +399,7 @@ begin  -- rtl
             end if;
 
           when EB_READ_STATUS =>
-
+				debug_o(7 downto 4) <= "1100";
             eb_state <= EB_WAIT_XFER_DONE;
             rq_rd    <= '1';
             rq_adr   <= std_logic_vector(to_unsigned(c_STATUS, 32));
@@ -389,6 +407,7 @@ begin  -- rtl
 
             
           when EB_WAIT_XFER_DONE =>
+			 debug_o(7 downto 4) <= "1101";
             rq_rd <= '0';
             if (rq_done = '1') then
               if(rq_dat_rd(31 downto 16) = x"0000") then
@@ -402,6 +421,7 @@ begin  -- rtl
             end if;
 
             when EB_FINISH_TRANSFER =>
+				debug_o(7 downto 4) <= "1110";
             slot_discard <= '0';
             slot_done<='0';
             eb_state <= EB_WAIT_SLOT;

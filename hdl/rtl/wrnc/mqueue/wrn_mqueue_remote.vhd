@@ -60,7 +60,9 @@ entity wrn_mqueue_remote is
     ebs_slave_o : out t_wishbone_slave_out;
     ebs_slave_i : in  t_wishbone_slave_in := cc_dummy_slave_in;
 
-    rmq_status_o : out std_logic_vector(15 downto 0)
+    rmq_status_o : out std_logic_vector(15 downto 0);
+	 
+	 debug_o: out std_logic_vector(31 downto 0)
     );
 
 end wrn_mqueue_remote;
@@ -80,7 +82,10 @@ architecture rtl of wrn_mqueue_remote is
       ebm_o        : out t_wishbone_master_out;
       ebm_i        : in  t_wishbone_master_in := cc_dummy_master_in;
       host_slave_i : in  t_wishbone_slave_in;
-      host_slave_o : out t_wishbone_slave_out);
+      host_slave_o : out t_wishbone_slave_out;
+			 debug_o: out std_logic_vector(31 downto 0)
+
+		);
   end component;
 
   function f_dummy_slots (n : integer) return t_slot_bus_out_array is
@@ -195,7 +200,8 @@ begin  -- rtl
       discard_o    => eb_outgoing_discard,
       ebm_o        => ebm_master_o,
       ebm_i        => ebm_master_i,
-      host_slave_i => cc_dummy_slave_in);
+      host_slave_i => cc_dummy_slave_in,
+		debug_o => debug_O);
 
   --ebs_slave_o.stall <= '0';
   --ebs_slave_o.rty <= '0';
