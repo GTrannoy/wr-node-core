@@ -109,7 +109,7 @@ entity wr_d3s_core is
 -- Core control
 -------------------------------------------------
 
-    rt_d3s_running_o : std_logic;
+    rt_d3s_running_o : out std_logic;
 
     slave_i : in  t_wishbone_slave_in;
     slave_o : out t_wishbone_slave_out;
