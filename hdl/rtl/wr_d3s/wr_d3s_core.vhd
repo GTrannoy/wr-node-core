@@ -921,6 +921,6 @@ begin  -- behavioral
   end process;
 
 -- can inform other cores that RFoWR lm32 cpu is running
-  rt_d3s_running_o <= regs_out.cr_rt_d3s_running_o;
+  rt_d3s_running_o <= regs_out.sr_rt_d3s_running_o;
 
 end behavioral;
