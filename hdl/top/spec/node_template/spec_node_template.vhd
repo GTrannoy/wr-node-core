@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2016-06-08
+-- Last update: 2016-11-21
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -495,7 +495,7 @@ begin
       slave_o      => cnx_master_in(c_SLAVE_FLASH),
       -- Master reader port
       master_clk_i   => clk_multiboot,
-      master_rst_n_i => l_rst_n,
+      master_rst_n_i => local_reset_n,
       master_i       => wb_from_multiboot,
       master_o       => wb_to_multiboot
 	);
@@ -503,7 +503,7 @@ begin
   U_Flash : xwb_xil_multiboot
     port map (
       clk_i  => clk_multiboot,
-      rst_n_i    => l_rst_n,
+      rst_n_i    => local_reset_n,
       wbs_i      => wb_to_multiboot,
       wbs_o      => wb_from_multiboot,
       spi_cs_n_o => spi_cs_n_o,
