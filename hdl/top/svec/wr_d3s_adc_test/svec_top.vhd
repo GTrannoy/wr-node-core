@@ -299,7 +299,8 @@ architecture rtl of svec_top is
       tm_cycles_i          : in  std_logic_vector(27 downto 0);
       tm_clk_aux_lock_en_o : out std_logic;
       tm_clk_aux_locked_i  : in  std_logic;
-
+      wr_pps_i             : in  std_logic;
+		
       spi_din_i            : in    std_logic;
       spi_dout_o           : out   std_logic;
       spi_sck_o            : out   std_logic;
@@ -345,7 +346,7 @@ architecture rtl of svec_top is
       tm_clk_aux_locked_i  : in  std_logic;
       tm_dac_value_i       : in  std_logic_vector(23 downto 0);
       tm_dac_wr_i          : in  std_logic;
-
+		
       -- WR reference clock from FMC's PLL (AD9516)
       wr_ref_clk_n_i    : in    std_logic;
       wr_ref_clk_p_i    : in    std_logic;
@@ -519,7 +520,7 @@ architecture rtl of svec_top is
   signal tm_time_valid      : std_logic;
   signal tm_tai             : std_logic_vector(39 downto 0);
   signal tm_cycles          : std_logic_vector(27 downto 0);
-
+  signal wr_pps             : std_logic;
 
   signal fmc0_clk_wr, fmc1_clk_wr : std_logic;
 
@@ -661,7 +662,9 @@ begin
       tm_clk_aux_locked_o  => tm_clk_aux_locked,
       tm_time_valid_o      => tm_time_valid,
       tm_tai_o             => tm_tai,
-      tm_cycles_o          => tm_cycles
+      tm_cycles_o          => tm_cycles,
+		
+		pps_o                => wr_pps
       );
 
 
@@ -706,7 +709,8 @@ begin
       tm_cycles_i          => tm_cycles,
       tm_clk_aux_lock_en_o => tm_clk_aux_lock_en(0),
       tm_clk_aux_locked_i  => tm_clk_aux_locked(0),
-
+      wr_pps_i             => wr_pps,
+		
       spi_din_i       => adc0_spi_din_i,
       spi_dout_o      => adc0_spi_dout_o,
       spi_sck_o       => adc0_spi_sck_o,
