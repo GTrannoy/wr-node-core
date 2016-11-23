@@ -7,3 +7,4 @@ set NumericStdNoWarnings 1
 do wave.do
 radix -hexadecimal
 run 230us
+WaveRestoreZoom {138373590 ps} {138437910 ps}
