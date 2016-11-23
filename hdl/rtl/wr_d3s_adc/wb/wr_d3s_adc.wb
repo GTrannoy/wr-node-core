@@ -25,7 +25,7 @@ peripheral {
 			prefix = "TCR";
 			name = "Time Control Register";
       
-            field {
+         field {
 				 prefix = "WR_LOCK_EN";
 				 name = "WR Lock Enable";
 				 description = "write 1: enable locking of the ADC clock to WR. Enable only after Si57x has been initialized.";
@@ -60,7 +60,21 @@ peripheral {
 				 access_bus = READ_ONLY;
 			};
    };
+   reg {
+	      name = "WR FREQUENCY register";
+			prefix = "WR_FREQ";
+			
+			field {
+				 prefix = "METER";
+				 name = "WR frequency";
+				 description = "WR frequency measured by the a freq. meter core";
 
+				 size = 32;
+				 type = SLV;
+				 access_dev = WRITE_ONLY;
+				 access_bus = READ_ONLY;
+			};
+	};
    reg {
 			name = "GPIO register";
 			prefix = "GPIOR";
