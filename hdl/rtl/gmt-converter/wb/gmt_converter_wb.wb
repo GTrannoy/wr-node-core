@@ -1,0 +1,210 @@
+-- -*- Mode: LUA; tab-width: 2 -*-
+
+peripheral {
+   name = "GMT Converter WB Slave";
+   hdl_entity = "gmt_converter_wb_slave";
+   prefix = "gmtc";
+
+	 reg {
+			prefix = "CR";
+			name = "Control Register";
+			
+			field {
+				 name = "Software Reset";
+				 description = "Writing 1 holds the GMT converter core in reset";
+				 prefix = "swrst";
+				 type = BIT;
+				 access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+			};
+	 };
+
+
+	 reg {
+			prefix = "DELAY";
+			name = "GMT Delay";
+			description = "GMT In/Out delay in 40 MHz clock ticks";
+			
+			field {
+				 name = "Delay";
+				 type = SLV;
+				 size = 16;
+				 clock = "clk_40m_i";
+				 access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+			};
+	 };
+
+	 reg {
+			prefix = "PPS_OFFSET";
+			name = "External PPS Offset";
+			description = "Offset between external PPS input (from MTG) and the internal WR clock, in 8 ns WR clock cycles";
+			
+			field {
+				 name = "Offset";
+				 type = SLV;
+				 size = 32;
+				 clock = "clk_wr_i";
+				 access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+			};
+	 };
+
+	 reg {
+			prefix ="RX_STATUS";
+			name = "GMT Rx Frame Status";
+			description = "Each bit indicates whether the corresponding RX_DATAn register contains a new GMT frame. Clear-on-write.";
+			
+			field {
+				 name = "Status";
+				 type = SLV;
+				 size = 8;
+				 access_bus = READ_WRITE;
+         access_dev = READ_WRITE;
+				 load = LOAD_EXT;
+			};
+	 };
+
+   reg {
+      prefix = "RX_DATA0";
+      name = "RX Data, channel 0";
+			description = "Received GMT frame, channel 0";
+
+      field {
+         name = "Payload";
+         type = SLV;
+				 size = 32;
+				 access_bus = READ_ONLY;
+         access_dev = WRITE_ONLY;
+      };
+   };
+
+   reg {
+      prefix = "RX_DATA1";
+      name = "RX Data, channel 1";
+			description = "Received GMT frame, channel 1";
+
+      field {
+         name = "Payload";
+         type = SLV;
+				 size = 32;
+				 access_bus = READ_ONLY;
+         access_dev = WRITE_ONLY;
+      };
+   };
+   reg {
+      prefix = "RX_DATA2";
+      name = "RX Data, channel 2";
+			description = "Received GMT frame, channel 2";
+
+      field {
+         name = "Payload";
+         type = SLV;
+				 size = 32;
+				 access_bus = READ_ONLY;
+         access_dev = WRITE_ONLY;
+      };
+   };
+
+   reg {
+      prefix = "RX_DATA3";
+      name = "RX Data, channel 3";
+			description = "Received GMT frame, channel 3";
+
+      field {
+         name = "Payload";
+         type = SLV;
+				 size = 32;
+				 access_bus = READ_ONLY;
+         access_dev = WRITE_ONLY;
+      };
+   };
+
+   reg {
+      prefix = "RX_DATA4";
+      name = "RX Data, channel 4";
+			description = "Received GMT frame, channel 4";
+
+      field {
+         name = "Payload";
+         type = SLV;
+				 size = 32;
+				 access_bus = READ_ONLY;
+         access_dev = WRITE_ONLY;
+      };
+   };
+
+   reg {
+      prefix = "RX_TSTAMP0";
+      name = "RX Timestamp, channel 0";
+			description = "Timestamp of the last received GMT Frame in 8ns ticks";
+
+      field {
+         name = "Timestamp";
+         type = SLV;
+				 size = 32;
+				 access_bus = READ_ONLY;
+         access_dev = WRITE_ONLY;
+      };
+   };
+
+   reg {
+      prefix = "RX_TSTAMP1";
+      name = "RX Timestamp, channel 1";
+			description = "Timestamp of the last received GMT Frame in 8ns ticks";
+
+      field {
+         name = "Timestamp";
+         type = SLV;
+				 size = 32;
+				 access_bus = READ_ONLY;
+         access_dev = WRITE_ONLY;
+      };
+   };
+
+   reg {
+      prefix = "RX_TSTAMP2";
+      name = "RX Timestamp, channel 2";
+			description = "Timestamp of the last received GMT Frame in 8ns ticks";
+
+      field {
+         name = "Timestamp";
+         type = SLV;
+				 size = 32;
+				 access_bus = READ_ONLY;
+         access_dev = WRITE_ONLY;
+      };
+   };
+
+   reg {
+      prefix = "RX_TSTAMP3";
+      name = "RX Timestamp, channel 3";
+			description = "Timestamp of the last received GMT Frame in 8ns ticks";
+
+      field {
+         name = "Timestamp";
+         type = SLV;
+				 size = 32;
+				 access_bus = READ_ONLY;
+         access_dev = WRITE_ONLY;
+      };
+   };
+
+   reg {
+      prefix = "RX_TSTAMP4";
+      name = "RX Timestamp, channel 4";
+			description = "Timestamp of the last received GMT Frame in 8ns ticks";
+
+      field {
+         name = "Timestamp";
+         type = SLV;
+				 size = 32;
+				 access_bus = READ_ONLY;
+         access_dev = WRITE_ONLY;
+      };
+   };
+
+
+
+
+};
