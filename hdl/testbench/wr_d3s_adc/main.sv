@@ -108,24 +108,21 @@ class RFGenerator;
 
    function real y();
       if ( y_orig.size() == 0 )
-	run(10000);
-      
+	        run(10000);
 
       return y_orig.pop_front();
    endfunction // y_orig
 
    function real y_sign();
       if ( y_sign_q.size() == 0 )
-	run(10000);
-      
-
+	        run(10000);
+  
       return y_sign_q.pop_front();
    endfunction // y_orig
    
    function real y_under_sample();
       if ( y_under.size() == 0 )
-	run(10000);
-      
+	        run(10000);
 
       return y_under.pop_front();
       
@@ -320,7 +317,6 @@ module fake_dac
    );
 
    parameter g_bits = 14;
-   
    parameter g_delay = 0;
    parameter g_oversample = 20;
    parameter g_step = 100;
@@ -368,6 +364,46 @@ module fake_dac
    end // block: reconstruct_undiv
 endmodule // fake_dac
 
+//// Attempt to read the file with real aquired and saved data
+module read_file
+  (
+   input clk_wr,
+   input enc_started,
+   output reg[13:0] sine2
+   );
+     
+     integer data_file, scan_file;
+     logic  signed[13:0] captdata;
+     integer sample_n;
+     integer read;
+     
+     initial begin
+         data_file = $fopen("adc.dat", "r"); //place here file with acq.samples
+         if (data_file == 0) begin
+             $display("ERROR : CAN NOT OPEN THE FILE");
+             $finish;
+         end else 
+             read = 0;
+     end
+     
+     always @(posedge clk_wr) begin
+         if ((enc_started == 1) && (read==0)) begin
+             if (!$feof(data_file)) begin 
+                scan_file = $fscanf(data_file, "%d %d\n", sample_n, sine2);
+                //$display("Data read from file: %d\n",sine2);
+             end else begin 
+                $fclose(data_file);
+                sine2 <= 0;
+                read = 1;
+                //$finish;
+             end
+         end
+     end
+     
+endmodule
+
+
+
    
 module main;
 
@@ -384,122 +420,119 @@ module main;
 
    reg frev_in = 0;
 
-
-
-   
+   // =-=-=-=-=-=-=-=- CLOCK GENERATION -==-=-=-=-=-=-=-=-=-=-
    always #1ns clk_adc <= ~clk_adc; // 500 MHz ADC/DAC clock
    
    always@(posedge clk_adc)
-     clk_wr_2x <= ~clk_wr_2x;
+     clk_wr_2x <= ~clk_wr_2x;  // 250 MHz
 
    always@(posedge clk_wr_2x)
-     clk_wr <= ~clk_wr;
+     clk_wr <= ~clk_wr;        // 125 MHz
 
    always@(posedge clk_wr)
-     clk_sys <= ~clk_sys;
+     clk_sys <= ~clk_sys;      // 62.5 MHz
 
    initial begin
       repeat(20) @(posedge clk_sys);
       rst_n = 1;
    end
-
+   // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+   
    IVHDWishboneMaster Host1 ( clk_sys, rst_n );
    IVHDWishboneMaster Host2 ( clk_sys, rst_n );
+   //IVHDWishboneMaster Host3 ( clk_sys, rst_n );
 
    reg [39:0]  tm_tai = 100;
    reg [31:0]  tm_nsec = 0;
    
-   // 1GHz nsec counter
-   always@(posedge clk_adc or negedge clk_adc) begin
-      if(tm_nsec == (g_clock_freq * 8 - 1)) begin
-	 tm_tai <= tm_tai + 1;
-	 tm_nsec <= 0;
-      end      else
-	tm_nsec <= tm_nsec + 1;
+   // =-=-=-=-=-=-=-=-=-  1GHz nsec counter    =-=-=-=-=-=-=-=
+   always@(posedge clk_adc or negedge clk_adc) 
+   begin
+      if(tm_nsec == (g_clock_freq * 8 - 1)) 
+      begin
+	        tm_tai <= tm_tai + 1;
+	        tm_nsec <= 0;
+      end else
+	        tm_nsec <= tm_nsec + 1;
    end
+   // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
    RFGenerator gen = new;
-
-
-   reg [13:0] sine;
    
-
-//   int samples[$];
+   reg [13:0] sine, sine2;
+   
+//   int samples[$];{RFGenerator gen = new;}
    int pos = 0;
-
    real sine_in, sine_in_d0;
-   
    reg 	clk_rf = 0;
-   
-
    real a_rf = 0;
-   
 
-   // produce a pseudo-analog ( 10GHz sampling freq)  RF signal  for display purposes and to fake the square RF clock
-   
-    initial forever begin
+
+   // produce a pseudo-analog ( 10GHz sampling freq)  RF signal
+   // for display purposes and to fake the square RF clock
+   initial forever 
+   begin
       a_rf <= gen.y_sign();
       
       sine_in <= gen.y();
       sine_in_d0 <= sine_in;
       if(sine_in_d0 < 0 && sine_in >= 0)
-	clk_rf <= 1;
+	        clk_rf <= 1;
       else if (sine_in_d0 >=0 && sine_in < 0)
-	clk_rf <= 0;
+	        clk_rf <= 0;
       
       #100ps;
    end
    
 
    // produce the fake fRev
-
    int frev_count = 0;
 
-   always@(posedge clk_rf) begin
+   always@(posedge clk_rf) 
+   begin
       if (frev_count == g_h_divider - 1)
-	begin
-	   frev_count <= 0;
-	   frev_in <= 1;
-	end else begin
-	   frev_count <= frev_count + 1;
-	   frev_in <= 0;
-	end
+	       begin
+	          frev_count <= 0;
+	          frev_in <= 1;
+	    end else begin
+	          frev_count <= frev_count + 1;
+	          frev_in <= 0;
+	    end
    end
    
-   
    real y_under;
-   
+
    // produce the undersampled clock for the WR-DDS Master (ADC Input)
    always@(posedge clk_wr)
-    begin
-	y_under = gen.y_under_sample();
-	sine <= int'(2000.0*y_under);
-     end
+   begin
+	        y_under = gen.y_under_sample();
+	        sine <= int'(2000.0*y_under);
+   end
 
 
-   
    reg [31:0] frev_ts_ns;
    reg [31:0] frev_ts_tai;
    
    reg frev_ts_valid = 0; 
 
+   reg enc_started;
+   
    // Fake timestamper for the FRev
    always@(posedge frev_in)
      begin
-	frev_ts_ns <= tm_nsec;
-	frev_ts_tai <= tm_tai;
+	      frev_ts_ns <= tm_nsec;
+	      frev_ts_tai <= tm_tai;
 
-	@(posedge clk_wr);
-	frev_ts_valid <= 1;
-	@(posedge clk_wr);
-	frev_ts_valid <= 0;
-	@(posedge clk_wr);
+	      @(posedge clk_wr);
+	         frev_ts_valid <= 1;
+	      @(posedge clk_wr);
+	         frev_ts_valid <= 0;
+	      @(posedge clk_wr);
 	
-     end
-   
-   
-
-   // cores under test
+   end
+      
+      
+   // =-=-=-=-=- Cores under test  =-=-=-=-=-=-=-=-
    wr_d3s_adc
       
      #(
@@ -511,19 +544,38 @@ module main;
 	.adc_dco_p_i(clk_adc),
 	.adc_dco_n_i(~clk_adc),
 	.tm_cycles_i(tm_nsec[30:3]),
+	
 	.fake_data_i(sine),
-
+  .enc_started_o(enc_started),  
+  
 	.slave_i(Host1.master.out),
 	.slave_o(Host1.master.in)
 	);
 
+//  wr_d3s_adc
+//      
+//     #(
+//       .g_use_fake_data(1)
+//       )
+//   DUT_Mrealdata (
+//	.rst_n_sys_i(rst_n),
+//	.clk_sys_i (clk_sys),
+//	.adc_dco_p_i(clk_adc),
+//	.adc_dco_n_i(~clk_adc),
+//	.tm_cycles_i(tm_nsec[30:3]),
+//	
+//	.fake_data_i(sine2),          // 'sine2' for data from file, and 'sine' for the TB generator
+//  .enc_started_o(enc_started),  // to start reading the sampled data when ready
+//  
+//	.slave_i(Host3.master.out),
+//	.slave_o(Host3.master.in)
+//	);
+   
+
+
    wire [14-1: 0] dac_p;
 
-
    fake_dac U_DAC(clk_adc, dac_p);
-   
-		  
-	     
    
 
    wr_d3s_adc_slave
@@ -548,168 +600,168 @@ module main;
 	.slave_o(Host2.master.in)
 	);
 
-   
+    read_file ReadFile(
+      .clk_wr, 
+      .enc_started,
+      .sine2);
 
+  //  =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+   
    PhaseData ph_master = new;
    PhaseData ph_slave = new;
    PhaseData ph_check = new;
-   
+    
    // store whatever goes to the Phase Encoder's FIFO also to the ph_unc object.
-
    always @(posedge clk_wr)
      if(DUT_M.U_Phase_Enc.fifo_en_i)
-       begin
-	  if( ph_master.get_start_time() < 0 )
-	    begin
-	       ph_master.set_start_time(DUT_M.U_Phase_Enc.tm_cycles_i);
-	       $display("Master: 1st sample timestamp: %d\n", ph_master.get_start_time());
-	       end
+     begin
+	      if( ph_master.get_start_time() < 0 )
+	      begin
+	            ph_master.set_start_time(DUT_M.U_Phase_Enc.tm_cycles_i);
+	            $display("Master: 1st sample timestamp: %d\n", ph_master.get_start_time());
+	      end
 	  
-	  ph_master.add(DUT_M.U_Phase_Enc.rl_phase_ext);
-       end
+	      ph_master.add(DUT_M.U_Phase_Enc.rl_phase_ext);
+   end
    
 	  
-
    // store whatever goes to the Phase Encoder's FIFO also to the ph_unc object.
    always @(posedge clk_wr)
      if(DUT_S.U_Phase_Dec.s3_valid)
-       begin
-	  if( ph_slave.get_start_time() < 0 )
-	    begin
-	       ph_slave.set_start_time(DUT_S.U_Phase_Dec.tm_cycles_i);
-	       $display("Slave: 1st sample timestamp: %d\n", ph_slave.get_start_time());
-	    end
+     begin
+	      if( ph_slave.get_start_time() < 0 )
+	      begin
+	         ph_slave.set_start_time(DUT_S.U_Phase_Dec.tm_cycles_i);
+	         $display("Slave: 1st sample timestamp: %d\n", ph_slave.get_start_time());
+	      end
 	  
-
-	  ph_slave.add(DUT_S.U_Phase_Dec.s3_phase);
-       end // if (DUT_S.U_Phase_Dec.s3_valid)
+	      ph_slave.add(DUT_S.U_Phase_Dec.s3_phase);
+     end // if (DUT_S.U_Phase_Dec.s3_valid)
    
-   phase_rl_record_t compr_records[$];
-   int n_records = 0;
+     phase_rl_record_t compr_records[$];
+     int n_records = 0;
    
-
    // Master process: configure the compressor, start sampling, push all records to a queue
    initial begin
       uint64_t rv;
-      CBusAccessor acc = Host1.get_accessor();
-      int max_err = int' ( real'(1<<(9+14))  * real'(max_error_deg) / 360.0 );
-      int 	last_ts_cycles = -1;
+      automatic CBusAccessor acc = Host1.get_accessor();
+      //automatic CBusAccessor acc3 = Host3.get_accessor();
+      automatic int max_err = int' ( real'(1<<(9+14))  * real'(max_error_deg) / 360.0 );
+      automatic int 	last_ts_cycles = -1;
       
       #5us;
 
       $display ("Starting DDS Master");
       
       
-      acc.write(`ADDR_D3S_RL_ERR_MIN, -max_err);
-      acc.write(`ADDR_D3S_RL_ERR_MAX, max_err);
+      acc.write(`ADDR_D3S_LT_RL_ERR_MIN, -max_err);
+      acc.write(`ADDR_D3S_LT_RL_ERR_MAX, max_err);
+      acc.write(`ADDR_D3S_ST_RL_ERR_MIN, -max_err);
+      acc.write(`ADDR_D3S_ST_RL_ERR_MAX, max_err);
       acc.write(`ADDR_D3S_RL_LENGTH_MAX, 4000);
       acc.write(`ADDR_D3S_CR, `D3S_CR_ENABLE);
+      
+      //acc3.write(`ADDR_D3S_RL_ERR_MIN, -max_err);
+//      acc3.write(`ADDR_D3S_RL_ERR_MAX, max_err);
+//      acc3.write(`ADDR_D3S_RL_LENGTH_MAX, 4000);
+//      acc3.write(`ADDR_D3S_CR, `D3S_CR_ENABLE);
       		     
       while(1)
-	begin
-	   uint64_t rv,r0,payload;
-	   time t_start, t_end;
-	   bit 	is_ts, is_rl, is_fixed;
-	   automatic	   int 	count;
+	    begin
+	        uint64_t rv,r0,payload;
+	        time t_start, t_end;
+	        bit 	is_ts, is_rl, is_fixed;
+	        automatic	   int 	count;
 	  
-	   
-	   
-	   acc.read(`ADDR_D3S_ADC_CSR, rv);
-	   count = rv & 'hffff;
+	   	   
+	       acc.read(`ADDR_D3S_ADC_CSR, rv);
+	       count = rv & 'hffff;
 	   	   
 //	   if(rv & `D3S_ADC_CSR_FULL)
-//		$warning("master: full FIFO\n");
+//		  $warning("master: full FIFO\n");
 
 //	   $display("Got %d\n", count);
 	   
-	   while(count > 0)
-	     begin
+	       while(count > 0)
+	       begin
 		
-		phase_rl_record_t  rec;
-		t_start = $time;
+		        phase_rl_record_t  rec;
+		        t_start = $time;
 
+		        acc.read(`ADDR_D3S_ADC_R0, payload);
 		
-		acc.read(`ADDR_D3S_ADC_R0, payload);
-		
-		
-		t_end = $time;
+		        t_end = $time;
 
 		//	      $display("Read from FIFO took %.0f ns", real'(t_end-t_start)/real'(1ns) );
 
+		        rec.r0 = payload;
 
-		rec.r0 = payload;
-
-		
-		is_rl = (payload & (1 << 31)) ? 1 : 0;
-		is_ts = !is_rl && ( (payload & (1<< 30)) ? 1 : 0 );
-		is_fixed = !is_rl && ( (payload & (1<<30)) ? 0 : 1 );
+		        is_rl = (payload & (1 << 31)) ? 1 : 0;
+		        is_ts = !is_rl && ( (payload & (1<< 30)) ? 1 : 0 );
+		        is_fixed = !is_rl && ( (payload & (1<<30)) ? 0 : 1 );
 
 //		$display("payload %x rl %d ts %d fix %d\n", payload, is_rl, is_ts, is_fixed);
 		
 		
-		rec.is_rl = is_rl;
+		        rec.is_rl = is_rl;
 		
-		if (is_ts)
-		  begin
-		     last_ts_cycles = payload & 'hfffffff;
-		     compr_records.push_back(rec);
+	 	        if (is_ts)
+		        begin
+		          last_ts_cycles = payload & 'hfffffff;
+		          compr_records.push_back(rec);
 
 //		     $display("report timestamp: %x", last_ts_cycles);
-		  end
+		        end
 		
-		if (is_fixed)
-		  begin
-		     rec.phase = (payload & 'h3fffffff);
-		     rec.is_rl = 0;
+		        if (is_fixed)
+		        begin
+		          rec.phase = (payload & 'h3fffffff);
+		          rec.is_rl = 0;
 
-		     
-		     
 //		     $display("LTS %d", last_ts_cycles);
 		     
-		     
-		     if( last_ts_cycles >= 0 )
-		       begin
-			  rec.cycles = last_ts_cycles;
-			  last_ts_cycles ++;
-			  n_records++;
+		          if( last_ts_cycles >= 0 )
+		          begin
+			           rec.cycles = last_ts_cycles;
+			           last_ts_cycles ++;
+			           n_records++;
 //			  $display("Fix: phase %d", rec.phase);
 //		     $display("FFF phase %d payload %x", rec.phase, payload);
 
-			  compr_records.push_back(rec);
-			  ph_check.uncompress(rec);
-		       end  
-		  end
+			           compr_records.push_back(rec);
+			           ph_check.uncompress(rec);
+		          end  
+		        end
 
-		if (is_rl)
-		  begin
-		     rec.phase = (payload & 'h7ffff) << 4;
-		     rec.length = (payload >> 19) & 'hfff;
-		     rec.is_rl = 1;
-//		     $display("LTS %d", last_ts_cycles);
-
-		     if( last_ts_cycles >= 0 )
-		       begin
-			  rec.cycles = last_ts_cycles;
-			  last_ts_cycles += rec.length;
-//			  $display("RL: phase %d len %d", rec.phase, rec.length);
-
-			  
-			  n_records++;
-			  compr_records.push_back(rec);
-			  ph_check.uncompress(rec);
-		       end
-		  end
-		
-		
-		count--;
+        	   if (is_rl)
+        	   begin
+        		     rec.phase = (payload & 'h7ffff) << 4;
+        		     rec.length = (payload >> 19) & 'hfff;
+        		     rec.is_rl = 1;
+        //		     $display("LTS %d", last_ts_cycles);
+        
+        		     if( last_ts_cycles >= 0 )
+        		     begin
+        			        rec.cycles = last_ts_cycles;
+        			        last_ts_cycles += rec.length;
+        //			  $display("RL: phase %d len %d", rec.phase, rec.length);
+        			  
+        			        n_records++;
+        			        compr_records.push_back(rec);
+        			        ph_check.uncompress(rec);
+        		     end
+        	   end
+        		
+		   count--;
 	     end
-	end
-   end // initial begin
+	   end
+  end // initial begin
 
    
    
     initial begin
-      CBusAccessor acc_slave = Host2.get_accessor();
+      automatic CBusAccessor acc_slave = Host2.get_accessor();
 
       $display ("Starting DDS Slave");
       
@@ -756,10 +808,11 @@ module main;
    // Calculate worst phase error 
    initial
      begin
-	int f = $fopen("phase_err.txt","w");
+	automatic int f = $fopen("phase_err.txt","w");
 	
-	int i, size_m, size_s, size_check, size=0;
-	int max_err = 3, err;
+	automatic int size =0;
+	int i, size_m, size_s, size_check;
+	automatic int max_err = 3, err;
 	const int sample_count = 1000;
 	int   st;
 	

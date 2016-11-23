@@ -14,16 +14,19 @@ entity d3s_phase_encoder is
 
     raw_phase_o   : out std_logic_vector(15 downto 0);
     raw_hp_data_o : out std_logic_vector(15 downto 0);
+	 adc_dphase_o  : out std_logic_vector(15 downto 0);
 
     r_max_run_len_i  : in  std_logic_vector(15 downto 0);
-    r_max_error_i    : in  std_logic_vector(22 downto 0);
-    r_min_error_i    : in  std_logic_vector(22 downto 0);
+    lt_max_error_i   : in  std_logic_vector(22 downto 0);
+    lt_min_error_i   : in  std_logic_vector(22 downto 0);
+    st_max_error_i   : in  std_logic_vector(22 downto 0);
+    st_min_error_i   : in  std_logic_vector(22 downto 0);
     r_record_count_o : out std_logic_vector(31 downto 0);
 
 
     fifo_en_i   : in  std_logic;
-    fifo_full_i : in  std_logic;
-    fifo_lost_o : out std_logic;
+    fifo_full_i : in  std_logic;  
+    fifo_lost_o : out std_logic;  
 
     fifo_payload_o : out std_logic_vector(31 downto 0);
 
@@ -32,13 +35,19 @@ entity d3s_phase_encoder is
     tm_cycles_i : in std_logic_vector(27 downto 0);
 
     cnt_fixed_o : out std_logic_vector(31 downto 0);
-    cnt_rl_o    : out std_logic_vector(31 downto 0);
-    cnt_ts_o    : out std_logic_vector(31 downto 0)
+    lt_cnt_rl_o : out std_logic_vector(31 downto 0);
+    st_cnt_rl_o : out std_logic_vector(31 downto 0);
+    cnt_ts_o    : out std_logic_vector(31 downto 0);
+	 rl_state_o  :  out std_logic_vector(15 downto 0)
     );
 
 end d3s_phase_encoder;
 
 architecture rtl of d3s_phase_encoder is
+
+------------------------------------------
+--        COMPONENTs DECLARATION  
+------------------------------------------ 
 
   component fir_compiler_v5_0 is
     port (
@@ -108,9 +117,38 @@ architecture rtl of d3s_phase_encoder is
       y_o     : out std_logic_vector(g_data_bits-1 downto 0));
   end component d3s_highpass_filter;
 
+  component chipscope_ila
+    port (
+      CONTROL : inout std_logic_vector(35 downto 0);
+      CLK     : in    std_logic;
+      TRIG0   : in    std_logic_vector(31 downto 0);
+      TRIG1   : in    std_logic_vector(31 downto 0);
+      TRIG2   : in    std_logic_vector(31 downto 0);
+      TRIG3   : in    std_logic_vector(31 downto 0));
+  end component;
+
+  component chipscope_icon
+    port (
+      CONTROL0 : inout std_logic_vector (35 downto 0));
+  end component;
+	 
+  ------------------------------------------
+  --        CONSTANTS DECLARATION  
+  ------------------------------------------
   constant c_HILBERT_GROUP_DELAY     : integer := 71 + 64;
   constant c_TIMESTAMP_REPORT_PERIOD : integer := 10000;
 
+  ------------------------------------------
+  --        SIGNALS DECLARATION  
+  ------------------------------------------
+  
+  type t_state is (STARTUP, IDLE, RL_SHORT, RL_LONG);
+  
+  type t_comp_record is record
+    valid   : std_logic;
+    payload : std_logic_vector(31 downto 0);
+  end record;
+  
   signal adc_i, adc_i_pre : std_logic_vector(15 downto 0);
   signal adc_q, adc_q_pre : std_logic_vector(15 downto 0);
   signal adc_phase        : std_logic_vector(15 downto 0);
@@ -127,8 +165,6 @@ architecture rtl of d3s_phase_encoder is
 
   --signal avg_lt_trunc, avg_st_trunc : std_logic_vector(15 downto 0);
 
-  type t_state is (STARTUP, IDLE, RL_SHORT, RL_LONG);
-
   signal rl_phase : std_logic_vector(15 downto 0);
 
   signal err_bound_st_lo : unsigned (22 downto 0);
@@ -136,34 +172,38 @@ architecture rtl of d3s_phase_encoder is
   signal err_bound_lt_lo : unsigned (22 downto 0);
   signal err_bound_lt_hi : unsigned (22 downto 0);
 
+  signal rl_state                              : t_state;
   signal rl_integ, rl_integ_next, rl_phase_ext : unsigned(22 downto 0);
   signal rl_length                             : unsigned(15 downto 0);
-  signal rl_state                              : t_state;
   signal rl_cycles_start                       : std_logic_vector(27 downto 0);
-  signal err_st                                : signed(22 downto 0);
-  signal err_lt                                : signed(22 downto 0);
+  signal err_st                                : signed(22 downto 0);  -- FIXME: not used
+  signal err_lt                                : signed(22 downto 0);  -- FIXME: not used
   signal err_lt_bound, err_st_bound            : std_logic;
 
   signal adc_hp_out   : std_logic_vector(15 downto 0);
   signal adc_data_reg : std_logic_vector(13 downto 0);
-
-  type t_comp_record is record
-    valid   : std_logic;
-    payload : std_logic_vector(31 downto 0);
-  end record;
 
   signal c1, c2, c1_d, c2_d, c_out                  : t_comp_record;
   signal c2_pending                                 : std_logic;
   signal ts_report_cnt                              : unsigned(15 downto 0);
   signal err_st_lo, err_st_hi, err_lt_lo, err_lt_hi : signed(22 downto 0);
 
-  signal cnt_fix, cnt_rl, cnt_ts : unsigned(31 downto 0);
+  signal cnt_fix, lt_cnt_rl, st_cnt_rl, cnt_ts : unsigned(31 downto 0);
 
   constant c_ACC_SHIFT : integer := 4;
   
+  --  Signals for chip Scope  -----------------
+  signal CONTROL : std_logic_vector(35 downto 0);
+  signal CLK     : std_logic;
+  signal TRIG0   : std_logic_vector(31 downto 0);
+  signal TRIG1   : std_logic_vector(31 downto 0);
+  signal TRIG2   : std_logic_vector(31 downto 0);
+  signal TRIG3   : std_logic_vector(31 downto 0);
+  ---------------------------------------------
+  
 begin
 
-  process(clk_i)
+  p_input_reg: process(clk_i)
   begin
     if rising_edge(clk_i) then
       adc_data_reg <= adc_data_i;
@@ -187,7 +227,7 @@ begin
     port map (
       clk_i     => clk_i,
       rst_n_i   => rst_n_i,
-      x_valid_i => '1',
+      x_valid_i => '1',  
       x_i       => (adc_data_reg(13) & adc_data_reg(13) & adc_data_reg),
       y_valid_o => open,
       y_o       => adc_hp_out);
@@ -218,6 +258,16 @@ begin
 
   adc_i <= adc_i_pre(15) & adc_i_pre(15) & adc_i_pre(15 downto 2);
 
+  -------------------------------------------------------------------
+  --  This module calculates the phase as arc_tan(y_in/x_in)
+  --  x_in and y_in should be between -1 and 1.
+  --  adc_phase is expressed as normalized radians (value between -1 and 1)
+  --  that is : -1=-PI, +1=PI
+  --  x_in and y_in: are fixed-point 2's complement number with 1QN format
+  --       1 sign bit + 1 bit for interger part + 14 bits for fractional part.
+  --  adc_pahse is a fixed-point 2's complement with 2QN format
+  --       1 bit sign + 2 bits for integer part + 13 bits for fractional part.
+  -------------------------------------------------------------------
   U_ArcTangent : cordic_v4_0
     port map (
       x_in      => adc_i,
@@ -242,6 +292,8 @@ begin
     end if;
   end process;
 
+  adc_dphase_o  <= std_logic_vector(adc_dphase);
+  
   U_Avg_LT : gc_moving_average          -- 128 taps LT average
     generic map (
       g_data_width => 16,
@@ -319,7 +371,7 @@ begin
   p_compress_fsm : process (clk_i)
   begin
     if rising_edge(clk_i) then
-      if rst_n_i = '0' then
+      if rst_n_i = '0' or fifo_en_i = '0' then
         rl_state      <= STARTUP;
         c1.valid      <= '0';
         c2.valid      <= '0';
@@ -328,23 +380,27 @@ begin
         
         
         case (rl_state) is
+
           when STARTUP =>
+
             rl_length <= (others => '0');
             rl_integ  <= rl_phase_ext;
             if(fifo_en_i = '1') then
               rl_state <= IDLE;
             end if;
+
           when IDLE =>
+
             rl_cycles_start <= std_logic_vector(unsigned(tm_cycles_i) + 1);
             rl_length       <= (others => '0');
 
             avg_st_d <= avg_st;
             avg_lt_d <= avg_lt;
 
-            err_bound_st_lo <= avg_st + unsigned(r_min_error_i);
-            err_bound_st_hi <= avg_st + unsigned(r_max_error_i);
-            err_bound_lt_lo <= avg_lt + unsigned(r_min_error_i);
-            err_bound_lt_hi <= avg_lt + unsigned(r_max_error_i);
+            err_bound_st_lo <= avg_st + unsigned(st_min_error_i);  
+            err_bound_st_hi <= avg_st + unsigned(st_max_error_i);
+            err_bound_lt_lo <= avg_lt + unsigned(lt_min_error_i);
+            err_bound_lt_hi <= avg_lt + unsigned(lt_max_error_i);
 
 
             c1.payload(31)          <= '0';
@@ -353,7 +409,9 @@ begin
             c1.valid                <= '1';
             c2.valid                <= '0';
 
-            if (err_lt_bound = '1') then
+            if (fifo_en_i = '0') then 
+              rl_state      <= STARTUP;
+            elsif (err_lt_bound = '1') then
               rl_state      <= RL_LONG;
               rl_integ      <= rl_phase_ext;
               rl_integ_next <= rl_phase_ext + avg_lt;
@@ -369,13 +427,17 @@ begin
             ts_report_cnt <= ts_report_cnt + 1;
             
           when RL_SHORT =>
+
             c1.valid <= '0';
             c2.valid <= '0';
 
 
             rl_integ_next <= rl_integ_next + avg_st_d;
 
-            if (err_st_bound = '1' and rl_length < unsigned(r_max_run_len_i)) then
+            if (fifo_en_i = '0') then 
+              rl_state      <= STARTUP;
+            
+            elsif (err_st_bound = '1' and rl_length < unsigned(r_max_run_len_i)) then
               rl_length <= rl_length + 1;
               rl_integ  <= rl_integ_next;
               rl_state  <= RL_SHORT;
@@ -420,7 +482,10 @@ begin
             rl_integ_next <= rl_integ_next + avg_lt_d;
 
 
-            if (err_lt_bound = '1' and rl_length < unsigned(r_max_run_len_i)) then
+            if (fifo_en_i = '0') then 
+              rl_state      <= STARTUP;
+           
+            elsif (err_lt_bound = '1' and rl_length < unsigned(r_max_run_len_i)) then
               rl_length <= rl_length + 1;
               rl_state  <= RL_LONG;
               rl_integ  <= rl_integ_next;
@@ -480,7 +545,7 @@ begin
           c_out.valid <= '0';
         end if;
 
-        c2_pending <= c2.valid and c1_d.valid;
+        c2_pending <= c2.valid and c1_d.valid;   --c2_pending is read nowhere. Is it for debugging?
         
       end if;
     end if;
@@ -490,13 +555,16 @@ begin
   begin
     if rising_edge(clk_i) then
       if rst_n_i = '0' or fifo_en_i = '0' then
-        cnt_ts  <= (others => '0');
-        cnt_fix <= (others => '0');
-        cnt_rl  <= (others => '0');
+        cnt_ts     <= (others => '0');
+        cnt_fix    <= (others => '0');
+        lt_cnt_rl  <= (others => '0');
+        st_cnt_rl  <= (others => '0');
       else
         if(c_out.valid = '1') then
-          if (c_out.payload(31) = '1') then
-            cnt_fix <= cnt_rl + 1;
+          if (c_out.payload(31) = '1') and (rl_state/=RL_LONG) then
+            st_cnt_rl <= st_cnt_rl + 1;
+          elsif (c_out.payload(31) = '1') and (rl_state/=RL_SHORT) then
+            lt_cnt_rl <= lt_cnt_rl + 1;
           elsif (c_out.payload(31) = '0' and c_out.payload(30) = '1') then
             cnt_ts <= cnt_ts + 1;
           else
@@ -507,13 +575,61 @@ begin
     end if;
   end process;
 
-  cnt_fixed_o  <= std_logic_vector(cnt_fix);
-  cnt_rl_o     <= std_logic_vector(cnt_rl);
-  cnt_ts_o <= std_logic_vector(cnt_ts);
+  cnt_fixed_o     <= std_logic_vector(cnt_fix);
+  st_cnt_rl_o     <= std_logic_vector(st_cnt_rl);
+  lt_cnt_rl_o     <= std_logic_vector(lt_cnt_rl);
+  cnt_ts_o        <= std_logic_vector(cnt_ts);
 
 
-  fifo_we_o      <= c_out.valid and fifo_en_i;
-  fifo_payload_o <= c_out.payload;
-
+  fifo_we_o      <=  c_out.valid and fifo_en_i;
+  fifo_payload_o <=  c_out.payload;
+  rl_state_o( 1 downto 0)     <=  std_logic_vector(to_unsigned(t_state'pos(rl_state),2));
+  rl_state_o(2) <= c_out.valid and fifo_en_i;
+  rl_state_o(3) <= fifo_full_i;
+  rl_state_o(4) <= err_st_bound;
+  rl_state_o(5) <= err_lt_bound;
   
+  
+  --------------------------------------------
+  --         Chip Scope
+  --------------------------------------------
+
+--  chipscope_icon_1: chipscope_icon
+--    port map (
+--      CONTROL0 => CONTROL);
+--
+--  chipscope_ila_1: chipscope_ila
+--    port map (
+--      CONTROL => CONTROL,
+--      CLK     => clk_i,
+--      TRIG0   => TRIG0,
+--      TRIG1   => TRIG1,
+--      TRIG2   => TRIG2,
+--      TRIG3   => TRIG3);
+--	
+--	 TRIG0(22 downto 0)  <= std_logic_vector(rl_phase_ext);  -- 22 downto 0
+--	 TRIG0(31 downto 23) <= std_logic_vector(rl_integ(8 downto 0));  -- rl_integ range (22 downto 0)
+--
+--    TRIG1(13 downto 0)  <= std_logic_vector(rl_integ(22 downto 9));
+--    TRIG1(29 downto 14) <= std_logic_vector(rl_length);  -- (15 downto 0)
+--    TRIG1(30)    <= c1.valid;
+--    TRIG1(31)    <= c2.valid;
+--	 
+--    TRIG2(22 downto 0)  <= std_logic_vector(avg_st); -- (22 downto 0)
+--    TRIG2(31 downto 23) <= std_logic_vector(rl_integ_next(8 downto 0)); -- 22 downto 0
+--    
+--    TRIG3(27 downto 23) <= std_logic_vector(rl_integ_next(13 downto 9)); -- 22 downto 0  -- TRUNCATED TO 14 bits!
+--    TRIG3(22 downto 0)  <= std_logic_vector(avg_lt); -- (22 downto 0); 
+--    
+--	 TRIG3(31) <= err_lt_bound;
+--	 TRIG3(30) <= err_st_bound;
+--    TRIG3(29 downto 28) <= std_logic_vector(to_unsigned(t_state'pos(rl_state),2)); -- 4 states
+
+
+	
+	
+   
+	
+	
+	
 end rtl;

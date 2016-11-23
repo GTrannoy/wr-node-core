@@ -2,15 +2,30 @@
 
 peripheral {
 	 name = "WR D3S WB (master)";
-   prefix="d3s";
+     prefix="d3s";
 
 	 hdl_entity="d3s_adc_wb";
 	 
-   reg {
+     reg {
+      name = "Reset Register";
+      prefix = "RSTR";
+      field {
+         name = "FPGA REF/Serdes PLL Reset";
+         prefix = "PLL_RST";
+				 description = "write 1: resets the internal PLL producing the DDS DAC serdes clock\
+                        write 0: un-reset";
+         type = BIT;
+         access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+         
+      };
+		};
+
+		reg {
 			prefix = "TCR";
 			name = "Time Control Register";
       
-      field {
+         field {
 				 prefix = "WR_LOCK_EN";
 				 name = "WR Lock Enable";
 				 description = "write 1: enable locking of the ADC clock to WR. Enable only after Si57x has been initialized.";
@@ -30,13 +45,13 @@ peripheral {
 			};
 			field {
 				 prefix = "WR_TIME_VALID";
-         name = "WR Time Valid";
+                 name = "WR Time Valid";
 				 description = "when 1, the WR Core is synchronized with the WR network";
 				 type = BIT;
 				 access_dev = WRITE_ONLY;
 				 access_bus = READ_ONLY;
 			};
-      field {
+            field {
 				 prefix = "WR_LINK";
 				 name = "WR Link";
 				 description = "when 1, WR link is up";
@@ -45,12 +60,26 @@ peripheral {
 				 access_bus = READ_ONLY;
 			};
    };
+   reg {
+	      name = "WR FREQUENCY register";
+			prefix = "WR_FREQ";
+			
+			field {
+				 prefix = "METER";
+				 name = "WR frequency";
+				 description = "WR frequency measured by the a freq. meter core";
 
+				 size = 32;
+				 type = SLV;
+				 access_dev = WRITE_ONLY;
+				 access_bus = READ_ONLY;
+			};
+	};
    reg {
 			name = "GPIO register";
 			prefix = "GPIOR";
 			
-      field {
+            field {
 				 prefix = "SI57X_SCL";
 				 name = "SI57X_SCL";
 				 description = "GPIO controlling the state of the SCL line of the Silabs Si57p oscillator on the ADC mezzanine."; 
@@ -100,10 +129,19 @@ peripheral {
 				 access_dev = WRITE_ONLY;
 				 access_bus = READ_ONLY;
 			};
+      field {
+         name = "Serdes PLL locked";
+         prefix = "SERDES_PLL_LOCKED";
+				 description = "read 1: FPGA internal PLL for deriving 1000 MHz ADC serdes serdes clock is locked.";
+
+         type = BIT;
+         access_bus = READ_ONLY;
+         access_dev = WRITE_ONLY;
+      };
 	 };
  
 	 fifo_reg {
-			size = 1024; -- or more. We'll see :)
+			size = 16384;  -- or more. We'll see :)
 			direction = CORE_TO_BUS;
 			prefix = "adc";
 			name = "ADC Data FIFO";
@@ -155,8 +193,40 @@ peripheral {
 	 };
 
 	 reg {
-			name = "Error min";
-			prefix = "RL_ERR_MIN";
+			name = "LT RL Error min";
+			prefix = "LT_RL_ERR_MIN";
+
+			field {
+				 name = "MinError";
+				 description = "Lower error bound (negative) for phase error for the compression algorithm";
+				 type = SLV;
+				 size = 32;
+				 access_dev = READ_ONLY;
+				 access_bus = READ_WRITE;
+				 clock = "clk_wr_i";
+			};
+
+	 };
+	 
+     reg {
+			name = "LT RL Error max";
+			prefix = "LT_RL_ERR_MAX";
+
+			field {
+				 name = "MaxError";
+				 description = "Upper error bound (positive) for phase error for the compression algorithm";
+				 type = SLV;
+				 size = 32;
+				 access_dev = READ_ONLY;
+				 access_bus = READ_WRITE;
+				 clock = "clk_wr_i";
+			};
+
+	 };
+
+     reg {
+			name = "ST RL Error min";
+			prefix = "ST_RL_ERR_MIN";
 
 			field {
 				 name = "MinError";
@@ -170,8 +240,8 @@ peripheral {
 
 	 };
 	 reg {
-			name = "Error max";
-			prefix = "RL_ERR_MAX";
+			name = "ST RL Error max";
+			prefix = "ST_RL_ERR_MAX";
 
 			field {
 				 name = "MaxError";
@@ -201,7 +271,7 @@ peripheral {
 
 	 };
 
-reg {
+     reg {
 			name = "Fixed record count";
 			prefix = "CNT_FIXED";
 
@@ -216,13 +286,14 @@ reg {
 			};
 
 	 };
-reg {
-			name = "Run Length record count";
-			prefix = "CNT_RL";
+
+     reg {
+			name = "LT Run Length record count";
+			prefix = "LT_CNT_RL";
 
 			field {
 				 name = "Count";
-				 description = "Number of run length records produced by the compression engine.";
+				 description = "Number of LT run length records produced by the compression engine.";
 				 type = SLV;
 				 size = 32;
 				 access_dev = WRITE_ONLY;
@@ -231,7 +302,24 @@ reg {
 			};
 
 	 };
-reg {
+
+     reg {
+			name = "ST Run Length record count";
+			prefix = "ST_CNT_RL";
+
+			field {
+				 name = "Count";
+				 description = "Number of run ST length records produced by the compression engine.";
+				 type = SLV;
+				 size = 32;
+				 access_dev = WRITE_ONLY;
+				 access_bus = READ_ONLY;
+				 clock = "clk_wr_i";
+			};
+
+	 };
+
+     reg {
 			name = "Timestamp record count";
 			prefix = "CNT_TSTAMP";
 
