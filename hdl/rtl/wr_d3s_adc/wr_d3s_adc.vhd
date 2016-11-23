@@ -27,7 +27,8 @@ entity wr_d3s_adc is
     tm_cycles_i          : in  std_logic_vector(27 downto 0);
     tm_clk_aux_lock_en_o : out std_logic;
     tm_clk_aux_locked_i  : in  std_logic;
-
+    wr_pps_i             : in  std_logic;
+	 
     fake_data_i : in std_logic_vector(13 downto 0) := "00000000000000";
     enc_started_o        : out std_logic;  -- for testbench
 
@@ -75,7 +76,7 @@ architecture rtl of wr_d3s_adc is
     port (
       rst_n_i    : in  std_logic;
       clk_sys_i  : in  std_logic;
-      wb_adr_i   : in  std_logic_vector(3 downto 0);
+      wb_adr_i   : in  std_logic_vector(4 downto 0);
       wb_dat_i   : in  std_logic_vector(31 downto 0);
       wb_dat_o   : out std_logic_vector(31 downto 0);
       wb_cyc_i   : in  std_logic;
@@ -200,6 +201,21 @@ architecture rtl of wr_d3s_adc is
       );
   end component;
 
+  component gc_frequency_meter is
+    generic(
+      g_with_internal_timebase : boolean := true;
+      g_clk_sys_freq           : integer;
+      g_counter_bits           : integer := 32);
+    port(
+      clk_sys_i    : in  std_logic;
+      clk_in_i     : in  std_logic;
+      rst_n_i      : in  std_logic;
+      pps_p1_i     : in  std_logic;
+      freq_o       : out std_logic_vector(g_counter_bits-1 downto 0);
+      freq_valid_o : out std_logic
+      );
+  end component;
+
     component chipscope_ila
     port (
       CONTROL : inout std_logic_vector(35 downto 0);
@@ -291,6 +307,9 @@ signal acq_trig : std_logic;
   signal rl_state : std_logic_vector(15 downto 0);
   
   signal acq_start : std_logic;  -- signal to daisy chain the acq_buffers
+  
+  signal wr_freq : std_logic_vector(31 downto 0);
+  signal wr_freq_valid : std_logic;
   
   -- signal enc_fifo_count : std_logic_vector(13 downto 0);
 
@@ -414,7 +433,7 @@ begin
     port map (
       rst_n_i    => rst_n_sys_i,
       clk_sys_i  => clk_sys_i,
-      wb_adr_i   => cnx_out(0).adr(5 downto 2),
+      wb_adr_i   => cnx_out(0).adr(6 downto 2),
       wb_dat_i   => cnx_out(0).dat,
       wb_dat_o   => cnx_in(0).dat,
       wb_cyc_i   => cnx_out(0).cyc,
@@ -685,8 +704,19 @@ begin
   enc_started_o  <= regs_out.cr_enable_o;
   -- enc_fifo_count <= regs_out.d3s_adc_usedw_int;  -- Not exported
 
-
-
+  U_Mon_wr_clk_freq: gc_frequency_meter 
+    generic map(
+      g_with_internal_timebase => true,
+      g_clk_sys_freq           => 62500000,  --only taken into account if internal_timebase=true
+      g_counter_bits           => 32)
+    port map(
+      clk_sys_i    =>  clk_sys_i,
+      clk_in_i     =>  clk_wr,
+      rst_n_i      =>  rst_n_wr,
+      pps_p1_i     =>  wr_pps_i,   -- only taken into account if internal_timebase=false
+      freq_o       =>  regs_in.wr_freq_meter_i,
+      freq_valid_o =>  open );  -- indicates when the synchronizer is ready 
+  
   u_mon_adc_clock : process(clk_wr)
   begin
     if rising_edge(clk_wr) then
