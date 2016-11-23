@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2016-11-21
+-- Last update: 2016-11-22
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -410,9 +410,9 @@ architecture rtl of spec_node_template is
   signal clk_cpu         : std_logic;
   signal clk_dmtd         : std_logic;
 
-  signal local_reset_n : std_logic;
-  signal wrn_irq       : std_logic;
-
+  signal local_reset_n     : std_logic;
+  signal wrn_irq           : std_logic;
+  signal rst_multiboot     : std_logic;
 
   signal pins : std_logic_vector(31 downto 0);
 
@@ -487,23 +487,32 @@ begin
       rst_n_o          => local_reset_n);
 
 
+  U_Multiboot_Rst: gc_sync_ffs
+    port map (
+      clk_i    => clk_multiboot,
+      rst_n_i  => '1',
+      data_i   => local_reset_n,
+      synced_o => rst_multiboot,
+      npulse_o => open,
+      ppulse_o => open);
+
   U_CC: xwb_clock_crossing port map (
       -- Slave control port
       slave_clk_i    => clk_sys,
       slave_rst_n_i  => local_reset_n,
-      slave_i      => cnx_master_out(c_SLAVE_FLASH),
-      slave_o      => cnx_master_in(c_SLAVE_FLASH),
+      slave_i        => cnx_master_out(c_SLAVE_FLASH),
+      slave_o        => cnx_master_in(c_SLAVE_FLASH),
       -- Master reader port
       master_clk_i   => clk_multiboot,
-      master_rst_n_i => local_reset_n,
+      master_rst_n_i => rst_multiboot,
       master_i       => wb_from_multiboot,
       master_o       => wb_to_multiboot
 	);
 
   U_Flash : xwb_xil_multiboot
     port map (
-      clk_i  => clk_multiboot,
-      rst_n_i    => local_reset_n,
+      clk_i      => clk_multiboot,
+      rst_n_i    => rst_multiboot,
       wbs_i      => wb_to_multiboot,
       wbs_o      => wb_from_multiboot,
       spi_cs_n_o => spi_cs_n_o,
