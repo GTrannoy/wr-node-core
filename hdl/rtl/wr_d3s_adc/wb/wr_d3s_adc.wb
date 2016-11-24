@@ -192,41 +192,9 @@ peripheral {
 
 	 };
 
-	 reg {
-			name = "LT RL Error min";
-			prefix = "LT_RL_ERR_MIN";
-
-			field {
-				 name = "MinError";
-				 description = "Lower error bound (negative) for phase error for the compression algorithm";
-				 type = SLV;
-				 size = 32;
-				 access_dev = READ_ONLY;
-				 access_bus = READ_WRITE;
-				 clock = "clk_wr_i";
-			};
-
-	 };
-	 
-     reg {
-			name = "LT RL Error max";
-			prefix = "LT_RL_ERR_MAX";
-
-			field {
-				 name = "MaxError";
-				 description = "Upper error bound (positive) for phase error for the compression algorithm";
-				 type = SLV;
-				 size = 32;
-				 access_dev = READ_ONLY;
-				 access_bus = READ_WRITE;
-				 clock = "clk_wr_i";
-			};
-
-	 };
-
-     reg {
-			name = "ST RL Error min";
-			prefix = "ST_RL_ERR_MIN";
+	  reg {
+			name = "Error min";
+			prefix = "RL_ERR_MIN";
 
 			field {
 				 name = "MinError";
@@ -240,8 +208,8 @@ peripheral {
 
 	 };
 	 reg {
-			name = "ST RL Error max";
-			prefix = "ST_RL_ERR_MAX";
+			name = "Error max";
+			prefix = "RL_ERR_MAX";
 
 			field {
 				 name = "MaxError";
@@ -271,6 +239,39 @@ peripheral {
 
 	 };
 
+
+	 reg {
+			name = "Transient threshold (phase)";
+			prefix = "TRANSIENT_THRESHOLD_PHASE";
+
+			field {
+				 name = "Phase";
+				 description = "";
+				 type = SLV;
+				 size = 16;
+				 access_dev = READ_ONLY;
+				 access_bus = READ_WRITE;
+				 clock = "clk_wr_i";
+			};
+
+	 };
+
+ reg {
+			name = "Transient threshold (number of samples)";
+			prefix = "TRANSIENT_THRESHOLD_COUNT";
+
+			field {
+				 name = "Count";
+				 description = "";
+				 type = SLV;
+				 size = 6;
+				 access_dev = READ_ONLY;
+				 access_bus = READ_WRITE;
+				 clock = "clk_wr_i";
+			};
+
+	 };
+
      reg {
 			name = "Fixed record count";
 			prefix = "CNT_FIXED";
@@ -286,30 +287,13 @@ peripheral {
 			};
 
 	 };
-
-     reg {
-			name = "LT Run Length record count";
-			prefix = "LT_CNT_RL";
-
-			field {
-				 name = "Count";
-				 description = "Number of LT run length records produced by the compression engine.";
-				 type = SLV;
-				 size = 32;
-				 access_dev = WRITE_ONLY;
-				 access_bus = READ_ONLY;
-				 clock = "clk_wr_i";
-			};
-
-	 };
-
-     reg {
-			name = "ST Run Length record count";
-			prefix = "ST_CNT_RL";
+	reg {
+			name = "Run Length record count";
+			prefix = "CNT_RL";
 
 			field {
 				 name = "Count";
-				 description = "Number of run ST length records produced by the compression engine.";
+				 description = "Number of run length records produced by the compression engine.";
 				 type = SLV;
 				 size = 32;
 				 access_dev = WRITE_ONLY;

@@ -12,15 +12,16 @@ entity d3s_phase_encoder is
 
     adc_data_i : in std_logic_vector(13 downto 0);
 
+    adc_dphase_o  : out std_logic_vector(15 downto 0);
     raw_phase_o   : out std_logic_vector(15 downto 0);
     raw_hp_data_o : out std_logic_vector(15 downto 0);
 
-    r_max_run_len_i  : in  std_logic_vector(15 downto 0);
-    r_max_error_i    : in  std_logic_vector(22 downto 0);
-    r_min_error_i    : in  std_logic_vector(22 downto 0);
+    r_max_run_len_i               : in  std_logic_vector(15 downto 0);
+    r_max_error_i                 : in  std_logic_vector(22 downto 0);
+    r_min_error_i                 : in  std_logic_vector(22 downto 0);
     r_transient_threshold_phase_i : in  std_logic_vector(15 downto 0);
-    r_transient_threshold_count_i : in std_logic_vector(5 downto 0);
-    r_record_count_o : out std_logic_vector(31 downto 0);
+    r_transient_threshold_count_i : in  std_logic_vector(5 downto 0);
+    r_record_count_o              : out std_logic_vector(31 downto 0);
 
 
     fifo_en_i   : in  std_logic;
@@ -150,6 +151,7 @@ architecture rtl of d3s_phase_encoder is
 
   signal rl_phase, transient_detect_phase : std_logic_vector(15 downto 0);
   signal transient_theshold_hit           : std_logic_vector(c_transient_detect_window-1 downto 0);
+  signal transient_threshold_cnt           : unsigned(7 downto 0);
   signal transient_found                  : std_logic;
   signal transient_count                  : unsigned(5 downto 0);
 
@@ -357,19 +359,27 @@ begin
   p_detect_transients : process(clk_i)
   begin
     if rising_edge(clk_i) then
-      if rst_n_i = '0' then
+      if rst_n_i = '0' or fifo_en_i = '0' then
         transient_theshold_hit <= (others => '0');
         transient_found        <= '0';
+        transient_threshold_cnt <= (others => '0');
       else
         if unsigned(transient_detect_phase) > unsigned(r_transient_threshold_phase_i) then
+          if transient_theshold_hit(c_transient_detect_window-1) = '0' then
+            transient_threshold_cnt <= transient_threshold_cnt + 1;
+          end if;
           transient_theshold_hit(0) <= '1';
         else
+          if transient_theshold_hit(c_transient_detect_window-1) = '1' then
+            transient_threshold_cnt <= transient_threshold_cnt - 1;
+          end if;
+
           transient_theshold_hit(0) <= '0';
         end if;
 
         transient_theshold_hit(c_transient_detect_window-1 downto 1) <= transient_theshold_hit(c_transient_detect_window-2 downto 0);
 
-        if (f_count_ones(transient_theshold_hit) >= to_integer(unsigned(r_transient_threshold_count_i))) then
+        if (transient_threshold_cnt > unsigned(r_transient_threshold_count_i)) then
           transient_found <= '1';
         else
           transient_found <= '0';
@@ -557,13 +567,13 @@ begin
             transient_integ <= transient_integ + adc_dphase;
 
             if (transient_count = c_transient_detect_window-1) then
-              c1.payload(31)           <= '1';
-              c1.payload(18 downto 0)  <= std_logic_vector(resize(transient_integ sll 1, 19));
+              c1.payload(31)          <= '1';
+              c1.payload(18 downto 0) <= std_logic_vector(resize(transient_integ sll 1, 19));
 
               report "Transient: " & integer'image(to_integer(transient_integ sll 1));
               c1.payload(30 downto 19) <= std_logic_vector(to_unsigned(c_transient_detect_window, 12));
               c1.valid                 <= '1';
-              rl_state <= IDLE;
+              rl_state                 <= IDLE;
               
             end if;
             

@@ -257,20 +257,23 @@ class PhaseData;
    endfunction // sample_at
 
    
-   function int compare ( PhaseData other, real max_allowed_error );
+   function int compare ( PhaseData other, real max_allowed_error, string filename );
       
       int st_max = max ( other.start_time, start_time );
       int i;
       real err_max = 0.0;
    
       int max_samples = min ( samples.size(), other.samples.size() )  - st_max;
-
+      int f = $fopen(filename,"w");
+      
       //$display("start_time %d max %d", st_max, max_samples);
 
 //      max_samples = 100;
       
 
    //   max_samples = st_max + 100;
+
+      
       
       for(i=st_max;i<max_samples;i++)
 	begin
@@ -292,12 +295,14 @@ class PhaseData;
 	     err_max = err_deg;
 	   
 	   
+	   $fdisplay(f,"%d %d %d", sample_at(i), other.sample_at(i), err);
 	   
 //	   $display("%d %d %d", sample_at(i), other.sample_at(i), delta );
 	   
 	end
   
       $display("compared %d samples, max error = %.3f deg", max_samples-st_max, err_max);
+      $fclose(f);
       
       return (err_max > max_allowed_error ? 1 : 0);
       
@@ -655,10 +660,10 @@ module main;
       $display ("Starting DDS Master");
       
       
-      acc.write(`ADDR_D3S_LT_RL_ERR_MIN, -max_err);
-      acc.write(`ADDR_D3S_LT_RL_ERR_MAX, max_err);
-      acc.write(`ADDR_D3S_ST_RL_ERR_MIN, -max_err);
-      acc.write(`ADDR_D3S_ST_RL_ERR_MAX, max_err);
+      acc.write(`ADDR_D3S_RL_ERR_MIN, -max_err);
+      acc.write(`ADDR_D3S_TRANSIENT_THRESHOLD_PHASE, 50);
+      acc.write(`ADDR_D3S_TRANSIENT_THRESHOLD_COUNT, 6);
+      acc.write(`ADDR_D3S_RL_ERR_MAX, max_err);
       acc.write(`ADDR_D3S_RL_LENGTH_MAX, 4000);
       acc.write(`ADDR_D3S_CR, `D3S_CR_ENABLE);
       
@@ -813,7 +818,7 @@ module main;
 	automatic int size =0;
 	int i, size_m, size_s, size_check;
 	automatic int max_err = 3, err;
-	const int sample_count = 1000;
+	const int sample_count = 50000;
 	int   st;
 	
 	
@@ -835,7 +840,7 @@ module main;
 
 
 	
-	if ( ph_master.compare( ph_check, max_error_deg ) )
+	if ( ph_master.compare( ph_check, max_error_deg, "ms_phase.txt" ) )
 	  $error("master-slave error exceeding the limit (%.1f deg)", max_error_deg);
 	
 
@@ -851,7 +856,7 @@ module main;
 	
 
 	
-	if ( ph_slave.compare( ph_check, 0.0 ) )
+	if ( ph_slave.compare( ph_check, 0.0, "check_phase.txt" ) )
 	  $error("slave and check samples not equal, something wrong with the decompressor!");
 	
 
@@ -859,7 +864,6 @@ module main;
 	 //  $display("%d %d %d", ph_slave.sample_at(i), ph_check.sample_at(i),ph_slave.sample_at(i)- ph_check.sample_at(i));
 	end
 	
-	forever #100us;
 
 	
 		
@@ -877,14 +881,14 @@ module main;
 	
 	   err_deg = real'(err)	/real'(1<<23) * 360.0;
 	   
-	   $display("%d %d %d %d %.1f [%d %d]" , i, ph_master.samples[i], ph_check.samples[i], err, err_deg, ph_slave.samples[i],err_s);
+	  // $display("%d %d %d %d %.1f [%d %d]" , i, ph_master.samples[i], ph_check.samples[i], err, err_deg, ph_slave.samples[i],err_s);
 	   $fdisplay(f, "%d %d %d %d %.1f [%d]", i, ph_master.samples[i], ph_check.samples[i], err,err_deg, err_s);
 
 	   if(err_deg < 0)
 	     err_deg = -err_deg;
 	   
-	   if(err_deg > max_error_deg)
-	     $display("Error too big!");
+	   //if(err_deg > max_error_deg)
+	    // $display("Error too big!");
 	    
 	   
 	   if((err > 0 ? err : -err) > max_err)
