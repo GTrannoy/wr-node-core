@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2016-04-15
+-- Last update: 2016-12-07
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -76,34 +76,34 @@ package spec_node_pkg is
 
       -- general purpose interface
       gpio       : inout std_logic_vector(1 downto 0);  -- gpio[0] -> gn4124 gpio8
-                                                        -- gpio[1] -> gn4124 gpio9
-      -- pcie to local [inbound data] - rx
-      p2l_rdy    : out   std_logic;     -- rx buffer full flag
-      p2l_clkn   : in    std_logic;     -- receiver source synchronous clock-
-      p2l_clkp  : in    std_logic;     -- receiver source synchronous clock+
-      p2l_data  : in    std_logic_vector(15 downto 0);  -- parallel receive data
-      p2l_dframe : in    std_logic;     -- receive frame
-      p2l_valid  : in    std_logic;     -- receive data valid
-
-      -- inbound buffer request/status
-      p_wr_req : in  std_logic_vector(1 downto 0);  -- pcie write request
-      p_wr_rdy : out std_logic_vector(1 downto 0);  -- pcie write ready
-      rx_error : out std_logic;                     -- receive error
-
-      -- local to parallel [outbound data] - tx
-      l2p_data   : out std_logic_vector(15 downto 0);  -- parallel transmit data
-      l2p_dframe : out std_logic;       -- transmit data frame
-      l2p_valid  : out std_logic;       -- transmit data valid
-      l2p_clkn   : out std_logic;  -- transmitter source synchronous clock-
-      l2p_clkp   : out std_logic;  -- transmitter source synchronous clock+
-      l2p_edb    : out std_logic;       -- packet termination and discard
-
-      -- outbound buffer status
-      l2p_rdy    : in std_logic;        -- tx buffer full flag
-      l_wr_rdy   : in std_logic_vector(1 downto 0);  -- local-to-pcie write
-      p_rd_d_rdy : in std_logic_vector(1 downto 0);  -- pcie-to-local read response data ready
-      tx_error   : in std_logic;        -- transmit error
-      vc_rdy    : in std_logic_vector(1 downto 0);  -- channel ready
+--                                                        -- gpio[1] -> gn4124 gpio9
+--      -- pcie to local [inbound data] - rx
+--      p2l_rdy    : out   std_logic;     -- rx buffer full flag
+--      p2l_clkn   : in    std_logic;     -- receiver source synchronous clock-
+--      p2l_clkp  : in    std_logic;     -- receiver source synchronous clock+
+--      p2l_data  : in    std_logic_vector(15 downto 0);  -- parallel receive data
+--      p2l_dframe : in    std_logic;     -- receive frame
+--      p2l_valid  : in    std_logic;     -- receive data valid
+--
+--      -- inbound buffer request/status
+--      p_wr_req : in  std_logic_vector(1 downto 0);  -- pcie write request
+--      p_wr_rdy : out std_logic_vector(1 downto 0);  -- pcie write ready
+--      rx_error : out std_logic;                     -- receive error
+--
+--      -- local to parallel [outbound data] - tx
+--      l2p_data   : out std_logic_vector(15 downto 0);  -- parallel transmit data
+--      l2p_dframe : out std_logic;       -- transmit data frame
+--      l2p_valid  : out std_logic;       -- transmit data valid
+--      l2p_clkn   : out std_logic;  -- transmitter source synchronous clock-
+--      l2p_clkp   : out std_logic;  -- transmitter source synchronous clock+
+--      l2p_edb    : out std_logic;       -- packet termination and discard
+--
+--      -- outbound buffer status
+--      l2p_rdy    : in std_logic;        -- tx buffer full flag
+--      l_wr_rdy   : in std_logic_vector(1 downto 0);  -- local-to-pcie write
+--      p_rd_d_rdy : in std_logic_vector(1 downto 0);  -- pcie-to-local read response data ready
+--      tx_error   : in std_logic;        -- transmit error
+--      vc_rdy    : in std_logic_vector(1 downto 0);  -- channel ready
 
       -- front panel leds
       led_red   : out std_logic;

@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2016-11-22
+-- Last update: 2016-12-07
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -114,33 +114,33 @@ entity spec_node_template is
       -- general purpose interface
       gpio       : inout std_logic_vector(1 downto 0);  -- gpio[0] -> gn4124 gpio8
                                         -- gpio[1] -> gn4124 gpio9
-      -- pcie to local [inbound data] - rx
-      p2l_rdy    : out   std_logic;     -- rx buffer full flag
-      p2l_clkn   : in    std_logic;     -- receiver source synchronous clock-
-      p2l_clkp  : in    std_logic;     -- receiver source synchronous clock+
-      p2l_data  : in    std_logic_vector(15 downto 0);  -- parallel receive data
-      p2l_dframe : in    std_logic;     -- receive frame
-      p2l_valid  : in    std_logic;     -- receive data valid
-
-      -- inbound buffer request/status
-      p_wr_req : in  std_logic_vector(1 downto 0);  -- pcie write request
-      p_wr_rdy : out std_logic_vector(1 downto 0);  -- pcie write ready
-      rx_error : out std_logic;                     -- receive error
-
-      -- local to parallel [outbound data] - tx
-      l2p_data   : out std_logic_vector(15 downto 0);  -- parallel transmit data
-      l2p_dframe : out std_logic;       -- transmit data frame
-      l2p_valid  : out std_logic;       -- transmit data valid
-      l2p_clkn   : out std_logic;  -- transmitter source synchronous clock-
-      l2p_clkp   : out std_logic;  -- transmitter source synchronous clock+
-      l2p_edb    : out std_logic;       -- packet termination and discard
-
-      -- outbound buffer status
-      l2p_rdy    : in std_logic;        -- tx buffer full flag
-      l_wr_rdy   : in std_logic_vector(1 downto 0);  -- local-to-pcie write
-      p_rd_d_rdy : in std_logic_vector(1 downto 0);  -- pcie-to-local read response data ready
-      tx_error   : in std_logic;        -- transmit error
-      vc_rdy    : in std_logic_vector(1 downto 0);  -- channel ready
+--      -- pcie to local [inbound data] - rx
+--      p2l_rdy    : out   std_logic;     -- rx buffer full flag
+--      p2l_clkn   : in    std_logic;     -- receiver source synchronous clock-
+--      p2l_clkp  : in    std_logic;     -- receiver source synchronous clock+
+--      p2l_data  : in    std_logic_vector(15 downto 0);  -- parallel receive data
+--      p2l_dframe : in    std_logic;     -- receive frame
+--      p2l_valid  : in    std_logic;     -- receive data valid
+--
+--      -- inbound buffer request/status
+--      p_wr_req : in  std_logic_vector(1 downto 0);  -- pcie write request
+--      p_wr_rdy : out std_logic_vector(1 downto 0);  -- pcie write ready
+--      rx_error : out std_logic;                     -- receive error
+--
+--      -- local to parallel [outbound data] - tx
+--      l2p_data   : out std_logic_vector(15 downto 0);  -- parallel transmit data
+--      l2p_dframe : out std_logic;       -- transmit data frame
+--      l2p_valid  : out std_logic;       -- transmit data valid
+--      l2p_clkn   : out std_logic;  -- transmitter source synchronous clock-
+--      l2p_clkp   : out std_logic;  -- transmitter source synchronous clock+
+--      l2p_edb    : out std_logic;       -- packet termination and discard
+--
+--      -- outbound buffer status
+--      l2p_rdy    : in std_logic;        -- tx buffer full flag
+--      l_wr_rdy   : in std_logic_vector(1 downto 0);  -- local-to-pcie write
+--      p_rd_d_rdy : in std_logic_vector(1 downto 0);  -- pcie-to-local read response data ready
+--      tx_error   : in std_logic;        -- transmit error
+--      vc_rdy    : in std_logic_vector(1 downto 0);  -- channel ready
 
       -- front panel leds
       led_red   : out std_logic;
@@ -325,10 +325,10 @@ architecture rtl of spec_node_template is
   
 
   constant c_NUM_WB_MASTERS : integer := 5;
-  constant c_NUM_WB_SLAVES  : integer := 2;
+  constant c_NUM_WB_SLAVES  : integer := 1;
 
-  constant c_MASTER_GENNUM    : integer := 0;
-  constant c_MASTER_ETHERBONE : integer := 1;
+--  constant c_MASTER_GENNUM    : integer := 0;
+  constant c_MASTER_ETHERBONE : integer := 0;
 
   constant c_SLAVE_FMC0     : integer := 0;
   constant c_SLAVE_WR_CORE  : integer := 1;
@@ -643,89 +643,89 @@ begin
   -- Gennum core
   -------------------------------------------------------------------------------
 
-  U_GN4124_Core : gn4124_core
-    port map
-    (
-      ---------------------------------------------------------
-      -- Control and status
-      rst_n_a_i => l_rst_n,
-      status_o  => open,
-
-      ---------------------------------------------------------
-      -- P2L Direction
-      --
-      -- Source Sync DDR related signals
-      p2l_clk_p_i  => p2l_clkp,
-      p2l_clk_n_i  => p2l_clkn,
-      p2l_data_i   => p2l_data,
-      p2l_dframe_i => p2l_dframe,
-      p2l_valid_i  => p2l_valid,
-      -- P2L Control
-      p2l_rdy_o    => p2l_rdy,
-      p_wr_req_i   => p_wr_req,
-      p_wr_rdy_o   => p_wr_rdy,
-      rx_error_o   => rx_error,
-      vc_rdy_i     => vc_rdy,
-
-      ---------------------------------------------------------
-      -- L2P Direction
-      ---------------------------------------------------------
-
-      -- Source Sync DDR related signals
-      l2p_clk_p_o  => l2p_clkp,
-      l2p_clk_n_o  => l2p_clkn,
-      l2p_data_o   => l2p_data,
-      l2p_dframe_o => l2p_dframe,
-      l2p_valid_o  => l2p_valid,
-      -- L2P Control
-      l2p_edb_o    => l2p_edb,
-      l2p_rdy_i    => l2p_rdy,
-      l_wr_rdy_i   => l_wr_rdy,
-      p_rd_d_rdy_i => p_rd_d_rdy,
-      tx_error_i   => tx_error,
-
-      ---------------------------------------------------------
-      -- Interrupt interface
-      ---------------------------------------------------------
-      
-      dma_irq_o => open,
-      irq_p_i   => '0',
-      irq_p_o   => open,
-
-      dma_reg_clk_i => clk_sys,
-
-      ---------------------------------------------------------
-      -- CSR wishbone interface (master pipelined)
-      csr_clk_i   => clk_sys,
-      csr_adr_o   => gn_wb_adr,
-      csr_dat_o   => cnx_slave_in(c_MASTER_GENNUM).dat,
-      csr_sel_o   => cnx_slave_in(c_MASTER_GENNUM).sel,
-      csr_stb_o   => cnx_slave_in(c_MASTER_GENNUM).stb,
-      csr_we_o    => cnx_slave_in(c_MASTER_GENNUM).we,
-      csr_cyc_o   => cnx_slave_in(c_MASTER_GENNUM).cyc,
-      csr_dat_i   => cnx_slave_out(c_MASTER_GENNUM).dat,
-      csr_ack_i   => cnx_slave_out(c_MASTER_GENNUM).ack,
-      csr_stall_i => cnx_slave_out(c_MASTER_GENNUM).stall,
-      csr_err_i => cnx_slave_out(c_MASTER_GENNUM).err,
-      csr_rty_i => cnx_slave_out(c_MASTER_GENNUM).rty,
-      csr_int_i => '0',
-		
-      dma_clk_i   => clk_sys,
-      dma_ack_i   => '1',
-      dma_stall_i => '0',
-      dma_err_i => '0',
-      dma_rty_i => '0',
-      dma_dat_i   => (others => '0'),
-      dma_int_i => '0',
-      dma_reg_adr_i => (others => '0'),
-      dma_reg_dat_i => (others => '0'),
-      dma_reg_sel_i => (others => '0'),
-      dma_reg_stb_i => '0',
-      dma_reg_cyc_i => '0',
-      dma_reg_we_i  => '0'
-      );
-
-  cnx_slave_in(c_MASTER_GENNUM).adr <= gn_wb_adr(29 downto 0) & "00";
+--  U_GN4124_Core : gn4124_core
+--    port map
+--    (
+--      ---------------------------------------------------------
+--      -- Control and status
+--      rst_n_a_i => l_rst_n,
+--      status_o  => open,
+--
+--      ---------------------------------------------------------
+--      -- P2L Direction
+--      --
+--      -- Source Sync DDR related signals
+--      p2l_clk_p_i  => p2l_clkp,
+--      p2l_clk_n_i  => p2l_clkn,
+--      p2l_data_i   => p2l_data,
+--      p2l_dframe_i => p2l_dframe,
+--      p2l_valid_i  => p2l_valid,
+--      -- P2L Control
+--      p2l_rdy_o    => p2l_rdy,
+--      p_wr_req_i   => p_wr_req,
+--      p_wr_rdy_o   => p_wr_rdy,
+--      rx_error_o   => rx_error,
+--      vc_rdy_i     => vc_rdy,
+--
+--      ---------------------------------------------------------
+--      -- L2P Direction
+--      ---------------------------------------------------------
+--
+--      -- Source Sync DDR related signals
+--      l2p_clk_p_o  => l2p_clkp,
+--      l2p_clk_n_o  => l2p_clkn,
+--      l2p_data_o   => l2p_data,
+--      l2p_dframe_o => l2p_dframe,
+--      l2p_valid_o  => l2p_valid,
+--      -- L2P Control
+--      l2p_edb_o    => l2p_edb,
+--      l2p_rdy_i    => l2p_rdy,
+--      l_wr_rdy_i   => l_wr_rdy,
+--      p_rd_d_rdy_i => p_rd_d_rdy,
+--      tx_error_i   => tx_error,
+--
+--      ---------------------------------------------------------
+--      -- Interrupt interface
+--      ---------------------------------------------------------
+--      
+--      dma_irq_o => open,
+--      irq_p_i   => '0',
+--      irq_p_o   => open,
+--
+--      dma_reg_clk_i => clk_sys,
+--
+--      ---------------------------------------------------------
+--      -- CSR wishbone interface (master pipelined)
+--      csr_clk_i   => clk_sys,
+--      csr_adr_o   => gn_wb_adr,
+--      csr_dat_o   => cnx_slave_in(c_MASTER_GENNUM).dat,
+--      csr_sel_o   => cnx_slave_in(c_MASTER_GENNUM).sel,
+--      csr_stb_o   => cnx_slave_in(c_MASTER_GENNUM).stb,
+--      csr_we_o    => cnx_slave_in(c_MASTER_GENNUM).we,
+--      csr_cyc_o   => cnx_slave_in(c_MASTER_GENNUM).cyc,
+--      csr_dat_i   => cnx_slave_out(c_MASTER_GENNUM).dat,
+--      csr_ack_i   => cnx_slave_out(c_MASTER_GENNUM).ack,
+--      csr_stall_i => cnx_slave_out(c_MASTER_GENNUM).stall,
+--      csr_err_i => cnx_slave_out(c_MASTER_GENNUM).err,
+--      csr_rty_i => cnx_slave_out(c_MASTER_GENNUM).rty,
+--      csr_int_i => '0',
+--		
+--      dma_clk_i   => clk_sys,
+--      dma_ack_i   => '1',
+--      dma_stall_i => '0',
+--      dma_err_i => '0',
+--      dma_rty_i => '0',
+--      dma_dat_i   => (others => '0'),
+--      dma_int_i => '0',
+--      dma_reg_adr_i => (others => '0'),
+--      dma_reg_dat_i => (others => '0'),
+--      dma_reg_sel_i => (others => '0'),
+--      dma_reg_stb_i => '0',
+--      dma_reg_cyc_i => '0',
+--      dma_reg_we_i  => '0'
+--      );
+--
+--  cnx_slave_in(c_MASTER_GENNUM).adr <= gn_wb_adr(29 downto 0) & "00";
 
   gen_with_wr : if( g_with_white_rabbit ) generate
   
