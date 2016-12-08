@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2016-06-06
+-- Last update: 2016-11-29
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -43,6 +43,20 @@ use work.wishbone_pkg.all;
 
 package wrn_mqueue_pkg is
 
+  type t_mt_stream_sink_in is record
+    data : std_logic_vector(31 downto 0);
+    tag : std_logic_vector(1 downto 0);
+    valid : std_logic;
+    last : std_logic;
+  end record;
+
+  type t_mt_stream_sink_out is record
+    ready : std_logic;
+  end record;
+
+  subtype t_mt_stream_source_in is t_mt_stream_sink_out;
+  subtype t_mt_stream_source_out is t_mt_stream_sink_in;
+    
   type t_wrn_mqueue_slot_config is record
     width   : integer;
     entries : integer;
@@ -69,7 +83,7 @@ package wrn_mqueue_pkg is
       (0, 0), (0, 0),
       (0, 0), (0, 0)),
 
-     ((64, 128), (64, 16),
+     ((128, 16), (128, 16),
       (0, 0), (0, 0),
       (0, 0), (0, 0),
       (0, 0), (0, 0),
@@ -135,7 +149,8 @@ package wrn_mqueue_pkg is
       inb_o         : out t_slot_bus_out;
       outb_i        : in  t_slot_bus_in;
       outb_o        : out t_slot_bus_out;
-      out_discard_i : in  std_logic := '0');
+      out_discard_i : in  std_logic := '0';
+      rmq_swrst_o : out std_logic);
   end component;
 
   component wrn_mqueue_wishbone_slave

@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-07-23
+-- Last update: 2016-11-28
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -54,6 +54,7 @@ entity wrn_mqueue_etherbone_output is
   port (
     clk_i   : in std_logic;
     rst_n_i : in std_logic;
+    rmq_swrst_i : in std_logic;
 
     slots_i : in  t_slot_bus_out_array(0 to g_config.out_slot_count-1);
     slots_o : out t_slot_bus_in_array(0 to g_config.out_slot_count-1);
@@ -67,7 +68,7 @@ entity wrn_mqueue_etherbone_output is
     host_slave_i : in  t_wishbone_slave_in;
     host_slave_o : out t_wishbone_slave_out;
 	 
-	 debug_o : out std_logic_vector(31 downto 0)
+    debug_o : out std_logic_vector(31 downto 0)
     );
 
 end wrn_mqueue_etherbone_output;
@@ -177,13 +178,22 @@ architecture rtl of wrn_mqueue_etherbone_output is
   signal rq_done     : std_logic;
   signal rq_dat_rd : std_logic_vector(31 downto 0);
   signal rq_ready  : std_logic;
+
+  signal rst_n_int : std_logic;
   
 begin  -- rtl
 
+  process(clk_i)
+    begin
+      if rising_edge(clk_i) then
+        rst_n_int <= rst_n_i and not rmq_swrst_i;
+      end if;
+    end process;
+  
   wrn_eb_cycle_gen_1 : wrn_eb_cycle_gen
     port map (
       clk_i      => clk_i,
-      rst_n_i    => rst_n_i,
+      rst_n_i    => rst_n_int,
       rq_adr_i   => rq_adr,
       rq_dat_i   => rq_dat_wr,
       rq_wr_i    => rq_wr,
@@ -202,7 +212,7 @@ begin  -- rtl
   p_arbitrate_slots : process(clk_i)
   begin
     if rising_edge(clk_i) then
-      if rst_n_i = '0' then
+      if rst_n_int = '0' then
         arb_state  <= ARB_IDLE;
         slot_ready <= '0';
         slot_sel   <= (others => '0');
@@ -260,7 +270,7 @@ begin  -- rtl
   p_eb_fsm_seq : process(clk_i)
   begin
     if rising_edge(clk_i) then
-      if rst_n_i = '0' then
+      if rst_n_int = '0' then
         eb_state     <= EB_WAIT_SLOT;
         slot_discard <= '0';
         slot_done    <= '0';

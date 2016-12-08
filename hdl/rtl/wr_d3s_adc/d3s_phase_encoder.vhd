@@ -34,9 +34,10 @@ entity d3s_phase_encoder is
 
     tm_cycles_i : in std_logic_vector(27 downto 0);
 
-    cnt_fixed_o : out std_logic_vector(31 downto 0);
-    cnt_rl_o    : out std_logic_vector(31 downto 0);
-    cnt_ts_o    : out std_logic_vector(31 downto 0)
+    cnt_fixed_o     : out std_logic_vector(31 downto 0);
+    cnt_rl_o        : out std_logic_vector(31 downto 0);
+    cnt_ts_o        : out std_logic_vector(31 downto 0);
+    cnt_transient_o : out std_logic_vector(31 downto 0)
     );
 
 end d3s_phase_encoder;
@@ -146,14 +147,14 @@ architecture rtl of d3s_phase_encoder is
 
   type t_state is (STARTUP, IDLE, RL_SHORT, RL_LONG, TRANSIENT);
 
-  constant c_transient_detect_window_log2 : integer := 4;
+  constant c_transient_detect_window_log2 : integer := 6;
   constant c_transient_detect_window      : integer := 2 ** c_transient_detect_window_log2;
 
   signal rl_phase, transient_detect_phase : std_logic_vector(15 downto 0);
   signal transient_theshold_hit           : std_logic_vector(c_transient_detect_window-1 downto 0);
-  signal transient_threshold_cnt           : unsigned(7 downto 0);
+  signal transient_threshold_cnt          : unsigned(9 downto 0);
   signal transient_found                  : std_logic;
-  signal transient_count                  : unsigned(5 downto 0);
+  signal transient_count                  : unsigned(9 downto 0);
 
   signal err_bound_st_lo : unsigned (22 downto 0);
   signal err_bound_st_hi : unsigned (22 downto 0);
@@ -182,7 +183,7 @@ architecture rtl of d3s_phase_encoder is
   signal ts_report_cnt                              : unsigned(15 downto 0);
   signal err_st_lo, err_st_hi, err_lt_lo, err_lt_hi : signed(22 downto 0);
 
-  signal cnt_fix, cnt_rl, cnt_ts : unsigned(31 downto 0);
+  signal cnt_fix, cnt_rl, cnt_ts, cnt_transient : unsigned(31 downto 0);
 
   signal ddphase_threshold_hit : std_logic;
 
@@ -360,8 +361,8 @@ begin
   begin
     if rising_edge(clk_i) then
       if rst_n_i = '0' or fifo_en_i = '0' then
-        transient_theshold_hit <= (others => '0');
-        transient_found        <= '0';
+        transient_theshold_hit  <= (others => '0');
+        transient_found         <= '0';
         transient_threshold_cnt <= (others => '0');
       else
         if unsigned(transient_detect_phase) > unsigned(r_transient_threshold_phase_i) then
@@ -420,6 +421,7 @@ begin
         c1.valid      <= '0';
         c2.valid      <= '0';
         ts_report_cnt <= to_unsigned(c_TIMESTAMP_REPORT_PERIOD, ts_report_cnt'length);
+        cnt_transient <= (others => '0');
       else
         
         
@@ -451,6 +453,7 @@ begin
 
             if (transient_found = '1') then
               rl_state        <= TRANSIENT;
+              cnt_transient   <= cnt_transient + 1;
               transient_count <= (others => '0');
               transient_integ <= resize(adc_dphase, transient_integ'length);
             elsif (err_lt_bound = '1') then
@@ -568,9 +571,9 @@ begin
 
             if (transient_count = c_transient_detect_window-1) then
               c1.payload(31)          <= '1';
-              c1.payload(18 downto 0) <= std_logic_vector(resize(transient_integ sll 1, 19));
+              c1.payload(18 downto 0) <= std_logic_vector(resize(transient_integ srl 1, 19));
 
-              report "Transient: " & integer'image(to_integer(transient_integ sll 1));
+              report "Transient: " & integer'image(to_integer(transient_integ srl 1));
               c1.payload(30 downto 19) <= std_logic_vector(to_unsigned(c_transient_detect_window, 12));
               c1.valid                 <= '1';
               rl_state                 <= IDLE;
@@ -628,10 +631,10 @@ begin
     end if;
   end process;
 
-  cnt_fixed_o <= std_logic_vector(cnt_fix);
-  cnt_rl_o    <= std_logic_vector(cnt_rl);
-  cnt_ts_o    <= std_logic_vector(cnt_ts);
-
+  cnt_fixed_o     <= std_logic_vector(cnt_fix);
+  cnt_rl_o        <= std_logic_vector(cnt_rl);
+  cnt_ts_o        <= std_logic_vector(cnt_ts);
+  cnt_transient_o <= std_logic_vector(cnt_transient);
 
   fifo_we_o      <= c_out.valid and fifo_en_i;
   fifo_payload_o <= c_out.payload;

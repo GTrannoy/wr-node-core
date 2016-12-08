@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2016-10-21
+-- Last update: 2016-11-29
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -458,15 +458,15 @@ architecture rtl of svec_top is
 
   constant c_rmq_config : t_wrn_mqueue_config :=
     (
-      out_slot_count  => 2,
+      out_slot_count  => 1,
       out_slot_config => (
-        0             => (width => 128, entries => 16),  -- RF stream (CPU0)
+        0             => (width => 128, entries => 64),  -- RF stream (CPU0)
         1             => (width => 128, entries => 16),  -- Events (CPU1)
         others        => (0, 0)),
 
-      in_slot_count  => 2,
+      in_slot_count  => 1,
       in_slot_config => (
-        0            => (width => 128, entries => 16),  -- RF stream (CPU0)
+        0            => (width => 128, entries => 64),  -- RF stream (CPU0)
         1            => (width => 128, entries => 16),  -- Events (CPU1)
         others       => (0, 0)
         )

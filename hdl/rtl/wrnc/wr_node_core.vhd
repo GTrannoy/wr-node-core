@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-08-13
+-- Last update: 2016-11-28
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -57,9 +57,9 @@ entity wr_node_core is
 -- When true, the Remote Message Queue is implemented.
     g_with_rmq          : boolean          := true;
 -- Frequency of clk_sys_i, in Hz
-    g_system_clock_freq : integer := 62500000;
+    g_system_clock_freq : integer          := 62500000;
 -- Enables/disables WR support
-    g_with_white_rabbit : boolean := false
+    g_with_white_rabbit : boolean          := false
     );
 
   port (
@@ -88,6 +88,8 @@ entity wr_node_core is
 
     gpio_o : out std_logic_vector(31 downto 0);
     gpio_i : in  std_logic_vector(31 downto 0);
+
+    rmq_swrst_o : out std_logic;
 
     host_irq_o      : out std_logic;
     debug_msg_irq_o : out std_logic
@@ -168,6 +170,7 @@ architecture rtl of wr_node_core is
     port (
       clk_i        : in  std_logic;
       rst_n_i      : in  std_logic;
+      rmq_swrst_o : out std_logic;
       si_slave_i   : in  t_wishbone_slave_in;
       si_slave_o   : out t_wishbone_slave_out;
       ebm_master_o : out t_wishbone_master_out;
@@ -175,8 +178,8 @@ architecture rtl of wr_node_core is
       ebs_slave_o  : out t_wishbone_slave_out;
       ebs_slave_i  : in  t_wishbone_slave_in  := cc_dummy_slave_in;
       rmq_status_o : out std_logic_vector(15 downto 0);
-  	 debug_o: out std_logic_vector(31 downto 0)
-);
+      debug_o      : out std_logic_vector(31 downto 0)
+      );
   end component;
 
   component wrn_shared_mem is
@@ -217,7 +220,7 @@ architecture rtl of wr_node_core is
     port (
       CONTROL0 : inout std_logic_vector (35 downto 0));
   end component;
-  
+
   ------------------------------------------
   --        CONSTANTS DECLARATION  
   ------------------------------------------
@@ -257,19 +260,19 @@ architecture rtl of wr_node_core is
 
   constant c_hac_wishbone_masters : integer := 3;
   constant c_hac_master_hmq       : integer := 0;
-  constant c_hac_master_cpu_csr       : integer := 1;
-  constant c_hac_master_si      : integer := 2;
+  constant c_hac_master_cpu_csr   : integer := 1;
+  constant c_hac_master_si        : integer := 2;
 
   constant c_hac_address : t_wishbone_address_array(c_hac_wishbone_masters-1 downto 0) := (
-    c_hac_master_hmq  => x"00000000",   -- Host MQ
-    c_hac_master_cpu_csr  => x"00010000",    -- CPU CSR
-    c_hac_master_si => x"00200000"    -- SMEM
+    c_hac_master_hmq     => x"00000000",  -- Host MQ
+    c_hac_master_cpu_csr => x"00010000",  -- CPU CSR
+    c_hac_master_si      => x"00200000"   -- SMEM
     );
 
   constant c_hac_mask : t_wishbone_address_array(c_hac_wishbone_masters-1 downto 0) := (
-    c_hac_master_hmq  => x"003f0000",   -- Host MQ
-    c_hac_master_cpu_csr => x"003f0000",    -- CPU CSR
-    c_hac_master_si => x"00300000"    -- SMEM
+    c_hac_master_hmq     => x"003f0000",  -- Host MQ
+    c_hac_master_cpu_csr => x"003f0000",  -- CPU CSR
+    c_hac_master_si      => x"00300000"   -- SMEM
     );
 
   signal hac_master_out : t_wishbone_master_out_array(c_hac_wishbone_masters-1 downto 0);
@@ -335,14 +338,14 @@ architecture rtl of wr_node_core is
 
   signal ebm_master : t_wishbone_master_out;
   --  Signals for chip Scope  -----------------
-  signal CONTROL : std_logic_vector(35 downto 0);
-  signal CLK     : std_logic;
-  signal TRIG0   : std_logic_vector(31 downto 0);
-  signal TRIG1   : std_logic_vector(31 downto 0);
-  signal TRIG2   : std_logic_vector(31 downto 0);
-  signal TRIG3   : std_logic_vector(31 downto 0);
+  signal CONTROL    : std_logic_vector(35 downto 0);
+  signal CLK        : std_logic;
+  signal TRIG0      : std_logic_vector(31 downto 0);
+  signal TRIG1      : std_logic_vector(31 downto 0);
+  signal TRIG2      : std_logic_vector(31 downto 0);
+  signal TRIG3      : std_logic_vector(31 downto 0);
   ---------------------------------------------
-  
+
   ------------------------------------------
   --        FUNCTIONS DECLARATION 
   ------------------------------------------
@@ -520,6 +523,7 @@ begin  -- rtl
       port map (
         clk_i        => clk_i,
         rst_n_i      => rst_n_i,
+        rmq_swrst_o  => rmq_swrst_o,
         si_slave_i   => si_master_out(c_si_master_rmq),
         si_slave_o   => si_master_in(c_si_master_rmq),
         ebm_master_o => ebm_master,
@@ -527,10 +531,10 @@ begin  -- rtl
         ebs_slave_o  => ebs_slave_o,
         ebs_slave_i  => ebs_slave_i,
         rmq_status_o => rmq_status,
-		  debug_o => trig2);
-  
+        debug_o      => trig2);
+
     ebm_master_o <= ebm_master;
-	 
+    
   end generate gen_with_rmq;
 
   gen_without_rmq : if not g_with_rmq generate
@@ -590,16 +594,16 @@ begin  -- rtl
   cpu_csr_towb.dbg_poll_ready_i(g_config.cpu_count-1 downto 0) <= cpu_dbg_drdy;
 
   gpio_o <= f_reduce_or(cpu_gpio_out);
-  
+
   --------------------------------------------
   --         Chip Scope
   --------------------------------------------
 
-  chipscope_icon_1: chipscope_icon
+  chipscope_icon_1 : chipscope_icon
     port map (
       CONTROL0 => CONTROL);
 
-  chipscope_ila_1: chipscope_ila
+  chipscope_ila_1 : chipscope_ila
     port map (
       CONTROL => CONTROL,
       CLK     => clk_i,
@@ -607,24 +611,24 @@ begin  -- rtl
       TRIG1   => TRIG1,
       TRIG2   => TRIG2,
       TRIG3   => TRIG3);
+
+  TRIG0(15 downto 0) <= rmq_status;     -- std_logic_vector(15 downto 0)
+
+  TRIG0(16) <= ebm_master.stb;
+  TRIG0(17) <= ebm_master.we;
+  TRIG0(18) <= ebm_master.cyc;
+
+  TRIG0(22) <= ebm_master_i.ack;
+  TRIG0(23) <= ebm_master_i.stall;
+  TRIG0(24) <= ebm_master_i.err;
+  TRIG0(25) <= ebm_master_i.rty;
+  TRIG0(26) <= ebm_master_i.int;
+
+  TRIG1(31 downto 0) <= ebm_master.dat(31 downto 0);  -- t_wishbone_master_out
+  TRIG3(31 downto 0) <= ebm_master.adr(31 downto 0);  -- t_wishbone_master_out
   
-  TRIG0(15 downto 0) <= rmq_status;  -- std_logic_vector(15 downto 0)
   
-  TRIG0(16) <= ebm_master.stb; 
-  TRIG0(17) <= ebm_master.we; 
-  TRIG0(18) <= ebm_master.cyc; 
   
-  TRIG0(22) <= ebm_master_i.ack; 
-  TRIG0(23) <= ebm_master_i.stall; 
-  TRIG0(24) <= ebm_master_i.err; 
-  TRIG0(25) <= ebm_master_i.rty; 
-  TRIG0(26) <= ebm_master_i.int; 
-  
-  TRIG1(31 downto 0)  <=  ebm_master.dat(31 downto 0); -- t_wishbone_master_out
-  TRIG3(31 downto 0)  <=  ebm_master.adr(31 downto 0); -- t_wishbone_master_out
-  
-    
-	 
   
 end rtl;
 

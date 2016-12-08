@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2016-05-31
+-- Last update: 2016-11-29
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -60,9 +60,12 @@ entity wrn_mqueue_remote is
     ebs_slave_o : out t_wishbone_slave_out;
     ebs_slave_i : in  t_wishbone_slave_in := cc_dummy_slave_in;
 
+    -- software reset for etherbone
+    rmq_swrst_o : out std_logic;
+    
     rmq_status_o : out std_logic_vector(15 downto 0);
 	 
-	 debug_o: out std_logic_vector(31 downto 0)
+    debug_o: out std_logic_vector(31 downto 0)
     );
 
 end wrn_mqueue_remote;
@@ -74,6 +77,7 @@ architecture rtl of wrn_mqueue_remote is
       g_config : t_wrn_mqueue_config);
     port (
       clk_i        : in  std_logic;
+      rmq_swrst_i : in std_logic;
       rst_n_i      : in  std_logic;
       slots_i      : in  t_slot_bus_out_array(0 to g_config.out_slot_count-1);
       slots_o      : out t_slot_bus_in_array(0 to g_config.out_slot_count-1);
@@ -110,9 +114,12 @@ architecture rtl of wrn_mqueue_remote is
   signal eb_outgoing_discard : std_logic_vector(g_config.out_slot_count-1 downto 0);
 
   signal rmq_status : std_logic_vector(g_config.in_slot_count-1 downto 0);
+  signal rmq_swrst_vec: std_logic_vector(g_config.out_slot_count-1 downto 0);
   
 begin  -- rtl
 
+  rmq_swrst_o <= rmq_swrst_vec(0);
+  
   U_SI_Wishbone_Slave : wrn_mqueue_wishbone_slave
     generic map (
       g_with_gcr => true,
@@ -136,8 +143,8 @@ begin  -- rtl
 
     U_Out_SlotX : wrn_mqueue_slot
       generic map (
-        g_entries => g_config.in_slot_config(i).entries,
-        g_width   => g_config.in_slot_config(i).width)
+        g_entries => g_config.out_slot_config(i).entries,
+        g_width   => g_config.out_slot_config(i).width)
       port map (
         clk_i         => clk_i,
         rst_n_i       => rst_n_i,
@@ -146,7 +153,8 @@ begin  -- rtl
         inb_o         => si_outgoing_out(i),
         outb_i        => eb_outgoing_in(i),
         outb_o        => eb_outgoing_out(i),
-        out_discard_i => eb_outgoing_discard(i));
+        out_discard_i => eb_outgoing_discard(i),
+        rmq_swrst_o => rmq_swrst_vec(i));
 
   end generate gen_outgoing_slots;
 
@@ -194,6 +202,7 @@ begin  -- rtl
     port map (
       clk_i        => clk_i,
       rst_n_i      => rst_n_i,
+      rmq_swrst_i => rmq_swrst_vec(0),
       slots_i      => eb_outgoing_out,
       slots_o      => eb_outgoing_in,
       stat_i       => outgoing_stat,

@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2016-09-19
+-- Last update: 2016-11-28
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -60,6 +60,8 @@ entity wrn_mqueue_slot is
     outb_i : in  t_slot_bus_in;
     outb_o : out t_slot_bus_out;
 
+    rmq_swrst_o : out std_logic;
+    
     out_discard_i : in std_logic := '0'
     );
 
@@ -145,6 +147,8 @@ begin  -- rtl
   out_discard <= out_discard_i or (out_cmd_wr and outb_i.dat(27));
   out_purge   <= out_cmd_wr and outb_i.dat(25);
 
+  rmq_swrst_o <= out_purge;
+  
   p_read_status : process(clk_i)
   begin
     if rising_edge(clk_i) then

@@ -616,7 +616,8 @@ module main;
    PhaseData ph_master = new;
    PhaseData ph_slave = new;
    PhaseData ph_check = new;
-    
+   int rec_count = 0;
+       
    // store whatever goes to the Phase Encoder's FIFO also to the ph_unc object.
    always @(posedge clk_wr)
      if(DUT_M.U_Phase_Enc.fifo_en_i)
@@ -630,7 +631,7 @@ module main;
 	      ph_master.add(DUT_M.U_Phase_Enc.rl_phase_ext);
    end
    
-	  
+
    // store whatever goes to the Phase Encoder's FIFO also to the ph_unc object.
    always @(posedge clk_wr)
      if(DUT_S.U_Phase_Dec.s3_valid)
@@ -658,11 +659,12 @@ module main;
       #5us;
 
       $display ("Starting DDS Master");
+
       
       
       acc.write(`ADDR_D3S_RL_ERR_MIN, -max_err);
       acc.write(`ADDR_D3S_TRANSIENT_THRESHOLD_PHASE, 50);
-      acc.write(`ADDR_D3S_TRANSIENT_THRESHOLD_COUNT, 6);
+      acc.write(`ADDR_D3S_TRANSIENT_THRESHOLD_COUNT, 3);
       acc.write(`ADDR_D3S_RL_ERR_MAX, max_err);
       acc.write(`ADDR_D3S_RL_LENGTH_MAX, 4000);
       acc.write(`ADDR_D3S_CR, `D3S_CR_ENABLE);
@@ -715,7 +717,15 @@ module main;
 		        begin
 		          last_ts_cycles = payload & 'hfffffff;
 		          compr_records.push_back(rec);
-
+			   rec_count++;
+			   
+			   acc.read(`ADDR_D3S_CNT_FIXED, rv);
+			   $display("Stat: fix = %d", rv);
+			   acc.read(`ADDR_D3S_CNT_RL, rv);
+			   $display("Stat: rl = %d", rv);
+			   acc.read(`ADDR_D3S_CNT_TRANSIENT, rv);
+			   $display("Stat: transient = %d", rv);
+			   
 //		     $display("report timestamp: %x", last_ts_cycles);
 		        end
 		
@@ -735,6 +745,8 @@ module main;
 //		     $display("FFF phase %d payload %x", rec.phase, payload);
 
 			           compr_records.push_back(rec);
+			     			   rec_count++;
+
 			           ph_check.uncompress(rec);
 		          end  
 		        end
@@ -754,6 +766,8 @@ module main;
         			  
         			        n_records++;
         			        compr_records.push_back(rec);
+							   rec_count++;
+
         			        ph_check.uncompress(rec);
         		     end
         	   end
@@ -863,6 +877,8 @@ module main;
 	for(i=0; i<size ;i++) begin
 	 //  $display("%d %d %d", ph_slave.sample_at(i), ph_check.sample_at(i),ph_slave.sample_at(i)- ph_check.sample_at(i));
 	end
+
+	$display("Total record count: %d", rec_count);
 	
 
 	

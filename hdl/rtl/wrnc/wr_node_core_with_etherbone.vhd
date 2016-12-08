@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-08-26
+-- Last update: 2016-11-28
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -117,11 +117,17 @@ architecture rtl of wr_node_core_with_etherbone is
   signal wr_ebs_src_out : t_wrf_source_out;
   signal wr_ebs_src_in  : t_wrf_source_in;
 
-  signal rst_net_n : std_logic;
+  signal rmq_swrst, rst_eb_n: std_logic;
 begin
 
 
-  rst_net_n <= rst_n_i and rst_net_n_i;
+  process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      rst_eb_n <= rst_n_i and rst_net_n_i and (not rmq_swrst);
+    end if;
+  end process;
+    
 
   U_Config_XBar : xwb_crossbar
     generic map (
@@ -163,7 +169,7 @@ begin
       g_sdb_address => x"00000000c0000000")
     port map (
       clk_i       => clk_i,
-      nRst_i      => rst_net_n,
+      nRst_i      => rst_eb_n,
       src_o       => wr_ebs_src_out,
       src_i       => wr_ebs_src_in,
       snk_o       => wr_snk_o,
@@ -192,7 +198,7 @@ begin
       g_mtu         => 1024)
     port map (
       clk_i   => clk_i,
-      rst_n_i => rst_net_n,
+      rst_n_i => rst_eb_n,
       slave_i => ebm_mux_out,
       slave_o => ebm_mux_in,
       src_i   => wr_src_i,
@@ -207,6 +213,7 @@ begin
     port map (
       clk_i        => clk_i,
       clk_cpu_i => clk_cpu_i,
+      rmq_swrst_o => rmq_swrst,
       rst_n_i      => rst_n_i,
       dp_master_o  => dp_master_o,
       dp_master_i  => dp_master_i,
@@ -223,6 +230,7 @@ begin
       tm_i         => tm_i,
       gpio_i       => gpio_i,
       gpio_o       => gpio_o,
+
       debug_msg_irq_o => debug_msg_irq_o);
 
 end rtl;

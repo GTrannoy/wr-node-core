@@ -36,41 +36,29 @@ void _exception_entry(int eid)
   for(;;);
 }
 
+SMEM int dupa;
+
 main()
 {   
   volatile int n = 0;
 
-  puts("TEst\n");
-  for(;;)
-  {
-//    dp_writel(1, 0x1008);
-    volatile int x = dp_readl(0x1008);
-    puts("read\n");
-  }
-#if 0
-  asm volatile("nop\nnop\nnop");
+  volatile void *ptr = &dupa;
 
-    if(x&1)
-      puts("1 ");
-    else
-      puts("0 ");
+  *(volatile uint32_t*)(ptr) = 0;
+  pp_printf("%x\n",*(volatile uint32_t*)(ptr));
 
-  asm volatile("nop\nnop\nnop");
+  *(volatile uint8_t*)(ptr) = 0xde;
+  pp_printf("%x\n",*(volatile uint32_t*)(ptr));
 
-/*    dp_writel(1, 0x100c);
-    x = dp_readl(0x1008);
-    if(x&1)
-      puts("1 "); 
-    else
-      puts("0 ");
+  *(volatile uint8_t*)(ptr+1) = 0xad;
+  pp_printf("%x\n",*(volatile uint32_t*)(ptr));
 
-    puts(" \n");
+  *(volatile uint8_t*)(ptr+2) = 0xbe;
+  pp_printf("%x\n",*(volatile uint32_t*)(ptr));
 
-    dp_writel(2, 0x1008);
-    dp_writel(2, 0x100c);*/
-  }
-#endif
-
-  for(;;);
+  *(volatile uint8_t*)(ptr+3) = 0xef;
+  pp_printf("%x\n",*(volatile uint32_t*)(ptr));
+  
+  pp_printf("%p\n",ptr);
 
 }

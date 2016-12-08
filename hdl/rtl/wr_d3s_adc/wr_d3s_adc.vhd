@@ -76,7 +76,7 @@ architecture rtl of wr_d3s_adc is
     port (
       rst_n_i    : in  std_logic;
       clk_sys_i  : in  std_logic;
-      wb_adr_i   : in  std_logic_vector(3 downto 0);
+      wb_adr_i   : in  std_logic_vector(4 downto 0);
       wb_dat_i   : in  std_logic_vector(31 downto 0);
       wb_dat_o   : out std_logic_vector(31 downto 0);
       wb_cyc_i   : in  std_logic;
@@ -111,6 +111,7 @@ architecture rtl of wr_d3s_adc is
       fifo_we_o                     : out std_logic;
       tm_cycles_i                   : in  std_logic_vector(27 downto 0);
       cnt_fixed_o                   : out std_logic_vector(31 downto 0);
+      cnt_transient_o                   : out std_logic_vector(31 downto 0);
       cnt_rl_o                      : out std_logic_vector(31 downto 0);
       cnt_ts_o                      : out std_logic_vector(31 downto 0));
   end component d3s_phase_encoder;
@@ -430,7 +431,7 @@ begin
     port map (
       rst_n_i    => rst_n_sys_i,
       clk_sys_i  => clk_sys_i,
-      wb_adr_i   => cnx_out(0).adr(5 downto 2),
+      wb_adr_i   => cnx_out(0).adr(6 downto 2),
       wb_dat_i   => cnx_out(0).dat,
       wb_dat_o   => cnx_in(0).dat,
       wb_cyc_i   => cnx_out(0).cyc,
@@ -693,7 +694,8 @@ begin
       tm_cycles_i                   => tm_cycles_i,
       cnt_fixed_o                   => regs_in.cnt_fixed_i,
       cnt_rl_o                      => regs_in.cnt_rl_i,
-      cnt_ts_o                      => regs_in.cnt_tstamp_i
+      cnt_ts_o                      => regs_in.cnt_tstamp_i,
+      cnt_transient_o => regs_in.cnt_transient_i
 --      rl_state_o                    => rl_state
       );
 

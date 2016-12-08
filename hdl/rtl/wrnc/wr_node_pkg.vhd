@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-08-13
+-- Last update: 2016-11-28
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -100,6 +100,7 @@ package wr_node_pkg is
       clk_i           : in  std_logic;
       clk_cpu_i       : in  std_logic                                             := '0';
       rst_n_i         : in  std_logic;
+      rmq_swrst_o : out std_logic;
       sp_master_o     : out t_wishbone_master_out;
       sp_master_i     : in  t_wishbone_master_in                                  := cc_dummy_master_in;
       dp_master_o     : out t_wishbone_master_out_array(0 to g_config.cpu_count-1);

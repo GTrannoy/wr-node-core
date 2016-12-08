@@ -30,6 +30,22 @@ class MQueueCB;
       
       bus.write ( base + `MQUEUE_BASE_OUT(slot) + r, v);
    endtask // slot_write
+   task outgoing_read ( int slot, uint32_t r, ref uint32_t v );
+      uint64_t rv;
+      
+      bus.read ( base + `MQUEUE_BASE_OUT(slot) + r, rv);
+      v=rv;
+   endtask // outgoing_read
+   
+
+  
+
+   task is_full(int slot, ref int full);
+      uint32_t rv;
+      
+      outgoing_read( slot, `MQUEUE_SLOT_STATUS, rv);
+      full = rv & 1 ? 1 : 0;
+   endtask // is_full
    
    
    task send(int slot, uint32_t data[] );

@@ -287,6 +287,23 @@ peripheral {
 			};
 
 	 };
+
+     reg {
+			name = "Transient record count";
+			prefix = "CNT_TRANSIENT";
+
+			field {
+				 name = "Count";
+				 description = "Number of transient phase records produced by the compression engine.";
+				 type = SLV;
+				 size = 32;
+				 access_dev = WRITE_ONLY;
+				 access_bus = READ_ONLY;
+				 clock = "clk_wr_i";
+			};
+
+	 };
+
 	reg {
 			name = "Run Length record count";
 			prefix = "CNT_RL";
