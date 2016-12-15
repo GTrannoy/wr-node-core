@@ -175,7 +175,7 @@ architecture rtl of wr_node_core is
       ebs_slave_o  : out t_wishbone_slave_out;
       ebs_slave_i  : in  t_wishbone_slave_in  := cc_dummy_slave_in;
       rmq_status_o : out std_logic_vector(15 downto 0);
-  	 debug_o: out std_logic_vector(31 downto 0)
+  	   debug_o: out std_logic_vector(31 downto 0)
 );
   end component;
 
@@ -203,20 +203,20 @@ architecture rtl of wr_node_core is
       master_o : out t_wishbone_master_out);
   end component wb_remapper;
 
-  component chipscope_ila
-    port (
-      CONTROL : inout std_logic_vector(35 downto 0);
-      CLK     : in    std_logic;
-      TRIG0   : in    std_logic_vector(31 downto 0);
-      TRIG1   : in    std_logic_vector(31 downto 0);
-      TRIG2   : in    std_logic_vector(31 downto 0);
-      TRIG3   : in    std_logic_vector(31 downto 0));
-  end component;
-
-  component chipscope_icon
-    port (
-      CONTROL0 : inout std_logic_vector (35 downto 0));
-  end component;
+--  component chipscope_ila
+--    port (
+--      CONTROL : inout std_logic_vector(35 downto 0);
+--      CLK     : in    std_logic;
+--      TRIG0   : in    std_logic_vector(31 downto 0);
+--      TRIG1   : in    std_logic_vector(31 downto 0);
+--      TRIG2   : in    std_logic_vector(31 downto 0);
+--      TRIG3   : in    std_logic_vector(31 downto 0));
+--  end component;
+--
+--  component chipscope_icon
+--    port (
+--      CONTROL0 : inout std_logic_vector (35 downto 0));
+--  end component;
   
   ------------------------------------------
   --        CONSTANTS DECLARATION  
@@ -334,13 +334,14 @@ architecture rtl of wr_node_core is
   signal host_remapped_out : t_wishbone_slave_out;
 
   signal ebm_master : t_wishbone_master_out;
+  
   --  Signals for chip Scope  -----------------
-  signal CONTROL : std_logic_vector(35 downto 0);
-  signal CLK     : std_logic;
-  signal TRIG0   : std_logic_vector(31 downto 0);
-  signal TRIG1   : std_logic_vector(31 downto 0);
-  signal TRIG2   : std_logic_vector(31 downto 0);
-  signal TRIG3   : std_logic_vector(31 downto 0);
+--  signal CONTROL : std_logic_vector(35 downto 0);
+--  signal CLK     : std_logic;
+--  signal TRIG0   : std_logic_vector(31 downto 0);
+--  signal TRIG1   : std_logic_vector(31 downto 0);
+--  signal TRIG2   : std_logic_vector(31 downto 0);
+--  signal TRIG3   : std_logic_vector(31 downto 0);
   ---------------------------------------------
   
   ------------------------------------------
@@ -527,7 +528,7 @@ begin  -- rtl
         ebs_slave_o  => ebs_slave_o,
         ebs_slave_i  => ebs_slave_i,
         rmq_status_o => rmq_status,
-		  debug_o => trig2);
+		  debug_o => open);
   
     ebm_master_o <= ebm_master;
 	 
@@ -595,33 +596,33 @@ begin  -- rtl
   --         Chip Scope
   --------------------------------------------
 
-  chipscope_icon_1: chipscope_icon
-    port map (
-      CONTROL0 => CONTROL);
-
-  chipscope_ila_1: chipscope_ila
-    port map (
-      CONTROL => CONTROL,
-      CLK     => clk_i,
-      TRIG0   => TRIG0,
-      TRIG1   => TRIG1,
-      TRIG2   => TRIG2,
-      TRIG3   => TRIG3);
-  
-  TRIG0(15 downto 0) <= rmq_status;  -- std_logic_vector(15 downto 0)
-  
-  TRIG0(16) <= ebm_master.stb; 
-  TRIG0(17) <= ebm_master.we; 
-  TRIG0(18) <= ebm_master.cyc; 
-  
-  TRIG0(22) <= ebm_master_i.ack; 
-  TRIG0(23) <= ebm_master_i.stall; 
-  TRIG0(24) <= ebm_master_i.err; 
-  TRIG0(25) <= ebm_master_i.rty; 
-  TRIG0(26) <= ebm_master_i.int; 
-  
-  TRIG1(31 downto 0)  <=  ebm_master.dat(31 downto 0); -- t_wishbone_master_out
-  TRIG3(31 downto 0)  <=  ebm_master.adr(31 downto 0); -- t_wishbone_master_out
+--  chipscope_icon_1: chipscope_icon
+--    port map (
+--      CONTROL0 => CONTROL);
+--
+--  chipscope_ila_1: chipscope_ila
+--    port map (
+--      CONTROL => CONTROL,
+--      CLK     => clk_i,
+--      TRIG0   => TRIG0,
+--      TRIG1   => TRIG1,
+--      TRIG2   => TRIG2,
+--      TRIG3   => TRIG3);
+--  
+--  TRIG0(15 downto 0) <= rmq_status;  -- std_logic_vector(15 downto 0)
+--  
+--  TRIG0(16) <= ebm_master.stb; 
+--  TRIG0(17) <= ebm_master.we; 
+--  TRIG0(18) <= ebm_master.cyc; 
+--  
+--  TRIG0(22) <= ebm_master_i.ack; 
+--  TRIG0(23) <= ebm_master_i.stall; 
+--  TRIG0(24) <= ebm_master_i.err; 
+--  TRIG0(25) <= ebm_master_i.rty; 
+--  TRIG0(26) <= ebm_master_i.int; 
+--  
+--  TRIG1(31 downto 0)  <=  ebm_master.dat(31 downto 0); -- t_wishbone_master_out
+--  TRIG3(31 downto 0)  <=  ebm_master.adr(31 downto 0); -- t_wishbone_master_out
   
     
 	 
