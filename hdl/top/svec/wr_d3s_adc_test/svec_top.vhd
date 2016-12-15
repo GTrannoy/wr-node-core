@@ -1,46 +1,49 @@
 -------------------------------------------------------------------------------
--- Title      : WR RF DDS Distribution Node (SVEC)
+-- Title      : WR RF D3S ADC Node (SVEC)
 -- Project    : 
 -------------------------------------------------------------------------------
 -- File       : svec_top.vhd
--- Author     : Tomasz Włostowski
--- Company    : CERN BE-CO-HT
--- Created    : 2014-04-01
--- Last update: 2016-10-21
--- Platform   : FPGA-generic
--- Standard   : VHDL'93
+--* @author    : Tomasz Włostowski, E. Calvo
+--* Company    : CERN BE-CO-HT
+--* @date      : 2014-04-01
+--* Last update: 2016-12-06
+--* Platform   : FPGA-generic
+--* Standard   : VHDL'93
 -------------------------------------------------------------------------------
+--
 -- Description: 
 --
--- WR RF DDS distribution Node. It was designed to be implemented in a SVEC 
+-- This is the top entity of the gateware for implementing a WR D3S ADC node
+-- WR RF DDS ADC distribution Node. It was designed to be implemented in a SVEC 
 -- card (VME carrier card) with two Fmc cards: a Fmc-adc-subsamp-125m14b4ch card
 -- which works as WR master node at the fmc slot 0 and a Fmc-dac-600m12b1cha-DDS 
--- card working as WR node at the fmc slot 1. 
--- The master node samples an RF signal, calculates its phase, and compresses and 
--- sends this information through a WR network. The slave node receives this
--- information, uncompresses it, and uses a DDS to reproduce the initial Rf signal.
---
+-- card working as WR slave node at the fmc slot 1. 
+-- The master node samples an RF signal, calculates its phase, compresses the 
+-- resulting information and sends this data through a WR network. 
+-- The slave node receives this information, uncompresses it, and uses a DDS 
+-- method to reproduce the initial RF signal.
+---------------------------------------------------------------------------------  
+--*  Copyright Copyright (c) 2014 CERN
+-- 
+--*  This source file is free software; you can redistribute it   
+--*  and/or modify it under the terms of the GNU Lesser General   
+--*  Public License as published by the Free Software Foundation; 
+--*  either version 2.1 of the License, or (at your option) any   
+--*  later version.                                               
+-- 
+--*  This source is distributed in the hope that it will be       
+--*  useful, but WITHOUT ANY WARRANTY; without even the implied   
+--*  warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR      
+--*  PURPOSE.  See the GNU Lesser General Public License for more 
+--*  details.                                                     
+-- 
+--*  You should have received a copy of the GNU Lesser General    
+--*  Public License along with this source; if not, download it   
+--*  from http://www.gnu.org/licenses/lgpl-2.1.html
+-- 
 -------------------------------------------------------------------------------
---
--- Copyright (c) 2014 CERN
---
--- This source file is free software; you can redistribute it   
--- and/or modify it under the terms of the GNU Lesser General   
--- Public License as published by the Free Software Foundation; 
--- either version 2.1 of the License, or (at your option) any   
--- later version.                                               
---
--- This source is distributed in the hope that it will be       
--- useful, but WITHOUT ANY WARRANTY; without even the implied   
--- warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR      
--- PURPOSE.  See the GNU Lesser General Public License for more 
--- details.                                                     
---
--- You should have received a copy of the GNU Lesser General    
--- Public License along with this source; if not, download it   
--- from http://www.gnu.org/licenses/lgpl-2.1.html
---
--------------------------------------------------------------------------------
+
+
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -55,64 +58,65 @@ use work.wr_node_pkg.all;
 library unisim;
 use unisim.vcomponents.all;
 
+
 entity svec_top is
   generic (
-    g_simulation : boolean := false
+    g_simulation : boolean := false  --* Generic used to accelerate the simulation. It must be 'false' for synthesis.
     );
   port (
-    rst_n_a_i           : in  std_logic;
+    rst_n_a_i           : in  std_logic;  --* Reset input 
     ----------------------------------------
     --  Clock controls
     ----------------------------------------
-    clk_20m_vcxo_i      : in  std_logic;  -- 20MHz VCXO clock
-    clk_125m_pllref_p_i : in  std_logic;  -- 125 MHz PLL reference
-    clk_125m_pllref_n_i : in  std_logic;
-    clk_125m_gtp_p_i    : in  std_logic;  -- 125 MHz PLL reference
-    clk_125m_gtp_n_i    : in  std_logic;
+    clk_20m_vcxo_i      : in  std_logic;  --* From SVEC 20MHz VCXO
+    clk_125m_pllref_p_i : in  std_logic;  --* 125 MHz PLL reference (differential p pin)
+    clk_125m_pllref_n_i : in  std_logic;  --* 125 MHz PLL reference (differential n pin)
+    clk_125m_gtp_p_i    : in  std_logic;  --* 125 MHz PLL reference (differential p pin)
+    clk_125m_gtp_n_i    : in  std_logic;  --* 125 MHz PLL reference (differential n pin)
     ----------------------------------------
     -- SVEC Front panel LEDs
     ----------------------------------------
-    fp_led_line_oen_o   : out std_logic_vector(1 downto 0);
-    fp_led_line_o       : out std_logic_vector(1 downto 0);
-    fp_led_column_o     : out std_logic_vector(3 downto 0);
-    dbg_led0_o          : out std_logic;  -- FIXME : Not connected
-    dbg_led1_o          : out std_logic;  -- FIXME : Not connected
-    dbg_led2_o          : out std_logic;  -- FIXME : Not connected
-    dbg_led3_o          : out std_logic;  -- FIXME : Not connected
+    fp_led_line_oen_o   : out std_logic_vector(1 downto 0);  --* Enables front panel leds top and bottom row
+    fp_led_line_o       : out std_logic_vector(1 downto 0);  --* FP led row coordinate 
+    fp_led_column_o     : out std_logic_vector(3 downto 0);  --* FP led column coordinate
+    dbg_led0_o          : out std_logic;  --* to control SVEC debug led 'LD10'
+    dbg_led1_o          : out std_logic;  --* to control SVEC debug led 'LD5'
+    dbg_led2_o          : out std_logic;  --* to control SVEC debug led 'LD8'
+    dbg_led3_o          : out std_logic;  --* to control SVEC debug led 'LD9'
 
     ----------------------------------------    
     -- SVEC GPIO
     ----------------------------------------  
-    fp_gpio1_a2b_o  : out   std_logic;
-    fp_gpio2_a2b_o  : out   std_logic;
-    fp_gpio34_a2b_o : out   std_logic;
-    fp_gpio1_b      : inout std_logic;
-    fp_gpio2_b      : inout std_logic;
-    fp_gpio3_b      : inout std_logic;
-    fp_gpio4_b      : inout std_logic;
+    fp_gpio1_a2b_o  : out   std_logic;  --* Use to setup FP lemo L1 as input/output (='H' output)
+    fp_gpio2_a2b_o  : out   std_logic;  --* Use to setup FP lemo L2 as input/output
+    fp_gpio34_a2b_o : out   std_logic;  --* Use to setup FP lemo L3 & L4 as input/output
+    fp_gpio1_b      : inout std_logic;  --* L1 signal (input/output)
+    fp_gpio2_b      : inout std_logic;  --* L2 signal (input/output)
+    fp_gpio3_b      : inout std_logic;  --* L3 signal (input/output)
+    fp_gpio4_b      : inout std_logic;  --* L4 signal (input/output)
 
     ----------------------------------------
     -- VME Interface pins
     ----------------------------------------
-    VME_AS_n_i        : in    std_logic;
-    VME_RST_n_i       : in    std_logic;
-    VME_WRITE_n_i     : in    std_logic;
-    VME_AM_i          : in    std_logic_vector(5 downto 0);
-    VME_DS_n_i        : in    std_logic_vector(1 downto 0);
-    VME_GA_i          : in    std_logic_vector(5 downto 0);
-    VME_BERR_o        : inout std_logic;
-    VME_DTACK_n_o     : inout std_logic;
-    VME_RETRY_n_o     : out   std_logic;
-    VME_RETRY_OE_o    : out   std_logic;
-    VME_LWORD_n_b     : inout std_logic;
-    VME_ADDR_b        : inout std_logic_vector(31 downto 1);
-    VME_DATA_b        : inout std_logic_vector(31 downto 0);
-    VME_BBSY_n_i      : in    std_logic;
-    VME_IRQ_n_o       : out   std_logic_vector(6 downto 0);
-    VME_IACK_n_i      : in    std_logic;
+    VME_AS_n_i        : in    std_logic;   --* VME address strobe: Tells the slaves when the address on the bus is valid
+    VME_RST_n_i       : in    std_logic;   --* VME reset
+    VME_WRITE_n_i     : in    std_logic;   --* VME signal that defines the direction of the data transfer
+    VME_AM_i          : in    std_logic_vector(5 downto 0);  --* VME address modifier. Defines the number of valid address bits and cycle type
+    VME_DS_n_i        : in    std_logic_vector(1 downto 0);  --* VME data strobes. Tell the slave when the master is ready. It can also encode the number of bytes to be transferred
+    VME_GA_i          : in    std_logic_vector(5 downto 0);  --* VME The geographical address  
+    VME_BERR_o        : inout std_logic;    --* VME Bus error
+    VME_DTACK_n_o     : inout std_logic;    --* VME data acknowledge: Used by a slave to tell the master that it has R/W the data 
+    VME_RETRY_n_o     : out   std_logic;    --* VME retry : used in conjunction with BERR, it can be asserted by a slave to postpone a data transfer.
+    VME_RETRY_OE_o    : out   std_logic;    --* VME retry output enable
+    VME_LWORD_n_b     : inout std_logic;    --* VME Long word signal: it is used in conjunction with A01, DS0* and DS1* to indicate the size of the current data transfer.
+    VME_ADDR_b        : inout std_logic_vector(31 downto 1);  --* VME address bus
+    VME_DATA_b        : inout std_logic_vector(31 downto 0);  --* VME data bus
+    VME_BBSY_n_i      : in    std_logic;    --* VME Bus Busy
+    VME_IRQ_n_o       : out   std_logic_vector(6 downto 0);  --* Interrupt request lines. Asserted by the interrupter
+    VME_IACK_n_i      : in    std_logic;  --* Interrupt acknowledge. Used by the interrupt handler to retrieve an interrupt vector from the interrupter
     VME_IACKIN_n_i    : in    std_logic;
     VME_IACKOUT_n_o   : out   std_logic;
-    VME_DTACK_OE_o    : inout std_logic;
+    VME_DTACK_OE_o    : inout std_logic;  --* VME DTACK output enable
     VME_DATA_DIR_o    : inout std_logic;
     VME_DATA_OE_N_o   : inout std_logic;
     VME_ADDR_DIR_o    : inout std_logic;
@@ -124,9 +128,9 @@ entity svec_top is
     sfp_txn_o         : out   std_logic;
     sfp_rxp_i         : in    std_logic := '0';
     sfp_rxn_i         : in    std_logic := '1';
-    sfp_mod_def0_b    : in    std_logic;  -- detect 
-    sfp_mod_def1_b    : inout std_logic;  -- scl
-    sfp_mod_def2_b    : inout std_logic;  -- sda
+    sfp_mod_def0_b    : in    std_logic;  --* sfp detect. SFP presence indicator 
+    sfp_mod_def1_b    : inout std_logic;  --* sfp scl signal (I2C interface to read the SFP EEPROM) 
+    sfp_mod_def2_b    : inout std_logic;  --* sfp sda signal (I2C interface to read the SFP EEPROM)
     sfp_rate_select_b : inout std_logic := '0';
     sfp_tx_fault_i    : in    std_logic := '0';
     sfp_tx_disable_o  : out   std_logic;
@@ -134,16 +138,16 @@ entity svec_top is
     ----------------------------------------
     --  Clock controls
     ----------------------------------------
-    pll20dac_din_o    : out   std_logic;
+    pll20dac_din_o    : out   std_logic;  --* Serial interface of the DAC controlling SVEC OSC2 (20MHz VCXO)
     pll20dac_sclk_o   : out   std_logic;
     pll20dac_sync_n_o : out   std_logic;
-    pll25dac_din_o    : out   std_logic;
+    pll25dac_din_o    : out   std_logic;  --* Serial interface of the DAC controlling SVEC OSC5 (25MHz VCXO)
     pll25dac_sclk_o   : out   std_logic;
     pll25dac_sync_n_o : out   std_logic;
     ----------------------------------------
     -- 1-wire thermometer + unique ID
     ----------------------------------------
-    tempid_dq_b       : inout std_logic;
+    tempid_dq_b       : inout std_logic;  --* 1-wire signal for the thermometer + unique ID IC
     ----------------------------------------
     --  UART
     ----------------------------------------
@@ -152,61 +156,54 @@ entity svec_top is
     ----------------------------------------
     --  SVEC carrier EEPROM
     ----------------------------------------
-    scl_afpga_b       : inout std_logic;
+    scl_afpga_b       : inout std_logic;  --* Serial interface of the SVEC EEPROM
     sda_afpga_b       : inout std_logic;
     ----------------------------------------   
     -- Fmc Management 
     ----------------------------------------
-    fmc0_prsntm2c_n_i : in    std_logic;  -- Mezzanine present (active low)
-    fmc1_prsntm2c_n_i : in    std_logic;  -- Mezzanine present (active low)
+    fmc0_prsntm2c_n_i : in    std_logic;  --* Signal to indicate that a mezzanine is present at fmc slot 0 (active low)
+    fmc1_prsntm2c_n_i : in    std_logic;  --* Signal to indicate that a mezzanine is present at fmc slot 1 (active low)
 
     ----------------------------------------
     -- Put the FMC I/Os here
     ----------------------------------------
 
-    ----    FMC 0: Adc-fmc type    ---------
+    --    FMC 0: Adc-fmc signals  ---------
 	 
-    adc0_ext_trigger_p_i : in std_logic;
-    adc0_ext_trigger_n_i : in std_logic;
+    adc0_ext_trigger_p_i : in std_logic;  --* Trigger signal from the FMC0 front-panel. (differential p pin)
+    adc0_ext_trigger_n_i : in std_logic;  --* Trigger signal from the FMC0 front-panel. (differential n pin)
+    -- ADC outputs
+    adc0_dco_p_i  : in std_logic;       --* ADC data ouput clock (differential p pin)
+    adc0_dco_n_i  : in std_logic;       --* ADC data ouput clock (differential n pin)
+    adc0_fr_p_i   : in std_logic;       --* ADC frame start (differential p pin)
+    adc0_fr_n_i   : in std_logic;       --* ADC frame start (differential n pin)
+    adc0_outa_p_i : in std_logic_vector(3 downto 0);  --* ADC serial data (odd bits) (differential pairs, p pins) 
+    adc0_outa_n_i : in std_logic_vector(3 downto 0);  --* ADC serial data (odd bits) (differential pairs, n pins)
+    adc0_outb_p_i : in std_logic_vector(3 downto 0);  --* ADC serial data (even bits) (differential pairs, p pins)
+    adc0_outb_n_i : in std_logic_vector(3 downto 0);  --* ADC serial data (even bits) (differential pairs, n pins)
+	 -- Serial interface of the LTC2175 ADC
+    adc0_spi_din_i       : in  std_logic;  --* SPI data from FMC0
+    adc0_spi_dout_o      : out std_logic;  --* SPI data to FMC0
+    adc0_spi_sck_o       : out std_logic;  --* SPI clock
+    adc0_spi_cs_adc_n_o  : out std_logic;  --* SPI ADC chip select (active low)
+    -- Front panel leds    
+    adc0_gpio_led_acq_o   : out std_logic;  --* Mezzanine front panel power LED (PWR)
+    adc0_gpio_led_trig_o  : out std_logic;  --* Mezzanine front panel trigger LED (TRIG)
+    -- Si570 serial interface
+    adc0_gpio_si570_oe_o : out std_logic;  --* Si570 (programmable oscillator) output enable
+    adc0_si570_scl_b : inout std_logic;  --* I2C bus clock (Si570)
+    adc0_si570_sda_b : inout std_logic;  --* I2C bus data (Si570)
 
-    adc0_dco_p_i  : in std_logic;       -- ADC data clock
-    adc0_dco_n_i  : in std_logic;
-    adc0_fr_p_i   : in std_logic;       -- ADC frame start
-    adc0_fr_n_i   : in std_logic;
-	 
-    adc0_outa_p_i : in std_logic_vector(3 downto 0);  -- ADC serial data (odd bits)
-    adc0_outa_n_i : in std_logic_vector(3 downto 0);
-    adc0_outb_p_i : in std_logic_vector(3 downto 0);  -- ADC serial data (even bits)
-    adc0_outb_n_i : in std_logic_vector(3 downto 0);
+    adc0_one_wire_b       : inout std_logic;  -- Mezzanine 1-wire interface (DS18B20 thermometer + unique ID)
 
-    adc0_spi_din_i       : in  std_logic;  -- SPI data from FMC
-    adc0_spi_dout_o      : out std_logic;  -- SPI data to FMC
-    adc0_spi_sck_o       : out std_logic;  -- SPI clock
-    adc0_spi_cs_adc_n_o  : out std_logic;  -- SPI ADC chip select (active low)
-    adc0_spi_cs_dac1_n_o : out std_logic;  -- SPI channel 1 offset DAC chip select (active low)
-    adc0_spi_cs_dac2_n_o : out std_logic;  -- SPI channel 2 offset DAC chip select (active low)
-    adc0_spi_cs_dac3_n_o : out std_logic;  -- SPI channel 3 offset DAC chip select (active low)
-    adc0_spi_cs_dac4_n_o : out std_logic;  -- SPI channel 4 offset DAC chip select (active low)
-
-    adc0_gpio_dac_clr_n_o : out std_logic;  -- offset DACs clear (active low)
-    adc0_gpio_led_acq_o   : out std_logic;  -- Mezzanine front panel power LED (PWR)
-    adc0_gpio_led_trig_o  : out std_logic;  -- Mezzanine front panel trigger LED (TRIG)
-
-    adc0_gpio_si570_oe_o : out std_logic;  -- Si570 (programmable oscillator) output enable
-
-    adc0_si570_scl_b : inout std_logic;  -- I2C bus clock (Si570)
-    adc0_si570_sda_b : inout std_logic;  -- I2C bus data (Si570)
-
---    adc0_one_wire_b       : inout std_logic;  -- Mezzanine 1-wire interface (DS18B20 thermometer + unique ID)
-
---    fmc0_scl_b            : inout std_logic;
+--    fmc0_scl_b            : inout std_logic;  --* ADC EEPROM serial interface
 --    fmc0_sda_b            : inout std_logic;
 
     ----    FMC 1 : Dds-fmc type   ---------
 
     -- DDS Dac I/F (Maxim)
-    fmc1_dac_p_o           : out    std_logic_vector(13 downto 0);  --DDS 14b DAC
-    fmc1_dac_n_o           : out    std_logic_vector(13 downto 0);
+    fmc1_dac_p_o           : out    std_logic_vector(13 downto 0);  --* DDS output signals to be routed to the 14b DAC (differential pairs, p pins)
+    fmc1_dac_n_o           : out    std_logic_vector(13 downto 0);  --* DDS output signals to be routed to the 14b DAC (differential pairs, n pins)
     -- SPI bus to both PLL chips
     fmc1_pll_sclk_o        : buffer std_logic;
     fmc1_pll_sdio_b        : inout  std_logic;
@@ -269,6 +266,7 @@ entity svec_top is
     );
 end svec_top;
 
+-- svec_top architecture contains 5 components: svec_node_template, wr_d3s_adc, wr_d3s_adc_slave, xwr_si57x_interface and a xwb_crossbar.
 architecture rtl of svec_top is
 
 ------------------------------------------
@@ -346,7 +344,7 @@ architecture rtl of svec_top is
       tm_clk_aux_locked_i  : in  std_logic;
       tm_dac_value_i       : in  std_logic_vector(23 downto 0);
       tm_dac_wr_i          : in  std_logic;
-		
+
       -- WR reference clock from FMC's PLL (AD9516)
       wr_ref_clk_n_i    : in    std_logic;
       wr_ref_clk_p_i    : in    std_logic;
@@ -535,12 +533,12 @@ architecture rtl of svec_top is
   signal rev_clk_o : std_logic;  -- Revolution clock signal
   
   -- Chip scope signals
-  signal CONTROL : std_logic_vector(35 downto 0);
-  signal CLK     : std_logic;
-  signal TRIG0   : std_logic_vector(31 downto 0);
-  signal TRIG1   : std_logic_vector(31 downto 0);
-  signal TRIG2   : std_logic_vector(31 downto 0);
-  signal TRIG3   : std_logic_vector(31 downto 0);
+--  signal CONTROL : std_logic_vector(35 downto 0);
+--  signal CLK     : std_logic;
+--  signal TRIG0   : std_logic_vector(31 downto 0);
+--  signal TRIG1   : std_logic_vector(31 downto 0);
+--  signal TRIG2   : std_logic_vector(31 downto 0);
+--  signal TRIG3   : std_logic_vector(31 downto 0);
 
 begin
 
