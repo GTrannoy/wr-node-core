@@ -201,7 +201,7 @@ begin  -- rtl
       ebm_o        => ebm_master_o,
       ebm_i        => ebm_master_i,
       host_slave_i => cc_dummy_slave_in,
-		debug_o => debug_O);
+		debug_o => debug_o);
 
   --ebs_slave_o.stall <= '0';
   --ebs_slave_o.rty <= '0';
