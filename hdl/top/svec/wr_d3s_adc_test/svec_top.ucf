@@ -341,17 +341,17 @@ NET "fp_gpio2_a2b_o" IOSTANDARD="LVCMOS33";
 NET "fp_gpio34_a2b_o" LOC=V28;
 NET "fp_gpio34_a2b_o" IOSTANDARD="LVCMOS33";
 
-NET "fp_gpio1_b" LOC=R30;
-NET "fp_gpio1_b" IOSTANDARD="LVCMOS33";
-
-NET "fp_gpio2_b" LOC=T28;
+NET "fp_gpio2_b" LOC=R30;
 NET "fp_gpio2_b" IOSTANDARD="LVCMOS33";
 
-NET "fp_gpio3_b" LOC=U29;
-NET "fp_gpio3_b" IOSTANDARD="LVCMOS33";
+NET "fp_gpio1_b" LOC=T28;
+NET "fp_gpio1_b" IOSTANDARD="LVCMOS33";
 
-NET "fp_gpio4_b" LOC=V27;
+NET "fp_gpio4_b" LOC=U29;
 NET "fp_gpio4_b" IOSTANDARD="LVCMOS33";
+
+NET "fp_gpio3_b" LOC=V27;
+NET "fp_gpio3_b" IOSTANDARD="LVCMOS33";
 
 #----------------------------------------
 # UART
@@ -558,8 +558,8 @@ NET "adc0_si570_scl_b" LOC = "H14";
 NET "adc0_si570_scl_b" IOSTANDARD = "LVCMOS25";
 NET "adc0_si570_sda_b" LOC = "J14";
 NET "adc0_si570_sda_b" IOSTANDARD = "LVCMOS25";
-#NET "adc0_one_wire_b" LOC = "E9";
-#NET "adc0_one_wire_b" IOSTANDARD = "LVCMOS25";
+NET "adc0_one_wire_b" LOC = "E9";
+NET "adc0_one_wire_b" IOSTANDARD = "LVCMOS25";
 #Created by Constraints Editor (xc6slx150t-fgg900-3) - 2016/02/03
 NET "adc0_dco_p_i" TNM_NET = adc0_dco_p_i;
 TIMESPEC TS_adc0_dco_p_i = PERIOD "adc0_dco_p_i" 500 MHz HIGH 50%;
