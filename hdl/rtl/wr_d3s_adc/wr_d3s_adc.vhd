@@ -76,7 +76,7 @@ architecture rtl of wr_d3s_adc is
     port (
       rst_n_i    : in  std_logic;
       clk_sys_i  : in  std_logic;
-      wb_adr_i   : in  std_logic_vector(3 downto 0);
+      wb_adr_i   : in  std_logic_vector(4 downto 0);
       wb_dat_i   : in  std_logic_vector(31 downto 0);
       wb_dat_o   : out std_logic_vector(31 downto 0);
       wb_cyc_i   : in  std_logic;
@@ -110,9 +110,11 @@ architecture rtl of wr_d3s_adc is
       fifo_payload_o                : out std_logic_vector(31 downto 0);
       fifo_we_o                     : out std_logic;
       tm_cycles_i                   : in  std_logic_vector(27 downto 0);
-      cnt_fixed_o                   : out std_logic_vector(31 downto 0);
-      cnt_rl_o                      : out std_logic_vector(31 downto 0);
-      cnt_ts_o                      : out std_logic_vector(31 downto 0));
+      cnt_fixed_o : out std_logic_vector(31 downto 0);
+      lt_cnt_rl_o : out std_logic_vector(31 downto 0);
+      st_cnt_rl_o : out std_logic_vector(31 downto 0);
+      cnt_ts_o    : out std_logic_vector(31 downto 0);
+      rl_state_o  :  out std_logic_vector(15 downto 0) );
   end component d3s_phase_encoder;
 
   component d3s_acq_buffer is
@@ -213,20 +215,21 @@ architecture rtl of wr_d3s_adc is
       );
   end component;
 
-  component chipscope_ila
-    port (
-      CONTROL : inout std_logic_vector(35 downto 0);
-      CLK     : in    std_logic;
-      TRIG0   : in    std_logic_vector(31 downto 0);
-      TRIG1   : in    std_logic_vector(31 downto 0);
-      TRIG2   : in    std_logic_vector(31 downto 0);
-      TRIG3   : in    std_logic_vector(31 downto 0));
-  end component;
-
-  component chipscope_icon
-    port (
-      CONTROL0 : inout std_logic_vector (35 downto 0));
-  end component;
+--  component chipscope_ila
+--    port (
+--      CONTROL : inout std_logic_vector(35 downto 0);
+--      CLK     : in    std_logic;
+--      TRIG0   : in    std_logic_vector(31 downto 0);
+--      TRIG1   : in    std_logic_vector(31 downto 0);
+--      TRIG2   : in    std_logic_vector(31 downto 0);
+--      TRIG3   : in    std_logic_vector(31 downto 0));
+--  end component;
+--
+--  component chipscope_icon
+--    port (
+--      CONTROL0 : inout std_logic_vector (35 downto 0));
+--  end component;
+  
   signal acq_trig             : std_logic;
 ------------------------------------------
 --        CONSTANTS DECLARATION  
@@ -311,12 +314,12 @@ architecture rtl of wr_d3s_adc is
   -- signal enc_fifo_count : std_logic_vector(13 downto 0);
 
   --  Signals for chip Scope  -----------------
-  signal CONTROL : std_logic_vector(35 downto 0);
-  signal CLK     : std_logic;
-  signal TRIG0   : std_logic_vector(31 downto 0);
-  signal TRIG1   : std_logic_vector(31 downto 0);
-  signal TRIG2   : std_logic_vector(31 downto 0);
-  signal TRIG3   : std_logic_vector(31 downto 0);
+--  signal CONTROL : std_logic_vector(35 downto 0);
+--  signal CLK     : std_logic;
+--  signal TRIG0   : std_logic_vector(31 downto 0);
+--  signal TRIG1   : std_logic_vector(31 downto 0);
+--  signal TRIG2   : std_logic_vector(31 downto 0);
+--  signal TRIG3   : std_logic_vector(31 downto 0);
   ---------------------------------------------
   
 begin
@@ -430,7 +433,7 @@ begin
     port map (
       rst_n_i    => rst_n_sys_i,
       clk_sys_i  => clk_sys_i,
-      wb_adr_i   => cnx_out(0).adr(5 downto 2),
+      wb_adr_i   => cnx_out(0).adr(6 downto 2),
       wb_dat_i   => cnx_out(0).dat,
       wb_dat_o   => cnx_in(0).dat,
       wb_cyc_i   => cnx_out(0).cyc,
@@ -692,9 +695,10 @@ begin
       fifo_we_o                     => regs_in.adc_wr_req_i,
       tm_cycles_i                   => tm_cycles_i,
       cnt_fixed_o                   => regs_in.cnt_fixed_i,
-      cnt_rl_o                      => regs_in.cnt_rl_i,
-      cnt_ts_o                      => regs_in.cnt_tstamp_i
---      rl_state_o                    => rl_state
+      lt_cnt_rl_o                   => regs_in.lt_cnt_rl_i,
+      st_cnt_rl_o                   => regs_in.st_cnt_rl_i,
+      cnt_ts_o                      => regs_in.cnt_tstamp_i,
+      rl_state_o                    => rl_state
       );
 
   enc_started_o <= regs_out.cr_enable_o;

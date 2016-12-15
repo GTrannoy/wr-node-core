@@ -287,13 +287,30 @@ peripheral {
 			};
 
 	 };
-	reg {
-			name = "Run Length record count";
-			prefix = "CNT_RL";
+
+     reg {
+			name = "LT Run Length record count";
+			prefix = "LT_CNT_RL";
 
 			field {
 				 name = "Count";
-				 description = "Number of run length records produced by the compression engine.";
+				 description = "Number of LT run length records produced by the compression engine.";
+				 type = SLV;
+				 size = 32;
+				 access_dev = WRITE_ONLY;
+				 access_bus = READ_ONLY;
+				 clock = "clk_wr_i";
+			};
+
+	 };
+
+     reg {
+			name = "ST Run Length record count";
+			prefix = "ST_CNT_RL";
+
+			field {
+				 name = "Count";
+				 description = "Number of run ST length records produced by the compression engine.";
 				 type = SLV;
 				 size = 32;
 				 access_dev = WRITE_ONLY;
