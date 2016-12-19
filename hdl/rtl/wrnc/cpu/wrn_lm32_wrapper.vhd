@@ -207,27 +207,27 @@ architecture wrapper of wrn_lm32_wrapper is
 
   signal dwb_out : t_wishbone_master_out;
 
-  component chipscope_ila
-    port (
-      CONTROL : inout std_logic_vector(35 downto 0);
-      CLK     : in    std_logic;
-      TRIG0   : in    std_logic_vector(31 downto 0);
-      TRIG1   : in    std_logic_vector(31 downto 0);
-      TRIG2   : in    std_logic_vector(31 downto 0);
-      TRIG3   : in    std_logic_vector(31 downto 0));
-  end component;
-
-  component chipscope_icon
-    port (
-      CONTROL0 : inout std_logic_vector (35 downto 0));
-  end component;
-
-  signal CONTROL : std_logic_vector(35 downto 0);
-  signal CLK     : std_logic;
-  signal TRIG0   : std_logic_vector(31 downto 0);
-  signal TRIG1   : std_logic_vector(31 downto 0);
-  signal TRIG2   : std_logic_vector(31 downto 0);
-  signal TRIG3   : std_logic_vector(31 downto 0);
+--  component chipscope_ila
+--    port (
+--      CONTROL : inout std_logic_vector(35 downto 0);
+--      CLK     : in    std_logic;
+--      TRIG0   : in    std_logic_vector(31 downto 0);
+--      TRIG1   : in    std_logic_vector(31 downto 0);
+--      TRIG2   : in    std_logic_vector(31 downto 0);
+--      TRIG3   : in    std_logic_vector(31 downto 0));
+--  end component;
+--
+--  component chipscope_icon
+--    port (
+--      CONTROL0 : inout std_logic_vector (35 downto 0));
+--  end component;
+--
+--  signal CONTROL : std_logic_vector(35 downto 0);
+--  signal CLK     : std_logic;
+--  signal TRIG0   : std_logic_vector(31 downto 0);
+--  signal TRIG1   : std_logic_vector(31 downto 0);
+--  signal TRIG2   : std_logic_vector(31 downto 0);
+--  signal TRIG3   : std_logic_vector(31 downto 0);
 
   signal bus_timeout : unsigned(7 downto 0);
   signal bus_timeout_hit : std_logic;
@@ -409,34 +409,34 @@ begin
         D_RTY_I => cpu_dwb_in.rty);
 
 
-    chipscope_ila_1 : chipscope_ila
-      port map (
-        CONTROL => CONTROL,
-        CLK     => clk_sys_i,
-        TRIG0   => TRIG0,
-        TRIG1   => TRIG1,
-        TRIG2   => TRIG2,
-        TRIG3   => TRIG3);
-
-    chipscope_icon_1 : chipscope_icon
-      port map (
-        CONTROL0 => CONTROL);
-
-    trig0(0)  <= cpu_reset;
-    trig0(1)  <= iram_i_en_cpu;
-    trig0(2)  <= cpu_dwb_out.cyc;
-    trig0(3)  <= cpu_dwb_out.stb;
-    trig0(4)  <= cpu_dwb_out.we;
-    trig0(5)  <= cpu_dwb_in.ack;
-    trig0(6)  <= cpu_dwb_in.err;
-    trig0(7)  <= cpu_dwb_in.rty;
-    trig0(8)  <= cpu_dwb_in.stall;
-    trig0(9)  <= dwb_i.ack;
-    trig0(10) <= dwb_i.err;
-    trig0(11) <= dwb_i.rty;
-    trig0(12) <= dwb_i.stall;
-    trig0(13) <= iram_i_en;
-    trig0(14) <= iram_i_wr;
+--    chipscope_ila_1 : chipscope_ila
+--      port map (
+--        CONTROL => CONTROL,
+--        CLK     => clk_sys_i,
+--        TRIG0   => TRIG0,
+--        TRIG1   => TRIG1,
+--        TRIG2   => TRIG2,
+--        TRIG3   => TRIG3);
+--
+--    chipscope_icon_1 : chipscope_icon
+--      port map (
+--        CONTROL0 => CONTROL);
+--
+--    trig0(0)  <= cpu_reset;
+--    trig0(1)  <= iram_i_en_cpu;
+--    trig0(2)  <= cpu_dwb_out.cyc;
+--    trig0(3)  <= cpu_dwb_out.stb;
+--    trig0(4)  <= cpu_dwb_out.we;
+--    trig0(5)  <= cpu_dwb_in.ack;
+--    trig0(6)  <= cpu_dwb_in.err;
+--    trig0(7)  <= cpu_dwb_in.rty;
+--    trig0(8)  <= cpu_dwb_in.stall;
+--    trig0(9)  <= dwb_i.ack;
+--    trig0(10) <= dwb_i.err;
+--    trig0(11) <= dwb_i.rty;
+--    trig0(12) <= dwb_i.stall;
+--    trig0(13) <= iram_i_en;
+--    trig0(14) <= iram_i_wr;
 
 
     cpu_dwb_in.dat <= cpu_dwb_in_sys.dat;
