@@ -37,10 +37,10 @@ entity wr_d3s_adc is
     spi_dout_o      : out std_logic;    -- SPI data to FMC
     spi_sck_o       : out std_logic;    -- SPI clock
     spi_cs_adc_n_o  : out std_logic;    -- SPI ADC chip select (active low)
-    spi_cs_dac1_n_o : out std_logic;  -- SPI channel 1 offset DAC chip select (active low)
-    spi_cs_dac2_n_o : out std_logic;  -- SPI channel 2 offset DAC chip select (active low)
-    spi_cs_dac3_n_o : out std_logic;  -- SPI channel 3 offset DAC chip select (active low)
-    spi_cs_dac4_n_o : out std_logic;  -- SPI channel 4 offset DAC chip select (active low)
+--    spi_cs_dac1_n_o : out std_logic;  -- SPI channel 1 offset DAC chip select (active low)
+--    spi_cs_dac2_n_o : out std_logic;  -- SPI channel 2 offset DAC chip select (active low)
+--    spi_cs_dac3_n_o : out std_logic;  -- SPI channel 3 offset DAC chip select (active low)
+--    spi_cs_dac4_n_o : out std_logic;  -- SPI channel 4 offset DAC chip select (active low)
 
     si570_scl_b : inout std_logic;      -- I2C bus clock (Si570)
     si570_sda_b : inout std_logic;      -- I2C bus data (Si570)

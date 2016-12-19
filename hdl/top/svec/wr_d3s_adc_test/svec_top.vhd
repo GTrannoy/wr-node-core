@@ -713,10 +713,10 @@ begin
       spi_dout_o      => adc0_spi_dout_o,
       spi_sck_o       => adc0_spi_sck_o,
       spi_cs_adc_n_o  => adc0_spi_cs_adc_n_o,
-      spi_cs_dac1_n_o => adc0_spi_cs_dac1_n_o,
-      spi_cs_dac2_n_o => adc0_spi_cs_dac2_n_o,
-      spi_cs_dac3_n_o => adc0_spi_cs_dac3_n_o,
-      spi_cs_dac4_n_o => adc0_spi_cs_dac4_n_o,
+--      spi_cs_dac1_n_o => adc0_spi_cs_dac1_n_o,
+--      spi_cs_dac2_n_o => adc0_spi_cs_dac2_n_o,
+--      spi_cs_dac3_n_o => adc0_spi_cs_dac3_n_o,
+--      spi_cs_dac4_n_o => adc0_spi_cs_dac4_n_o,
 
       adc_dco_p_i          => adc0_dco_p_i,
       adc_dco_n_i          => adc0_dco_n_i,
@@ -805,7 +805,7 @@ begin
 --  fp_gpio1_b <= debug(0);
 --  fp_gpio2_b <= tm_dac_wr(0);
 
-  adc0_gpio_dac_clr_n_o <= '1';
+--  adc0_gpio_dac_clr_n_o <= '1';
   adc0_gpio_si570_oe_o  <= '1';
 
   fp_gpio1_a2b_o  <= '1';  -- svec front panel LEMO L2 set as output
