@@ -34,7 +34,7 @@ module d3s_lut (
    genvar 					     g;
    
 generate
-   for(g = 0; g<4;g=g+1) : generate_loop
+   for(g = 0; g<4;g=g+1)
      begin
 	assign phases_raw[g] = phase_divided_i[g*14+:14];
 	assign	phases[g] = phases_raw[g][12:3];
