@@ -494,10 +494,10 @@ begin
   spi_sck_o                <= regs_out.gpior_spi_sck_o;
   regs_in.gpior_spi_miso_i <= spi_din_i;
 
-  spi_cs_dac1_n_o <= '1';
-  spi_cs_dac2_n_o <= '1';
-  spi_cs_dac3_n_o <= '1';
-  spi_cs_dac4_n_o <= '1';
+--  spi_cs_dac1_n_o <= '1';
+--  spi_cs_dac2_n_o <= '1';
+--  spi_cs_dac3_n_o <= '1';
+--  spi_cs_dac4_n_o <= '1';
 
   ------------------------------------------
   --     ADC serdes

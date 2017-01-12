@@ -303,10 +303,10 @@ architecture rtl of svec_top is
       spi_dout_o           : out   std_logic;
       spi_sck_o            : out   std_logic;
       spi_cs_adc_n_o       : out   std_logic;
-      spi_cs_dac1_n_o      : out   std_logic;
-      spi_cs_dac2_n_o      : out   std_logic;
-      spi_cs_dac3_n_o      : out   std_logic;
-      spi_cs_dac4_n_o      : out   std_logic;
+--      spi_cs_dac1_n_o      : out   std_logic;
+--      spi_cs_dac2_n_o      : out   std_logic;
+--      spi_cs_dac3_n_o      : out   std_logic;
+--      spi_cs_dac4_n_o      : out   std_logic;
       si570_scl_b          : inout std_logic;
       si570_sda_b          : inout std_logic;
       adc_dco_p_i          : in    std_logic;
