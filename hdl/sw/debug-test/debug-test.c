@@ -40,36 +40,11 @@ main()
 {   
   volatile int n = 0;
 
-  puts("TEst\n");
-  for(;;)
-  {
-//    dp_writel(1, 0x1008);
-    volatile int x = dp_readl(0x1008);
-    puts("read\n");
-  }
-#if 0
-  asm volatile("nop\nnop\nnop");
+  puts("Test\n");
 
-    if(x&1)
-      puts("1 ");
-    else
-      puts("0 ");
 
-  asm volatile("nop\nnop\nnop");
+    volatile int x = dp_readl(0x1000); // try  to read something from silabs
 
-/*    dp_writel(1, 0x100c);
-    x = dp_readl(0x1008);
-    if(x&1)
-      puts("1 "); 
-    else
-      puts("0 ");
-
-    puts(" \n");
-
-    dp_writel(2, 0x1008);
-    dp_writel(2, 0x100c);*/
-  }
-#endif
 
   for(;;);
 
