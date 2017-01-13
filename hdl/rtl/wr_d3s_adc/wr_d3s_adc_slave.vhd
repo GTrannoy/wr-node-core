@@ -210,18 +210,18 @@ architecture rtl of wr_d3s_adc_slave is
   constant c_CNX_MASTER_COUNT : integer := 2;
 
   constant c_cnx_base_addr : t_wishbone_address_array(c_CNX_MASTER_COUNT-1 downto 0) :=
-    (0 => x"00000000",                  -- Base regs
-     1 => x"00000100"                   -- Trev Generataor
+    (x"00000000",                  -- Base regs
+     x"00000100"                   -- Trev Generator
      );
 
   constant c_cnx_base_mask : t_wishbone_address_array(c_CNX_MASTER_COUNT-1 downto 0) :=
-    (0 => x"00000700",
-     1 => x"00000700"
+    (x"00000100",
+     x"00000100"
      );
 
   -- Wishbone slave(s)
   constant c_ADC_slave     : integer := 0;  -- d3s_adc_slave core
-  constant c_SLAVE_TREVGEN : integer := 1;  -- Trev generator
+  constant c_TREVGEN_slave : integer := 1;  -- Trev generator
 
 ------------------------------------------
 --        SIGNALS DECLARATION  
@@ -259,9 +259,9 @@ architecture rtl of wr_d3s_adc_slave is
 
 begin
 
-  fpll_reset <= regs_out.rstr_pll_rst_o or (not rst_n_sys_i);
-
-
+  ------------------------------------------
+  -- Differential input buffers
+  ------------------------------------------
   U_Buf_CLK_WR_Ref : IBUFGDS
     generic map (
       DIFF_TERM    => true,
@@ -283,7 +283,10 @@ begin
       I  => synth_p_i,  -- Diff_p buffer input (connect directly to top-level port)
       IB => synth_n_i  -- Diff_n buffer input (connect directly to top-level port)
       );
-
+		
+  ------------------------------------------
+  -- PLL
+  ------------------------------------------
   cmp_dds_clk_pll : PLL_BASE
     generic map (
       BANDWIDTH          => "OPTIMIZED",
@@ -315,7 +318,9 @@ begin
       RST      => fpll_reset,
       CLKFBIN  => pllout_clk_fb_pllref,
       CLKIN    => clk_wr_ref_pllin);  
-
+  
+  -- PLL reset  
+  fpll_reset <= regs_out.rstr_pll_rst_o or (not rst_n_sys_i);
   regs_in.gpior_serdes_pll_locked_i <= clk_dds_locked;
 
   cmp_dds_ref_buf : BUFG
@@ -323,6 +328,9 @@ begin
       O => clk_wr,
       I => pllout_clk_wr_ref);
 
+  ------------------------------------------
+  -- Sync reset
+  ------------------------------------------
   U_Sync_Reset : gc_sync_ffs
     generic map (
       g_sync_edge => "positive")
@@ -341,43 +349,44 @@ begin
 
   rst_wr <= not rst_n_wr;
 
---  U_Intercon : xwb_crossbar
---    generic map (
---      g_num_masters => 1,
---      g_num_slaves  => c_CNX_MASTER_COUNT,
---      g_registered  => true,
---      g_address     => c_cnx_base_addr,
---      g_mask        => c_cnx_base_mask)
---    port map (
---      clk_sys_i  => clk_sys_i,
---      rst_n_i    => rst_n_sys_i,
---      slave_i(0) => slave_i,
---      slave_o(0) => slave_o,
---      master_i   => cnx_in,
---      master_o   => cnx_out);
+  ------------------------------------------
+  --     WB crossbar  
+  ------------------------------------------
+  U_Intercon : xwb_crossbar
+    generic map (
+      g_num_masters => 1,
+      g_num_slaves  => c_CNX_MASTER_COUNT,
+      g_registered  => true,
+      g_address     => c_cnx_base_addr,
+      g_mask        => c_cnx_base_mask)
+    port map (
+      clk_sys_i  => clk_sys_i,
+      rst_n_i    => rst_n_sys_i,
+      slave_i(0) => slave_i,
+      slave_o(0) => slave_o,
+      master_i   => cnx_in,
+      master_o   => cnx_out);
 
 
   U_CSR : d3ss_adc_slave_wb
     port map (
       rst_n_i    => rst_n_sys_i,
       clk_sys_i  => clk_sys_i,
-      wb_adr_i   => slave_i.adr(5 downto 2),  -- cnx_out(c_ADC_slave).adr(4 downto 2),
-      wb_dat_i   => slave_i.dat,        --cnx_out(c_ADC_slave).dat,
-      wb_dat_o   => slave_o.dat,        --cnx_in(c_ADC_slave).dat,
-      wb_cyc_i   => slave_i.cyc,        --cnx_out(c_ADC_slave).cyc,
-      wb_sel_i   => slave_i.sel,        --cnx_out(c_ADC_slave).sel,
-      wb_stb_i   => slave_i.stb,        --cnx_out(c_ADC_slave).stb,
-      wb_we_i    => slave_i.we,         --cnx_out(c_ADC_slave).we,
-      wb_ack_o   => slave_o.ack,        --cnx_in(c_ADC_slave).ack,
-      wb_stall_o => slave_o.stall,      --cnx_in(c_ADC_slave).stall,
+      wb_adr_i   => cnx_out(0).adr(5 downto 2),  
+      wb_dat_i   => cnx_out(0).dat,        
+      wb_dat_o   =>  cnx_in(0).dat,        
+      wb_cyc_i   => cnx_out(0).cyc,        
+      wb_sel_i   => cnx_out(0).sel,        
+      wb_stb_i   => cnx_out(0).stb,        
+      wb_we_i    => cnx_out(0).we,         
+      wb_ack_o   =>  cnx_in(0).ack,        
+      wb_stall_o =>  cnx_in(0).stall,      
       clk_wr_i   => clk_wr,
       regs_i     => regs_in,
       regs_o     => regs_out);
 
-  slave_o.err <= '0';
-  slave_o.rty <= '0';
---  cnx_in(0).err <= '0';
---  cnx_in(0).rty <= '0';
+--  cnx_in(0).err <= '0';  --slave_o.err <= '0';
+--  cnx_in(0).rty <= '0';  --slave_o.rty <= '0';
 
   U_Phase_Dec : d3s_phase_decoder
     generic map (
@@ -436,7 +445,6 @@ begin
       CLK_RESET            => rst_wr,
       IO_RESET             => rst_wr);
 
-  -- Do I need this for DAC AD5662?
   U_WR_DAC : gc_serial_dac
     generic map (
       g_num_data_bits  => 16,
@@ -454,7 +462,7 @@ begin
       dac_sclk_o    => wr_dac_sclk_o,
       dac_sdata_o   => wr_dac_din_o);
 
-  -- PLL SYS signals were not connected... 
+  
   pll_sys_cs_n_o    <= regs_out.gpior_pll_sys_cs_n_o;
   pll_sys_reset_n_o <= regs_out.gpior_pll_sys_reset_n_o;
   pll_sys_sync_n_o  <= '1';
@@ -490,26 +498,26 @@ begin
   --         T_REV GENERATOR MODULE
   -----------------------------------------------       
 
-  rev_clk_o <= '0';                     -- To remove later
+--rev_clk_o <= '0';
 
---  cmp_TrevGen: TrevGen_Module 
---    port map( rst_n_i    => rst_n_wr,
---              clk_sys_i  => clk_sys_i,          -- 62.5 MHz
---              clk_125m_i => clk_wr,
---              B_clk_i    => synth_i,
---              WRcyc_i    => unsigned(tm_cycles_i),
---              Rev_clk_o  => rev_clk_o,
---                                wb_adr_i   => cnx_out(c_SLAVE_TREVGEN).adr,  
---                                wb_dat_i   => cnx_out(c_SLAVE_TREVGEN).dat,
---                                wb_dat_o   => cnx_in(c_SLAVE_TREVGEN).dat,
---                                wb_cyc_i   => cnx_out(c_SLAVE_TREVGEN).cyc,
---                                wb_sel_i   => cnx_out(c_SLAVE_TREVGEN).sel,
---                                wb_stb_i   => cnx_out(c_SLAVE_TREVGEN).stb,
---                                wb_we_i    => cnx_out(c_SLAVE_TREVGEN).we,
---                                wb_ack_o   => cnx_in(c_SLAVE_TREVGEN).ack,
----                               wb_stall_o => cnx_in(c_SLAVE_TREVGEN).stall);
---               
-  --cnx_in(c_SLAVE_TREVGEN).err <= '0';
-  --cnx_in(c_SLAVE_TREVGEN).rty <= '0';
+  cmp_TrevGen: TrevGen_Module 
+    port map( rst_n_i    => rst_n_wr,
+              clk_sys_i  => clk_sys_i,          -- 62.5 MHz
+              clk_125m_i => clk_wr,
+              B_clk_i    => synth_i,
+              WRcyc_i    => unsigned(tm_cycles_i),
+              Rev_clk_o  => rev_clk_o,
+              wb_adr_i   => cnx_out(1).adr,  
+              wb_dat_i   => cnx_out(1).dat,
+              wb_dat_o   =>  cnx_in(1).dat,
+              wb_cyc_i   => cnx_out(1).cyc,
+              wb_sel_i   => cnx_out(1).sel,
+              wb_stb_i   => cnx_out(1).stb,
+              wb_we_i    => cnx_out(1).we,
+              wb_ack_o   =>  cnx_in(1).ack,
+              wb_stall_o =>  cnx_in(1).stall);
+               
+--  cnx_in(1).err <= '0';
+--  cnx_in(1).rty <= '0';
   
 end rtl;
