@@ -17,7 +17,6 @@ entity wr_d3s_adc_slave is
     rst_n_sys_i : in  std_logic;
     clk_sys_i   : in  std_logic;
     clk_wr_o    : out std_logic;
---    clk_125m_pllref_i : in std_logic;
 
     -- Timing (WRC)
     tm_link_up_i         : in  std_logic;
@@ -172,7 +171,7 @@ architecture rtl of wr_d3s_adc_slave is
       clk_sys_i  : in  std_logic;       -- 62.5MHz
       clk_125m_i : in  std_logic;       -- 125MHz
       -- Trev module signals
-      B_clk_i    : in  std_logic;
+      bunch_tick : in  std_logic;
       WRcyc_i    : in  unsigned(27 downto 0);
       Rev_clk_o  : out std_logic;
       -- Wishbone interface
@@ -461,7 +460,6 @@ begin
       dac_cs_n_o(0) => wr_dac_sync_n_o,
       dac_sclk_o    => wr_dac_sclk_o,
       dac_sdata_o   => wr_dac_din_o);
-
   
   pll_sys_cs_n_o    <= regs_out.gpior_pll_sys_cs_n_o;
   pll_sys_reset_n_o <= regs_out.gpior_pll_sys_reset_n_o;
@@ -498,13 +496,11 @@ begin
   --         T_REV GENERATOR MODULE
   -----------------------------------------------       
 
---rev_clk_o <= '0';
-
   cmp_TrevGen: TrevGen_Module 
     port map( rst_n_i    => rst_n_wr,
               clk_sys_i  => clk_sys_i,          -- 62.5 MHz
               clk_125m_i => clk_wr,
-              B_clk_i    => synth_i,
+              bunch_tick => synth_i,
               WRcyc_i    => unsigned(tm_cycles_i),
               Rev_clk_o  => rev_clk_o,
               wb_adr_i   => cnx_out(1).adr,  

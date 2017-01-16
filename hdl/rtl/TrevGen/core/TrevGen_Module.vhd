@@ -61,7 +61,7 @@ entity TrevGen_Module is
         clk_sys_i  :  in std_logic;     -- 62.5MHz
         clk_125m_i : in std_logic;  -- 125MHz
         -- Trev module signals
-        B_clk_i    :  in std_logic; 
+        bunch_tick :  in std_logic; 
         WRcyc_i    :  in unsigned(27 downto 0); 
         Rev_clk_o  :  out std_logic ;
         -- Wishbone interface
@@ -227,7 +227,7 @@ architecture rtl of TrevGen_Module is
      end if;
   end process;
 
-  s_Rev_clk <= s_BclkGate and B_clk_i;
+  s_Rev_clk <= s_BclkGate and bunch_tick;
   Rev_clk_o <= s_Rev_clk;
 
   end architecture;

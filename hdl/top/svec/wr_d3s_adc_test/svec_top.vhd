@@ -176,7 +176,7 @@ entity svec_top is
     ----------------------------------------
     --  SVEC carrier EEPROM
     ----------------------------------------
-    scl_afpga_b       : inout std_logic;  --! Serial interface of the SVEC EEPROM
+    scl_afpga_b       : inout std_logic;  --! SVEC EEPROM Serial interface 
     sda_afpga_b       : inout std_logic;
     ----------------------------------------   
     -- Fmc slot management 
@@ -188,9 +188,9 @@ entity svec_top is
     -- Put the FMC I/Os here
     ----------------------------------------
     
-	 ---------------------------------------- 
+	    ---------------------------------------- 
     	 --    FMC slot 0: Adc-fmc signals     --
-	 ----------------------------------------
+	    ----------------------------------------
 	 
     adc0_ext_trigger_p_i : in std_logic;  --! Trigger signal from the FMC0 front-panel. (differential p pin)
     adc0_ext_trigger_n_i : in std_logic;  --! Trigger signal from the FMC0 front-panel. (differential n pin)
@@ -218,20 +218,20 @@ entity svec_top is
 
     adc0_one_wire_b       : inout std_logic;  --! Mezzanine 1-wire interface (DS18B20 thermometer + unique ID)
 
---    fmc0_scl_b            : inout std_logic;  --! ADC EEPROM serial interface
+--    fmc0_scl_b            : inout std_logic;  --! Fmc-Adc EEPROM serial interface
 --    fmc0_sda_b            : inout std_logic;
 
-    ----------------------------------------
-    --    FMC slot 1: Dds-fmc type        --
-    ----------------------------------------
+       ----------------------------------------
+       --    FMC slot 1: Dds-fmc type        --
+       ----------------------------------------
 	 
     -- DDS Dac I/F (Maxim)
     fmc1_dac_p_o           : out    std_logic_vector(13 downto 0);  --! DDS output signals to be routed to the 14b DAC (differential pairs, p pins)
     fmc1_dac_n_o           : out    std_logic_vector(13 downto 0);  --! DDS output signals to be routed to the 14b DAC (differential pairs, n pins)
-    -- SPI bus to both PLL chips
-    fmc1_pll_sclk_o        : buffer std_logic;
-    fmc1_pll_sdio_b        : inout  std_logic;
-    fmc1_pll_sdo_i         : in     std_logic;
+    -- SPI bus to both PLL chips (AD9515 and AD9510)
+    fmc1_pll_sclk_o        : buffer std_logic;  --! SPI clock to both PLL chips (AD9515 and AD9510)
+    fmc1_pll_sdio_b        : inout  std_logic;  --! SPI data in to both PLL chips (AD9515 and AD9510)
+    fmc1_pll_sdo_i         : in     std_logic;  --! SPI data out to both PLL chips (AD9515 and AD9510)
     -- System/WR PLL dedicated lines
     -- AD9516 PLL generating DDS DAC clk
     fmc1_pll_sys_ld_i      : in     std_logic;
@@ -241,9 +241,9 @@ entity svec_top is
     -- VCXO PLL dedicated lines
     -- AD9510 distribution clock IC, which generates the
     -- RF input signal that feeds the phase detector
-    fmc1_pll_vcxo_cs_n_o   : buffer std_logic;
-    fmc1_pll_vcxo_sync_n_o : buffer std_logic;
-    fmc1_pll_vcxo_status_i : in     std_logic;
+    fmc1_pll_vcxo_cs_n_o   : buffer std_logic;  --! SPI chip select of the AD9510
+    fmc1_pll_vcxo_sync_n_o : buffer std_logic;  --! from AD9510 multipurpose pin. It can be used as Reset, Sync, Power Down.
+    fmc1_pll_vcxo_status_i : in     std_logic;  --! Used to Monitor AD9510 PLL Status and Sync
     -- Serial interface signals for
     -- the ADC after the phase detector
 --         fmc1_adc_sdo_i           : in std_logic;
@@ -285,7 +285,7 @@ entity svec_top is
     fmc1_wr_dac_din_o    : out std_logic;
     fmc1_wr_dac_sync_n_o : out std_logic
 
---    fmc1_scl_b        : inout std_logic;
+--    fmc1_scl_b        : inout std_logic;   --! Fmc-Dds EEPROM serial interface
 --    fmc1_sda_b        : inout std_logic
     );
 end svec_top;
@@ -558,7 +558,7 @@ architecture rtl of svec_top is
   signal scl_pad_oen, sda_pad_oen : std_logic;
   signal clk_125m_pllref          : std_logic;
 
-  signal rev_clk_o : std_logic;  -- Revolution clock signal
+  signal rev_clk : std_logic;  -- Revolution clock signal
   
   -- Chip scope signals
 --  signal CONTROL : std_logic_vector(35 downto 0);
@@ -768,7 +768,6 @@ begin
       rst_n_sys_i => rst_n,
       clk_sys_i   => clk_sys,
       clk_wr_o    => fmc1_clk_wr,
---               clk_125m_pllref_i   => clk_125m_pllref,
 
       tm_link_up_i         => tm_link_up,
       tm_tai_i             => tm_tai,
@@ -789,7 +788,7 @@ begin
       wr_ref_clk_p_i => fmc1_wr_ref_clk_p_i,
       -- Slave synthesized signal
       synth_n_i 	   => fmc1_synth_clk_n_i,
-      synth_p_i 	   => fmc1_synth_clk_n_i, 
+      synth_p_i 	   => fmc1_synth_clk_p_i, 
       -- System/WR PLL dedicated lines
       pll_sys_cs_n_o    => fmc1_pll_sys_cs_n_o,
       pll_sys_ld_i      => fmc1_pll_sys_ld_i,
@@ -809,7 +808,7 @@ begin
       -- WB interface
       slave_i           => fmc_wb_muxed_out(c_FMC_1),
       slave_o           => fmc_wb_muxed_in(c_FMC_1),
-      rev_clk_o         => rev_clk_o
+      rev_clk_o         => rev_clk
       );  
 
   U_Silabs_IF : xwr_si57x_interface
@@ -830,24 +829,27 @@ begin
   adc0_si570_sda_b <= '0' when sda_pad_oen = '0' else 'Z';
   adc0_si570_scl_b <= '0' when scl_pad_oen = '0' else 'Z';
 
---  fp_gpio1_b <= debug(0);
---  fp_gpio2_b <= tm_dac_wr(0);
-
 --  adc0_gpio_dac_clr_n_o <= '1';
   adc0_gpio_si570_oe_o  <= '1';
-
-  fp_gpio1_a2b_o  <= '1';  -- svec front panel LEMO L2 set as output
-  fp_gpio2_a2b_o  <= '1';  -- svec front panel LEMO L1 set as output
+  adc0_gpio_led_trig_o <= '0';
+  adc0_gpio_led_acq_o <= '0';
+  
+  -- SVEC Front panel LEMOS
+  fp_gpio1_a2b_o  <= '1';  -- svec front panel LEMO L1 set as output
+  fp_gpio2_a2b_o  <= '1';  -- svec front panel LEMO L2 set as output
   fp_gpio34_a2b_o <= '1';  -- svec front panel LEMOs L3 and L4 set as output
   
+  fp_gpio1_b <= rev_clk;  -- Trev pulse
+  fp_gpio2_b <= '0';
+  fp_gpio3_b <= '0';
+  fp_gpio4_b <= '0';
+  
+  -- SVEC debug LEDS
   dbg_led0_o  <= '0';
   dbg_led1_o  <= '0'; 
   dbg_led2_o  <= '0';
   dbg_led3_o  <= '0';
-  
-  adc0_gpio_led_trig_o <= '0';
-  adc0_gpio_led_acq_o <= '0';
-  
+   
 end rtl;
 
 

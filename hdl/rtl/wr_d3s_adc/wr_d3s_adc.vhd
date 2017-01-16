@@ -18,7 +18,6 @@ entity wr_d3s_adc is
   port (
     rst_n_sys_i : in  std_logic;
     clk_sys_i   : in  std_logic;
---    clk_125m_pllref_i : in  std_logic;
     clk_wr_o    : out std_logic;
 
     tm_link_up_i         : in  std_logic;
@@ -487,7 +486,6 @@ begin
   ------------------------------------------
   --  Control of SPI signals
   ------------------------------------------
-  -- To be removed with the future next Fmc adc subsamplig card
 
   spi_cs_adc_n_o           <= regs_out.gpior_spi_cs_adc_o;
   spi_dout_o               <= regs_out.gpior_spi_mosi_o;
@@ -613,7 +611,7 @@ begin
       data_i      => adc_data,
       mode_i      => '0',               -- if mode=1 circular buffer
       acq_start_i => '0',               -- Acq. started by SW
-      acq_start_o => acq_start,  -- signal to daisy chain the other buffers
+      acq_start_o => acq_start,         -- signal to daisy chain the other buffers
       freeze_i    => regs_out.adc_wr_full_o,  -- Freeze if FIFO gets full (circular otherwise), to diagnose only
       slave_i     => cnx_out(1),
       slave_o     => cnx_in(1));
@@ -717,19 +715,18 @@ begin
       freq_o       => regs_in.wr_freq_meter_i,
       freq_valid_o => open);     -- indicates when the synchronizer is ready 
 
-  u_mon_adc_clock : process(clk_wr)
-  begin
-    if rising_edge(clk_wr) then
-      clk_wr_div2 <= not clk_wr_div2;
-    end if;
-  end process;
+--  u_mon_adc_clock : process(clk_wr)
+--  begin
+--    if rising_edge(clk_wr) then
+--      clk_wr_div2 <= not clk_wr_div2;
+--    end if;
+--  end process;
 
   ------------------------------------------
-  --  STDC interace: 
-  --  Time stamps the triggers received with a resolution of 1ns 
-  --  It uses a serdes clocked at 1GHz
+  --!  STDC interface: 
+  --!  Time stamps the triggers received with a resolution of 1ns 
+  --!  It uses a serdes clocked at 1GHz
   ------------------------------------------
-
   cmp_stdc : stdc_hostif
     generic map (
       D_WIDTH => 72,                    -- Length of the fifo words
