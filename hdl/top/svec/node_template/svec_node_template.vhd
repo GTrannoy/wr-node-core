@@ -10,37 +10,7 @@
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
--- Description: 
---
--- Shared part of a typical WR node for the SVEC carrier. Contains pre-configured:
--- - WR PTP Core
--- - WR Node Core + Etherbone
--- - Wishbone interfaces for two mezzanines. This is indented for connecting
---   FmcTdc/FmcDelay in various combinations, but not limited to these cards.
--- Just instantiate this in the top level of your SVEC (see list_tdc_fd
--- project), replacing the FineDelay/TDC mezzanines with any cores you want,
--- synthesize and play!
--------------------------------------------------------------------------------
---
--- Copyright (c) 2014-2015 CERN
---
--- This source file is free software; you can redistribute it   
--- and/or modify it under the terms of the GNU Lesser General   
--- Public License as published by the Free Software Foundation; 
--- either version 2.1 of the License, or (at your option) any   
--- later version.                                               
---
--- This source is distributed in the hope that it will be       
--- useful, but WITHOUT ANY WARRANTY; without even the implied   
--- warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR      
--- PURPOSE.  See the GNU Lesser General Public License for more 
--- details.                                                     
---
--- You should have received a copy of the GNU Lesser General    
--- Public License along with this source; if not, download it   
--- from http://www.gnu.org/licenses/lgpl-2.1.html
---
--------------------------------------------------------------------------------
+
 
 library ieee;
 use ieee.STD_LOGIC_1164.all;
@@ -59,40 +29,57 @@ use work.wr_xilinx_pkg.all;
 library unisim;
 use unisim.vcomponents.all;
 
+-- The following lines have been added to generate doc in doxygen
+-------------------------------------------------------------------------------
+--! Description: 
+--! 
+--! Shared part of a typical WR node for the SVEC carrier. Contains pre-configured:
+--!   * WR PTP Core
+--!   * WR Node Core + Etherbone
+--!   * Wishbone interfaces for two mezzanines. This is indented for connecting
+--!   * FmcTdc/FmcDelay in various combinations, but not limited to these cards.
+--! Just instantiate this in the top level of your SVEC (see list_tdc_fd
+--! project), replacing the FineDelay/TDC mezzanines with any cores you want,
+--! synthesize and play!
+-------------------------------------------------------------------------------
+--! 
+--! 
+--! 
+--! Copyright (c) 2014-2015 CERN
+--! 
+--! This source file is free software; you can redistribute it   
+--! and/or modify it under the terms of the GNU Lesser General   
+--! Public License as published by the Free Software Foundation; 
+--! either version 2.1 of the License, or (at your option) any   
+--! later version.                                               
+--! 
+--! This source is distributed in the hope that it will be       
+--! useful, but WITHOUT ANY WARRANTY; without even the implied   
+--! warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR      
+--! PURPOSE.  See the GNU Lesser General Public License for more 
+--! details.                                                     
+--! 
+--! You should have received a copy of the GNU Lesser General    
+--! Public License along with this source; if not, download it   
+--! from http://www.gnu.org/licenses/lgpl-2.1.html
+--! 
+-------------------------------------------------------------------------------
 entity svec_node_template is
   generic (
--- SDB record of the mezzanine connected to slot 0
-    g_fmc0_sdb        : t_sdb_record;
--- VIC interrupt vector address of the mezzanine in slot 0
-    g_fmc0_vic_vector : t_wishbone_address;
--- SDB record of the mezzanine connected to slot 1
-    g_fmc1_sdb        : t_sdb_record;
--- VIC interrupt vector address of the mezzanine in slot 1
-    g_fmc1_vic_vector : t_wishbone_address;
 
--- Enables/disable White Rabbit support
-    g_with_white_rabbit : boolean := true;
-    
--- Reduces some timeouts to speed up simulations.
-    g_simulation     : boolean := false;
-    
--- Enable/disable instantiation of the gigabit transceiver core.
--- Speeds up the simulations a lot.
-    g_with_wr_phy    : boolean := false;
+    g_fmc0_sdb        : t_sdb_record;        --! SDB record of the mezzanine connected to slot 0
+    g_fmc0_vic_vector : t_wishbone_address;  --! VIC interrupt vector address of the mezzanine in slot 0
+    g_fmc1_sdb        : t_sdb_record;        --! SDB record of the mezzanine connected to slot 1
+    g_fmc1_vic_vector : t_wishbone_address;  --! VIC interrupt vector address of the mezzanine in slot 1
+    g_with_white_rabbit : boolean := true;   --! Enables/disable White Rabbit support
+    g_simulation     : boolean := false;     --! Reduces some timeouts to speed up simulations.
+    g_with_wr_phy    : boolean := false;     --! Enable/disable instantiation of the gigabit transceiver core.This speeds up the simulations a lot.
+    g_double_wrnode_core_clock : boolean := false;  --! When true, the CPUs in the WR node run at 125 MHz (twice the 62.5 MHz system clock). 
+                                                    --! May not meet the timing for heavily congested designs.
+    g_wr_node_config : t_wr_node_config;     --! Configuration of the WR Node Core. Fill in according to your needs.
 
--- When true, the CPUs in the WR node run at 125 MHz (twice the
--- 62.5 MHz system clock). May not meet the timing for heavily
--- congested designs.
-    g_double_wrnode_core_clock : boolean := false;
-
--- Configuration of the WR Node Core. Fill in according to your needs.
-    g_wr_node_config : t_wr_node_config;
-
--- Use external LEDs. When true, the front panel LEDs on the SVEC are
--- driven by the "led_state_i" signal. Otherwise, they display the default
--- board status (WR Link, timing, etc.)
-    g_use_external_fp_leds: boolean := false
-    
+    g_use_external_fp_leds: boolean := false  --! When true, the front panel LEDs on the SVEC are driven by the "led_state_i" signal. 
+                                              --! Otherwise, they display the default board status (WR Link, timing, etc.)    
     );
 
   port (
@@ -104,55 +91,55 @@ entity svec_node_template is
     -- Standard SVEC ports (Gennum bridge, LEDS, Etc. Do not modify
     -------------------------------------------------------------------------
 
-    clk_20m_vcxo_i : in std_logic;      -- 20MHz VCXO clock
+    clk_20m_vcxo_i : in std_logic;       --! 20MHz VCXO clock
 
-    clk_125m_pllref_p_i : in std_logic;  -- 125 MHz PLL reference
+    clk_125m_pllref_p_i : in std_logic;  --! 125 MHz PLL reference
     clk_125m_pllref_n_i : in std_logic;
 
-    clk_125m_gtp_p_i : in std_logic;    -- 125 MHz PLL reference
+    clk_125m_gtp_p_i : in std_logic;     --! 125 MHz PLL reference
     clk_125m_gtp_n_i : in std_logic;
 
     clk_125m_pllref_o : out std_logic;
 
     -- SVEC Front panel LEDs
 
-    fp_led_line_oen_o : out std_logic_vector(1 downto 0);
-    fp_led_line_o     : out std_logic_vector(1 downto 0);
-    fp_led_column_o   : out std_logic_vector(3 downto 0);
+    fp_led_line_oen_o : out std_logic_vector(1 downto 0);  --! Enables front panel leds top and bottom row
+    fp_led_line_o     : out std_logic_vector(1 downto 0);  --! FP led row coordinate
+    fp_led_column_o   : out std_logic_vector(3 downto 0);  --! FP led column coordinate
 
-    fp_gpio1_a2b_o  : out std_logic;
-    fp_gpio2_a2b_o  : out std_logic;
-    fp_gpio34_a2b_o : out std_logic;
+    fp_gpio1_a2b_o  : out std_logic;  --! Use to setup FP lemo L1 as input/output (='H' output)
+    fp_gpio2_a2b_o  : out std_logic;  --! Use to setup FP lemo L2 as input/output
+    fp_gpio34_a2b_o : out std_logic;  --! Use to setup FP lemo L3 & L4 as input/output
 
-    fp_gpio1_b : inout std_logic;
-    fp_gpio2_b : inout std_logic;
-    fp_gpio3_b : inout std_logic;
-    fp_gpio4_b : inout std_logic;
+    fp_gpio1_b : inout std_logic;    --! L1 signal (input/output)
+    fp_gpio2_b : inout std_logic;    --! L2 signal (input/output)
+    fp_gpio3_b : inout std_logic;    --! L3 signal (input/output)
+    fp_gpio4_b : inout std_logic;    --! L4 signal (input/output)
 
     -------------------------------------------------------------------------
     -- VME Interface pins
     -------------------------------------------------------------------------
 
-    VME_AS_n_i     : in    std_logic;
-    VME_RST_n_i    : in    std_logic;
-    VME_WRITE_n_i  : in    std_logic;
-    VME_AM_i       : in    std_logic_vector(5 downto 0);
-    VME_DS_n_i     : in    std_logic_vector(1 downto 0);
-    VME_GA_i       : in    std_logic_vector(5 downto 0);
-    VME_BERR_o     : inout std_logic;
-    VME_DTACK_n_o  : inout std_logic;
-    VME_RETRY_n_o  : out   std_logic;
-    VME_RETRY_OE_o : out   std_logic;
+    VME_AS_n_i     : in    std_logic;   --! VME address strobe: Tells the slaves when the address on the bus is valid
+    VME_RST_n_i    : in    std_logic;   --! VME reset
+    VME_WRITE_n_i  : in    std_logic;   --! VME signal that defines the direction of the data transfer
+    VME_AM_i       : in    std_logic_vector(5 downto 0);  --! VME address modifier. Defines the number of valid address bits and cycle type
+    VME_DS_n_i     : in    std_logic_vector(1 downto 0);  --! VME data strobes. Tell the slave when the master is ready. It can also encode the number of bytes to be transferred
+    VME_GA_i       : in    std_logic_vector(5 downto 0);  --! VME The geographical address  
+    VME_BERR_o     : inout std_logic;   --! VME Bus error
+    VME_DTACK_n_o  : inout std_logic;   --! VME data acknowledge: Used by a slave to tell the master that it has R/W the data 
+    VME_RETRY_n_o  : out   std_logic;   --! VME retry : used in conjunction with BERR, it can be asserted by a slave to postpone a data transfer.
+    VME_RETRY_OE_o : out   std_logic;   --! VME retry output enable
 
-    VME_LWORD_n_b   : inout std_logic;
-    VME_ADDR_b      : inout std_logic_vector(31 downto 1);
-    VME_DATA_b      : inout std_logic_vector(31 downto 0);
+    VME_LWORD_n_b   : inout std_logic;  --! VME Long word signal: it is used in conjunction with A01, DS0* and DS1* to indicate the size of the current data transfer.
+    VME_ADDR_b      : inout std_logic_vector(31 downto 1);  --! VME address bus
+    VME_DATA_b      : inout std_logic_vector(31 downto 0);  --! VME data bus
     VME_BBSY_n_i    : in    std_logic;
-    VME_IRQ_n_o     : out   std_logic_vector(6 downto 0);
-    VME_IACK_n_i    : in    std_logic;
+    VME_IRQ_n_o     : out   std_logic_vector(6 downto 0);  --! Interrupt request lines. Asserted by the interrupter
+    VME_IACK_n_i    : in    std_logic;   --! Interrupt acknowledge. Used by the interrupt handler to retrieve an interrupt vector from the interrupter
     VME_IACKIN_n_i  : in    std_logic;
     VME_IACKOUT_n_o : out   std_logic;
-    VME_DTACK_OE_o  : inout std_logic;
+    VME_DTACK_OE_o  : inout std_logic;   --! VME DTACK output enable
     VME_DATA_DIR_o  : inout std_logic;
     VME_DATA_OE_N_o : inout std_logic;
     VME_ADDR_DIR_o  : inout std_logic;
@@ -168,57 +155,53 @@ entity svec_node_template is
     sfp_rxp_i : in std_logic := '0';
     sfp_rxn_i : in std_logic := '1';
 
-    sfp_mod_def0_b    : in    std_logic;  -- detect pin
-    sfp_mod_def1_b    : inout std_logic;  -- scl
-    sfp_mod_def2_b    : inout std_logic;  -- sda
+    sfp_mod_def0_b    : in    std_logic;  --! sfp detect. SFP presence indicator 
+    sfp_mod_def1_b    : inout std_logic;  --! sfp scl signal (I2C interface to read the SFP EEPROM) 
+    sfp_mod_def2_b    : inout std_logic;  --! sfp sda signal (I2C interface to read the SFP EEPROM)
     sfp_rate_select_b : inout std_logic := '0';
     sfp_tx_fault_i    : in    std_logic := '0';
     sfp_tx_disable_o  : out   std_logic;
     sfp_los_i         : in    std_logic := '0';
    
-    pll20dac_din_o    : out std_logic;
+    pll20dac_din_o    : out std_logic;    --! serial interface din line of the DAC controlling SVEC OSC2 (20MHz VCXO)
     pll20dac_sclk_o   : out std_logic;
     pll20dac_sync_n_o : out std_logic;
-    pll25dac_din_o    : out std_logic;
+    pll25dac_din_o    : out std_logic;    --! Serial interface din line of the DAC controlling SVEC OSC5 (25MHz VCXO)
     pll25dac_sclk_o   : out std_logic;
     pll25dac_sync_n_o : out std_logic;
     
-    scl_afpga_b       : inout std_logic;
+    scl_afpga_b       : inout std_logic;  --! Serial interface of the SVEC EEPROM
     sda_afpga_b       : inout std_logic;
 	 
-    fmc0_prsntm2c_n_i : in std_logic;
-    fmc1_prsntm2c_n_i : in std_logic;
+    fmc0_prsntm2c_n_i : in std_logic;     --! Signal to indicate that a mezzanine is present at fmc slot 0 (active low)
+    fmc1_prsntm2c_n_i : in std_logic;     --! Signal to indicate that a mezzanine is present at fmc slot 1 (active low)
 
-    tempid_dq_b : inout std_logic;
+    tempid_dq_b : inout std_logic;        --! 1-wire signal for the thermometer + unique ID IC
 
-    uart_rxd_i : in  std_logic := '1';
+    uart_rxd_i : in  std_logic := '1';    --! SVEC UART interface
     uart_txd_o : out std_logic;
 
     -------------------------------------------------------------------------
     -- FMC <> WRNode interface (FMC slot 1)
     -------------------------------------------------------------------------
 
-    -- aux clock for WR core to lock-
-    fmc0_clk_aux_i  : in  std_logic;
-    -- host Wishbone bus (i.e. for the device driver to access the mezzanine regs)
-    fmc0_host_wb_o  : out t_wishbone_master_out;
+    fmc0_clk_aux_i  : in  std_logic;  --! FMC0 Aux clock for WR core to lock-
+    fmc0_host_wb_o  : out t_wishbone_master_out;  --! host Wishbone bus (i.e. for the device driver to access the mezzanine regs)
     fmc0_host_wb_i  : in  t_wishbone_master_in;
-    -- DP0 port of WR Node CPU 0
-    fmc0_dp_wb_o    : out t_wishbone_master_out;
+    fmc0_dp_wb_o    : out t_wishbone_master_out;  --! DP0 port of WR Node CPU 0
     fmc0_dp_wb_i    : in  t_wishbone_master_in;
-    -- host interrupt line
-    fmc0_host_irq_i : in  std_logic;
+    fmc0_host_irq_i : in  std_logic;   --! host interrupt line
 
     -------------------------------------------------------------------------
     -- FMC <> WRNode interface (FMC slot 2)
     -------------------------------------------------------------------------
     
-    fmc1_clk_aux_i  : in  std_logic;
+    fmc1_clk_aux_i  : in  std_logic;  --! FMC1 Aux clock for WR core to lock-
     fmc1_host_wb_o  : out t_wishbone_master_out;
     fmc1_host_wb_i  : in  t_wishbone_master_in;
     fmc1_dp_wb_o    : out t_wishbone_master_out;
     fmc1_dp_wb_i    : in  t_wishbone_master_in;
-    fmc1_host_irq_i : in  std_logic;
+    fmc1_host_irq_i : in  std_logic;  --! host interrupt line
 
     -------------------------------------------------------------------------
     -- Misc WRNode signals

@@ -30,38 +30,38 @@ entity wr_d3s_adc is
     wr_pps_i             : in  std_logic;
 
     fake_data_i   : in  std_logic_vector(13 downto 0) := "00000000000000";
-    enc_started_o : out std_logic;      -- for testbench
+    enc_started_o : out std_logic;      -- used only for testbench
 
     -- ADC Mezzanine I/F
-    spi_din_i       : in  std_logic;    -- SPI data from FMC
-    spi_dout_o      : out std_logic;    -- SPI data to FMC
-    spi_sck_o       : out std_logic;    -- SPI clock
-    spi_cs_adc_n_o  : out std_logic;    -- SPI ADC chip select (active low)
---    spi_cs_dac1_n_o : out std_logic;  -- SPI channel 1 offset DAC chip select (active low)
---    spi_cs_dac2_n_o : out std_logic;  -- SPI channel 2 offset DAC chip select (active low)
---    spi_cs_dac3_n_o : out std_logic;  -- SPI channel 3 offset DAC chip select (active low)
---    spi_cs_dac4_n_o : out std_logic;  -- SPI channel 4 offset DAC chip select (active low)
+    spi_din_i       : in  std_logic;    --! SPI data from FMC
+    spi_dout_o      : out std_logic;    --! SPI data to FMC
+    spi_sck_o       : out std_logic;    --! SPI clock
+    spi_cs_adc_n_o  : out std_logic;    --! SPI ADC chip select (active low)
+--    spi_cs_dac1_n_o : out std_logic;  --! SPI channel 1 offset DAC chip select (active low)
+--    spi_cs_dac2_n_o : out std_logic;  --! SPI channel 2 offset DAC chip select (active low)
+--    spi_cs_dac3_n_o : out std_logic;  --! SPI channel 3 offset DAC chip select (active low)
+--    spi_cs_dac4_n_o : out std_logic;  --! SPI channel 4 offset DAC chip select (active low)
 
-    si570_scl_b : inout std_logic;      -- I2C bus clock (Si570)
-    si570_sda_b : inout std_logic;      -- I2C bus data (Si570)
+    si570_scl_b : inout std_logic;      --! I2C bus clock (Si570)
+    si570_sda_b : inout std_logic;      --! I2C bus data (Si570)
 
-    adc_dco_p_i  : in std_logic;        -- ADC data clock
-    adc_dco_n_i  : in std_logic;
-    adc_fr_p_i   : in std_logic;        -- ADC frame start
-    adc_fr_n_i   : in std_logic;
-    adc_outa_p_i : in std_logic_vector(3 downto 0);  -- ADC serial data (odd bits)
+    adc_dco_p_i  : in std_logic;        --! LTC2175 ADC data clock output (differential pair, p pin)
+    adc_dco_n_i  : in std_logic;        --! LTC2175 ADC data clock output (differential pair, n pin)
+    adc_fr_p_i   : in std_logic;        --! LTC2175 ADC frame output (differential pair, p pin)
+    adc_fr_n_i   : in std_logic;        --! LTC2175 ADC frame output (differential pair, n pin)
+    adc_outa_p_i : in std_logic_vector(3 downto 0);  --! ADC serial data (odd bits)
     adc_outa_n_i : in std_logic_vector(3 downto 0);
-    adc_outb_p_i : in std_logic_vector(3 downto 0);  -- ADC serial data (even bits)
+    adc_outb_p_i : in std_logic_vector(3 downto 0);  --! ADC serial data (even bits)
     adc_outb_n_i : in std_logic_vector(3 downto 0);
 
-    adc_ext_trigger_p_i : in std_logic;
+    adc_ext_trigger_p_i : in std_logic;  --! Ext-trigger input. It will be time stamped with the STDC (1ns resolution)
     adc_ext_trigger_n_i : in std_logic;
 
---    gpio_dac_clr_n_o : out std_logic;   -- offset DACs clear (active low)
+--    gpio_dac_clr_n_o : out std_logic;  -- offset DACs clear (active low)
 --    gpio_si570_oe_o  : out std_logic;  -- Si570 (programmable oscillator) output enable
 
-    slave_i : in  t_wishbone_slave_in;
-    slave_o : out t_wishbone_slave_out
+    slave_i : in  t_wishbone_slave_in;   --! WB bus interface
+    slave_o : out t_wishbone_slave_out   --! WB bus interface
     );
 
 end wr_d3s_adc;
@@ -667,13 +667,13 @@ begin
       slave_o     => cnx_in(5));
 
   ------------------------------------------
-  --  Phase encoder: 
-  --  Removes DC from the signal, 
-  --  Calculates its Hilber transform (Q component)
-  --  Calculates the phase of the signal (atan(Q/I)) with cordic
-  --  Compress the information
-  --  Stores the compressed inforamtion in a FIFO
-  --  Data in the fifo will be read by MT real time task and send through WR
+  --! Phase encoder: 
+  --! Removes DC from the signal, 
+  --! Calculates its Hilber transform (Q component)
+  --! Calculates the phase of the signal (atan(Q/I)) with cordic
+  --! Compress the information
+  --! Stores the compressed inforamtion in a FIFO
+  --! Data in the fifo will be read by MT real time task and send through WR
   ------------------------------------------
   U_Phase_Enc : d3s_phase_encoder
     port map (
