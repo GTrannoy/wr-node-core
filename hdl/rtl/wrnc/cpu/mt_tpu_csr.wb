@@ -1,10 +1,10 @@
 -- -*- Mode: LUA; tab-width: 2 -*-
 
 -------------------------------------------------------------------------------
--- Title      : White Rabbit Node Core
--- Project    : White Rabbit
+-- Title      : Mock Turtle Trace/Profile Unit
+-- Project    : Mock Turtle
 -------------------------------------------------------------------------------
--- File       : wrn_cpu_csr.wb
+-- File       : mt_tpu_csr.wb
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
@@ -36,242 +36,15 @@
 -------------------------------------------------------------------------------
 
 peripheral {
-	 name = "WR Node CPU Control/Status registers block";
-	 prefix = "wrn_cpu_csr";
-	 hdl_entity = "wrn_cpu_csr_wb_slave";
+	 name = "Mock Turtle Trace/Priofile Unit Control Registers Block";
+	 prefix = "mt_tpu_csr";
+	 hdl_entity = "mt_tpu_csr_wb_slave";
 
-	 reg {
-			name = "Application ID Register";
- 		  prefix = "APP_ID";
- 			
-			field {
-			   name = "User application ID";
-		   
-				 type = SLV;
-				 size = 32;
-				 access_bus = READ_ONLY;
-				 access_dev = WRITE_ONLY;
-			};
-	 };
-
-	 reg {
-			name = "CPU Reset Register";
-			prefix = "RESET";
-
-			field {
-				 name = "CPU reset lines";
-				 size = 8;
-				 type = SLV;
-				 reset_value = 0xff;
-				 access_bus = READ_WRITE;
-				 access_dev = READ_ONLY;
-			};
-	 };
-
-	 reg {
-			name = "CPU Enable Register";
-			prefix = "ENABLE";
-
-			field {
-				 name = "CPU enable lines";
-				 size = 8;
-				 type = SLV;
-				 access_bus = READ_WRITE;
-				 access_dev = READ_ONLY;
-			};
-	 };
-
-	 reg {
-			name = "CPU Upload Address Register";
-			prefix = "UADDR";
-
-			field {
-				 name = "Address";
-				 prefix = "ADDR";				 
-				 size = 20;
-				 type = SLV;
-				 access_bus = READ_WRITE;
-				 access_dev = READ_ONLY;
-			};
-	 };
-
-   reg {
-      name = "Core Select Register";
-      prefix = "CORE_SEL";
-			field {
-				 name = "CPU core select";
-				 size = 4;
-				 type = SLV;
-				 access_bus = READ_WRITE;
-				 access_dev = READ_ONLY;
-			};
-   };
-  
-  reg {
-      name = "Core Count Register";
-      prefix = "CORE_COUNT";
-			field {
-				 name = "Number of CPU Cores";
-				 size = 4;
-				 type = SLV;
-				 access_bus = READ_ONLY;
-				 access_dev = WRITE_ONLY;
-			};
-   };
-
-  reg {
-      name = "Core Memory Size";
-      prefix = "CORE_MEMSIZE";
-			field {
-				 name = "Memory size for the selected core.";
-				 size = 32;
-				 type = SLV;
-				 access_bus = READ_ONLY;
-				 access_dev = WRITE_ONLY;
-			};
-   };
-
-	 reg {
-			name = "CPU Upload Data Register";
-			prefix = "UDATA";
-
-			field {
-				 name = "CPU IRAM read/write data";
-				 size = 32;
-				 type = SLV;
-				 access_bus = READ_WRITE;
-				 access_dev = READ_WRITE;
-				 load = LOAD_EXT;
-			};
-	 };
-
-
-   reg {
-      name = "CPU Debug Register";
-      prefix = "DBG_JTAG";
-      
-      field {
-         name = "JTAG data";
-         prefix = "jdata";
-         size = 8;
-         type = SLV;
-         access_bus = READ_WRITE;
-         access_dev = READ_WRITE;
-         load = LOAD_EXT;
-      };
-
-      
-      field {
-         name = "JTAG address";
-         prefix = "jaddr";
-         align = 8;
-         size = 3;
-         type = SLV;
-         access_bus = READ_WRITE;
-         access_dev = READ_WRITE;
-         load = LOAD_EXT;
-
-      };
-
-      field {
-         name = "JTAG reset";
-         prefix = "rstn";
-         align = 8;
-         type = BIT;
-         access_bus = READ_WRITE;
-         access_dev = READ_WRITE;
-         load = LOAD_EXT;
-
-      };
-
-      field {
-         name = "JTAG TCK";
-         prefix = "tck";
-         type = BIT;
-         access_bus = READ_WRITE;
-         access_dev = READ_WRITE;
-         load = LOAD_EXT;
-
-      };
-
-      field {
-         name = "JTAG Update";
-         prefix = "update";
-         type = BIT;
-         access_bus = READ_WRITE;
-         access_dev = READ_WRITE;
-         load = LOAD_EXT;
-      };
-   };
-
-	 reg {
-			name = "CPU Debug Message Register";
-			prefix = "DBG_MSG";
-
-			field {
-				 prefix = "DATA";
-				 name = "Debug message byte for the selected core";
-				 type = SLV;
-				 size = 8;
-				 ack_read = "dbg_msg_data_rd_ack_o";
-				 access_bus = READ_ONLY;
-				 access_dev = WRITE_ONLY;
-			};
-	 };
-
-   reg {
-			name = "CPU Debug Messge Poll Register";
-			prefix = "DBG_POLL";
-
-			field {
-				 prefix = "READY";
-				 name = "Debug Message data available";
-				 type = SLV;
-				 size = 8;
-				 access_bus = READ_ONLY;
-				 access_dev = WRITE_ONLY;
-			};
-   };
-
-  reg {
-			name = "CPU Debug Messge Interrupt Mask Register";
-			prefix = "DBG_IMSK";
-
-			field {
-				 prefix = "ENABLE";
-				 name = "Per-CPU Debug Message Interrupt Enable";
-				 description = "1: IRQ enabled";
-				 type = SLV;
-				 size = 8;
-				 access_bus = READ_WRITE;
-				 access_dev = READ_ONLY;
-			};
-   };
-
-	reg {
-		 name = "SMEM Operation Select";
-		 description = "Selects the operation mode for Shared Memory writes from host";
-		 prefix = "SMEM_OP";
-
-		 field {
-				name = "Operation code";
-				description = "0x0: write\
-0x1: add\
-0x2: subtract\
-0x3: bit set\
-0x3: bit clear\
-0x3: bit flip";
-				type = SLV;
-				size = 3;
-access_bus = READ_WRITE;
-access_dev = READ_ONLY;
-		 };
-	};
 
 	reg {
 		 name = "TPU Control/Status Register";
 		 description = "Controls the Trace/Profile Unit (TPU) if available";
-		 prefix = "TPU_CSR";
+		 prefix = "CSR";
 
 		 field {
 				name = "Present";
@@ -319,7 +92,7 @@ access_dev = READ_ONLY;
 		 field {
 				name = "Probe Select";
 				prefix = "PROBE_SEL";
-				description = "Selects the active TPU probe accessed by the TPU_PROBE_CSR register (0..PROBE_COUNT-1)";
+				description = "Selects the active TPU probe accessed by the PROBE_CSR register (0..PROBE_COUNT-1)";
 				size = 5;
 				type = SLV;
 				access_bus = READ_WRITE;
@@ -330,7 +103,7 @@ access_dev = READ_ONLY;
 	reg {
 		 name = "TPU Probe Control/Status Register";
 		 description = "Configures the selected TPU probe";
-		 prefix = "TPU_PROBE_CSR";
+		 prefix = "PROBE_CSR";
 
 		 field {
 				name = "Program Counter match value";
@@ -372,7 +145,7 @@ access_dev = READ_ONLY;
 
 	reg {
 		 name = "TPU Sample Buffer Current Sample Count";
-		 prefix = "TPU_BUF_COUNT";
+		 prefix = "BUF_COUNT";
 		 description = "Current number of samples in the TPU buffer";
 		 field {
 				name = "Count";
@@ -385,7 +158,7 @@ access_dev = READ_ONLY;
 
 	reg {
 		 name = "TPU Sample Buffer Size";
-		 prefix = "TPU_BUF_SIZE";
+		 prefix = "BUF_SIZE";
 		 description = "Max samples the TPU buffer can hold";
 				 
 		 field {
@@ -399,7 +172,7 @@ access_dev = READ_ONLY;
  
 	reg {
 		 name = "TPU Sample Buffer Address";
-		 prefix = "TPU_BUF_ADDR";
+		 prefix = "BUF_ADDR";
 		 name = "Address to read from the TPU sample buffer (in 32-bit words)";
 
 		 field {
@@ -413,9 +186,9 @@ access_dev = READ_ONLY;
 
 	reg {
 		 name = "TPU Sample Buffer Data";
-		 prefix = "TPU_BUF_DATA";
+		 prefix = "BUF_DATA";
 
-		 description = "Data in the TPU sample buffer read from TPU_BUF_ADDR (indirect access)";
+		 description = "Data in the TPU sample buffer read from BUF_ADDR (indirect access)";
 
 		 field {
 				name = "Probe ID the timestamp corresponds to";

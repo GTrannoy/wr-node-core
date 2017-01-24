@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2016-09-27
+-- Last update: 2017-01-24
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -53,7 +53,8 @@ entity wrn_lm32_wrapper is
     g_double_core_clock : boolean
     );
 
-  port(
+  port
+    (
     clk_cpu_i : in std_logic;
     clk_sys_i : in std_logic;
     rst_n_i   : in std_logic;
@@ -62,6 +63,9 @@ entity wrn_lm32_wrapper is
     dwb_o : out t_wishbone_master_out;
     dwb_i : in  t_wishbone_master_in;
 
+    pc_o: out std_logic_vector(c_mt_pc_bits-1 downto 0);
+    pc_valid_o : out std_logic;
+    
     cpu_csr_i : in  t_wrn_cpu_csr_out_registers;
     cpu_csr_o : out t_wrn_cpu_csr_in_registers
     );
@@ -102,8 +106,8 @@ architecture wrapper of wrn_lm32_wrapper is
       iram_d_we_o  : out std_logic;
       iram_d_en_o  : out std_logic;
 
-      --trace_pc : out std_logic_vector(31 downto 0);
-      --trace_pc_valid : out std_logic;
+      trace_pc : out std_logic_vector(31 downto 0);
+      trace_pc_valid : out std_logic;
       --trace_exception : out std_logic;
       --trace_eid : out std_logic_vector(2 downto 0);
       --trace_eret : out std_logic;
@@ -231,9 +235,13 @@ architecture wrapper of wrn_lm32_wrapper is
 
   signal bus_timeout : unsigned(7 downto 0);
   signal bus_timeout_hit : std_logic;
+
+  signal trace_pc : std_logic_vector(29 downto 0);
+  signal trace_pc_valid : std_logic;
 begin
 
-
+  pc_valid_o <= trace_pc_valid;
+  pc_o <= trace_pc(c_mt_pc_bits-3 downto 0) & "00";
 
   gen_with_double_core_clock : if g_double_core_clock generate
 
@@ -256,6 +264,10 @@ begin
         iram_d_we_o  => iram_d_wr,
         iram_d_en_o  => iram_d_en,
 
+        trace_pc => trace_pc,
+        trace_pc_valid => trace_pc_valid,
+
+        
         D_DAT_O => cpu_dwb_out.dat,
         D_ADR_O => cpu_dwb_out.adr,
         D_CYC_O => cpu_dwb_out.cyc,
@@ -397,6 +409,10 @@ begin
         iram_d_we_o  => iram_d_wr,
         iram_d_en_o  => iram_d_en,
 
+        trace_pc => trace_pc,
+        trace_pc_valid => trace_pc_valid,
+
+        
         D_DAT_O => cpu_dwb_out.dat,
         D_ADR_O => cpu_dwb_out.adr,
         D_CYC_O => cpu_dwb_out.cyc,

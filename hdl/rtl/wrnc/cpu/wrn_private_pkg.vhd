@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2014-12-01
+-- Last update: 2017-01-23
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -38,7 +38,14 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
+--use work.wr_node_pkg.all;
+
 package wrn_private_pkg is
+
+  constant c_mt_pc_bits : integer := 20;
+  subtype t_pc_counter is std_logic_vector(c_mt_pc_bits-1 downto 0);
+  type t_pc_array is array(integer range<>) of t_pc_counter;
+  
   function f_pick (
     cond : boolean;
     if_1 : std_logic;

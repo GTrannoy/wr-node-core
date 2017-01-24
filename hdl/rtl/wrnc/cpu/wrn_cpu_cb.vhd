@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-08-13
+-- Last update: 2017-01-23
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -44,6 +44,7 @@ use work.wishbone_pkg.all;
 use work.gencores_pkg.all;
 use work.genram_pkg.all;
 
+use work.wrn_private_pkg.all;
 use work.wrn_cpu_csr_wbgen2_pkg.all;
 use work.wrn_cpu_lr_wbgen2_pkg.all;
 
@@ -86,10 +87,12 @@ entity wrn_cpu_cb is
     gpio_i : in  std_logic_vector(31 downto 0);
     gpio_o : out std_logic_vector(31 downto 0);
 
+    pc_o       : out std_logic_vector(c_mt_pc_bits-1 downto 0);
+    pc_valid_o : out std_logic;
+
     dbg_drdy_o : out std_logic;
     dbg_dack_i : in  std_logic;
     dbg_data_o : out std_logic_vector(7 downto 0)
-
     );
 
 
@@ -121,14 +124,16 @@ architecture rtl of wrn_cpu_cb is
       g_cpu_id            : integer;
       g_double_core_clock : boolean);
     port (
-      clk_sys_i : in  std_logic;
-      clk_cpu_i : in  std_logic;
-      rst_n_i   : in  std_logic;
-      irq_i     : in  std_logic_vector(31 downto 0) := x"00000000";
-      dwb_o     : out t_wishbone_master_out;
-      dwb_i     : in  t_wishbone_master_in;
-      cpu_csr_i : in  t_wrn_cpu_csr_out_registers;
-      cpu_csr_o : out t_wrn_cpu_csr_in_registers);
+      clk_sys_i  : in  std_logic;
+      clk_cpu_i  : in  std_logic;
+      rst_n_i    : in  std_logic;
+      irq_i      : in  std_logic_vector(31 downto 0) := x"00000000";
+      dwb_o      : out t_wishbone_master_out;
+      dwb_i      : in  t_wishbone_master_in;
+      pc_o       : out std_logic_vector(c_mt_pc_bits-1 downto 0);
+      pc_valid_o : out std_logic;
+      cpu_csr_i  : in  t_wrn_cpu_csr_out_registers;
+      cpu_csr_o  : out t_wrn_cpu_csr_in_registers);
   end component;
 
   constant c_local_wishbone_masters : integer := 3;
@@ -160,7 +165,7 @@ architecture rtl of wrn_cpu_cb is
   signal cpu_dwb_in  : t_wishbone_master_in;
 
   signal tai_sys                                  : std_logic_vector(31 downto 0);
-  signal delay_cnt : std_logic_vector(31 downto 0);
+  signal delay_cnt                                : std_logic_vector(31 downto 0);
   signal cycles_sys, cycles_sys_d0, cycles_sys_d1 : std_logic_vector(27 downto 0);
 
   signal tai_ref    : std_logic_vector(31 downto 0);
@@ -275,9 +280,9 @@ begin  -- rtl
       end if;
     end process;
 
-    local_regs_in.tai_sec_i <= tai_sys;
-    local_regs_in.stat_wr_link_i <= '0';
-    local_regs_in.stat_wr_time_ok_i <= '0';
+    local_regs_in.tai_sec_i              <= tai_sys;
+    local_regs_in.stat_wr_link_i         <= '0';
+    local_regs_in.stat_wr_time_ok_i      <= '0';
     local_regs_in.stat_wr_aux_clock_ok_i <= x"00";
 
     
@@ -301,8 +306,8 @@ begin  -- rtl
     end if;
   end process;
 
-  
-  
+
+
   p_gpio : process(clk_sys_i)
   begin
     if rising_edge(clk_sys_i) then
@@ -330,14 +335,16 @@ begin  -- rtl
       g_cpu_id            => g_cpu_id,
       g_double_core_clock => g_double_core_clock)
     port map (
-      clk_sys_i => clk_sys_i,
-      clk_cpu_i => clk_cpu_i,
-      rst_n_i   => rst_n_i,
-      irq_i     => x"00000000",  -- no irqs, we want to be deterministic...
-      dwb_o     => cpu_dwb_out,
-      dwb_i     => cpu_dwb_in,
-      cpu_csr_i => cpu_csr_i,
-      cpu_csr_o => cpu_csr_o);
+      clk_sys_i  => clk_sys_i,
+      clk_cpu_i  => clk_cpu_i,
+      rst_n_i    => rst_n_i,
+      irq_i      => x"00000000",  -- no irqs, we want to be deterministic...
+      dwb_o      => cpu_dwb_out,
+      dwb_i      => cpu_dwb_in,
+      pc_valid_o => pc_valid_o,
+      pc_o       => pc_o,
+      cpu_csr_i  => cpu_csr_i,
+      cpu_csr_o  => cpu_csr_o);
 
 
   U_Local_Registrers : wrn_cpu_lr_wb_slave
