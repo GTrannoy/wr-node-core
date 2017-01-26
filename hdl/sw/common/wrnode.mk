@@ -7,9 +7,13 @@ OBJDUMP =	$(CROSS_COMPILE)objdump
 OBJCOPY =	$(CROSS_COMPILE)objcopy
 SIZE =		$(CROSS_COMPILE)size
 
-CFLAGS = -DWRNODE_RT -g -O3 -I. -I../common -I../../include -I../include/ -mmultiply-enabled -mbarrel-shift-enabled
+EXTRA_TARGETS ?= 
+
+CFLAGS = -DWRNODE_RT -g -Os -I. -I../common -I../../include -I../include/ -mmultiply-enabled -mbarrel-shift-enabled
 OBJS += ../common/wrn-crt0.o  ../common/rt-common.o  ../common/printf.o ../common/vsprintf-xint.o
 LDSCRIPT = ../common/wrnode.ld
+
+all:    $(OUTPUT)  $(EXTRA_TARGETS)
 
 $(OUTPUT): $(LDSCRIPT) $(OBJS)
 	${CC} -o $(OUTPUT).elf -nostartfiles $(OBJS) -T $(LDSCRIPT) -lgcc -lc
@@ -23,3 +27,4 @@ clean:
 	
 install:
 	cp $(OUTPUT).bin /acc/local/share/firmware/list
+
