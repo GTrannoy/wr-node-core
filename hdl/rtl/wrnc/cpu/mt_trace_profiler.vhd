@@ -2,11 +2,13 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-use work.wr_node_pkg.all;
-use work.wrn_private_pkg.all;
-use work.wrn_cpu_csr_wbgen2_pkg.all;
 use work.gencores_pkg.all;
 use work.genram_pkg.all;
+use work.wishbone_pkg.all;
+
+use work.wr_node_pkg.all;
+use work.wrn_private_pkg.all;
+use work.tpu_wbgen2_pkg.all;
 
 entity mt_trace_profiler is
   generic (
@@ -19,14 +21,31 @@ entity mt_trace_profiler is
     cpu_pc_i       : in t_pc_array(0 to g_config.cpu_count-1);
     cpu_pc_valid_i : in std_logic_vector(g_config.cpu_count-1 downto 0);
 
-    csr_regs_i : in  t_wrn_cpu_csr_out_registers;
-    csr_regs_o : out t_wrn_cpu_csr_in_registers
+    slave_i : in t_wishbone_slave_in;
+    slave_o : out t_wishbone_slave_out
     );
 
 end mt_trace_profiler;
 
 architecture rtl of mt_trace_profiler is
 
+  component mt_tpu_csr_wb_slave is
+    port (
+      rst_n_i    : in  std_logic;
+      clk_sys_i  : in  std_logic;
+      wb_adr_i   : in  std_logic_vector(2 downto 0);
+      wb_dat_i   : in  std_logic_vector(31 downto 0);
+      wb_dat_o   : out std_logic_vector(31 downto 0);
+      wb_cyc_i   : in  std_logic;
+      wb_sel_i   : in  std_logic_vector(3 downto 0);
+      wb_stb_i   : in  std_logic;
+      wb_we_i    : in  std_logic;
+      wb_ack_o   : out std_logic;
+      wb_stall_o : out std_logic;
+      regs_i     : in  t_tpu_in_registers;
+      regs_o     : out t_tpu_out_registers);
+  end component mt_tpu_csr_wb_slave;
+  
   constant c_ACTION_START_REC   : std_logic_vector(3 downto 0) := x"0";
   constant c_ACTION_STOP_REC    : std_logic_vector(3 downto 0) := x"1";
   constant c_ACTION_PROBE_START : std_logic_vector(3 downto 0) := x"2";
@@ -73,9 +92,27 @@ architecture rtl of mt_trace_profiler is
 
   signal channel_id : integer range 0 to g_config.tpu_channels-1;
 
+  signal regs_out : t_tpu_out_registers;
+  signal regs_in : t_tpu_in_registers;
   
 begin
 
+  U_WB_Regs: mt_tpu_csr_wb_slave
+    port map (
+      rst_n_i    => rst_n_i,
+      clk_sys_i  => clk_i,
+      wb_adr_i   => slave_i.adr(4 downto 2),
+      wb_dat_i   => slave_i.dat,
+      wb_dat_o   => slave_o.dat,
+      wb_cyc_i   => slave_i.cyc,
+      wb_sel_i   => slave_i.sel,
+      wb_stb_i   => slave_i.stb,
+      wb_we_i    => slave_i.we,
+      wb_ack_o   => slave_o.ack,
+      wb_stall_o => slave_o.stall,
+      regs_i     => regs_in,
+      regs_o     => regs_out);
+  
   p_ts_counter : process(clk_i)
   begin
     if rising_edge(clk_i) then
@@ -134,17 +171,17 @@ begin
         arb_input_valid(i) <= '0';
       end if;
 
-      arb_input_data(32 * (i+1) -1 downto 32 * i) <= std_logic_vector(ch(i).ts) & std_logic_vector(to_unsigned(i, 5));
+      arb_input_data(32 * (i+1) -1 downto 32 * i) <= std_logic_vector(to_unsigned(i, 5)) &  std_logic_vector(ch(i).ts) ;
       ch(i).ack                                   <= ch(i).hit and arb_input_req(i);
     end process;
 
     p_channel_regs_write : process(clk_i)
     begin
       if rising_edge(clk_i) then
-        if (csr_regs_i.tpu_probe_csr_pc_load_o = '1' and i = channel_id) then
-          ch(i).pc_match <= csr_regs_i.tpu_probe_csr_pc_o(c_mt_pc_bits-1 downto 0);
-          ch(i).core_id  <= csr_regs_i.tpu_probe_csr_core_id_o(2 downto 0);
-          ch(i).action   <= csr_regs_i.tpu_probe_csr_action_o;
+        if (regs_out.probe_csr_pc_load_o = '1' and i = channel_id) then
+          ch(i).pc_match <= regs_out.probe_csr_pc_o(c_mt_pc_bits-1 downto 0);
+          ch(i).core_id  <= regs_out.probe_csr_core_id_o(2 downto 0);
+          ch(i).action   <= regs_out.probe_csr_action_o;
         end if;
       end if;
     end process;
@@ -183,20 +220,20 @@ begin
       da_i    => arb_out_data,
       clkb_i  => clk_i,
       web_i   => '0',
-      ab_i    => csr_regs_i.tpu_buf_addr_o(c_mem_addr_width-1 downto 0),
+      ab_i    => regs_out.buf_addr_o(c_mem_addr_width-1 downto 0),
       qb_o    => mem_rdata);
 
   p_fsm : process(clk_i)
   begin
     if rising_edge(clk_i) then
-      if rst_n_i = '0' or csr_regs_i.tpu_csr_enable_o = '0' then
+      if rst_n_i = '0' or regs_out.csr_enable_o = '0' then
         state <= ST_IDLE;
         mem_addr <= (others => '0');
       else
         case state is
           when ST_IDLE =>
-            csr_regs_o.tpu_csr_ready_i <= '0';
-            if (start_rec = '1' or csr_regs_i.tpu_csr_force_start_o = '1') then
+            regs_in.csr_ready_i <= '0';
+            if (start_rec = '1' or regs_out.csr_force_start_o = '1') then
               state    <= ST_RECORDING;
               mem_addr <= (others => '0');
             end if;
@@ -215,29 +252,29 @@ begin
             end if;
 
           when ST_DONE =>
-            csr_regs_o.tpu_csr_ready_i <= '1';
+            regs_in.csr_ready_i <= '1';
         end case;
       end if;
     end if;
   end process;
 
-  channel_id <= to_integer(unsigned(csr_regs_i.tpu_csr_probe_sel_o));
+  channel_id <= to_integer(unsigned(regs_out.csr_probe_sel_o));
 
   p_channel_regs_read : process(clk_i)
   begin
     if rising_edge(clk_i) then
-      csr_regs_o.tpu_probe_csr_pc_i      <= std_logic_vector(resize (unsigned(ch(channel_id).pc_match), 24));
-      csr_regs_o.tpu_probe_csr_action_i  <= ch(channel_id).action;
-      csr_regs_o.tpu_probe_csr_core_id_i <= '0'&ch(channel_id).core_id;
+      regs_in.probe_csr_pc_i      <= std_logic_vector(resize (unsigned(ch(channel_id).pc_match), 24));
+      regs_in.probe_csr_action_i  <= ch(channel_id).action;
+      regs_in.probe_csr_core_id_i <= '0'&ch(channel_id).core_id;
     end if;
   end process;
 
 
-  csr_regs_o.tpu_buf_count_i       <= std_logic_vector (resize(mem_addr, 16));
-  csr_regs_o.tpu_buf_size_i        <= std_logic_vector (to_unsigned(g_config.tpu_buffer_size, 16));
-  csr_regs_o.tpu_csr_probe_count_i <= std_logic_vector(to_unsigned (g_config.tpu_channels, 5));
-  csr_regs_o.tpu_buf_data_id_i     <= mem_rdata(31 downto 27);
-  csr_regs_o.tpu_buf_data_tstamp_i <= mem_rdata(26 downto 0);
+  regs_in.buf_count_i       <= std_logic_vector (resize(mem_addr, 16));
+  regs_in.buf_size_i        <= std_logic_vector (to_unsigned(g_config.tpu_buffer_size, 16));
+  regs_in.csr_probe_count_i <= std_logic_vector(to_unsigned (g_config.tpu_channels, 5));
+  regs_in.buf_data_id_i     <= mem_rdata(31 downto 27);
+  regs_in.buf_data_tstamp_i <= mem_rdata(26 downto 0);
 
 
 

@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-08-13
+-- Last update: 2017-01-23
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -49,6 +49,7 @@ use work.wr_fabric_pkg.all;
 package wr_node_pkg is
 
   constant c_wrn_debug_message_fifo_size : integer := 512;
+  constant c_mt_max_core_count : integer := 8;
 
   type t_wrn_timing_if is record
     link_up    : std_logic;
@@ -71,6 +72,9 @@ package wr_node_pkg is
     rmq_config   : t_wrn_mqueue_config;
     -- shared memory size, in bytes
     shared_mem_size : integer range 256 to 65536;
+    tpu_enable : boolean;
+    tpu_channels : integer range 1 to 32;
+    tpu_buffer_size : integer range 256 to 65536;
   end record;
 
   constant c_default_node_config : t_wr_node_config :=
@@ -80,7 +84,10 @@ package wr_node_pkg is
       cpu_memsizes => (32768, 32768, 0, 0, 0, 0, 0, 0),
       hmq_config   => c_wrn_default_mqueue_config,
       rmq_config   => c_wrn_default_mqueue_config,
-      shared_mem_size => 8192
+      shared_mem_size => 8192,
+      tpu_enable => true,
+      tpu_channels => 8,
+      tpu_buffer_size => 2048
       );
 
   --- Functions
@@ -165,9 +172,24 @@ package wr_node_pkg is
         date      => x"20141201",
         name      => "WR-Node-Core       ")));
 
+  function f_reduce_or (x : std_logic_vector) return std_logic;
+
+  
 end wr_node_pkg;
 
 package body wr_node_pkg is
+
+    function f_reduce_or (x : std_logic_vector) return std_logic is
+    variable rv : std_logic;
+  begin
+    rv := '0';
+    for n in 0 to x'length-1 loop
+        if(x(n) = '1') then
+          rv := '1';
+        end if;
+    end loop;
+    return rv;
+  end f_reduce_or;
 
   
   function f_dummy_master_in_array(size : integer)

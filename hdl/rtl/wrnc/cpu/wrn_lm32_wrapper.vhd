@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2017-01-24
+-- Last update: 2017-01-25
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -106,7 +106,7 @@ architecture wrapper of wrn_lm32_wrapper is
       iram_d_we_o  : out std_logic;
       iram_d_en_o  : out std_logic;
 
-      trace_pc : out std_logic_vector(31 downto 0);
+      trace_pc : out std_logic_vector(29 downto 0);
       trace_pc_valid : out std_logic;
       --trace_exception : out std_logic;
       --trace_eid : out std_logic_vector(2 downto 0);
