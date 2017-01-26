@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-08-13
+-- Last update: 2017-01-25
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -41,6 +41,7 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 use work.wr_node_pkg.all;
+use work.wrn_private_pkg.all;
 use work.wishbone_pkg.all;
 use work.wrn_cpu_csr_wbgen2_pkg.all;
 use work.wrn_mqueue_pkg.all;
@@ -57,9 +58,9 @@ entity wr_node_core is
 -- When true, the Remote Message Queue is implemented.
     g_with_rmq          : boolean          := true;
 -- Frequency of clk_sys_i, in Hz
-    g_system_clock_freq : integer := 62500000;
+    g_system_clock_freq : integer          := 62500000;
 -- Enables/disables WR support
-    g_with_white_rabbit : boolean := false
+    g_with_white_rabbit : boolean          := false
     );
 
   port (
@@ -121,6 +122,8 @@ architecture rtl of wr_node_core is
       hmq_ready_i : in  std_logic_vector(15 downto 0);
       gpio_i      : in  std_logic_vector(31 downto 0);
       gpio_o      : out std_logic_vector(31 downto 0);
+      pc_o: out std_logic_vector(c_mt_pc_bits-1 downto 0);
+      pc_valid_o : out std_logic;
       dbg_drdy_o  : out std_logic;
       dbg_dack_i  : in  std_logic;
       dbg_data_o  : out std_logic_vector(7 downto 0));
@@ -172,6 +175,18 @@ architecture rtl of wr_node_core is
       ebs_slave_i  : in  t_wishbone_slave_in  := cc_dummy_slave_in;
       rmq_status_o : out std_logic_vector(15 downto 0));
   end component;
+
+  component mt_trace_profiler is
+    generic (
+      g_config : t_wr_node_config);
+    port (
+      clk_i          : in  std_logic;
+      rst_n_i        : in  std_logic;
+      cpu_pc_i       : in  t_pc_array(0 to g_config.cpu_count-1);
+      cpu_pc_valid_i : in  std_logic_vector(g_config.cpu_count-1 downto 0);
+      slave_i        : in  t_wishbone_slave_in;
+      slave_o        : out t_wishbone_slave_out);
+  end component mt_trace_profiler;
 
   component wrn_shared_mem is
     generic (
@@ -230,21 +245,24 @@ architecture rtl of wr_node_core is
     );
 
 
-  constant c_hac_wishbone_masters : integer := 3;
+  constant c_hac_wishbone_masters : integer := 4;
   constant c_hac_master_hmq       : integer := 0;
-  constant c_hac_master_cpu_csr       : integer := 1;
-  constant c_hac_master_si      : integer := 2;
+  constant c_hac_master_cpu_csr   : integer := 1;
+  constant c_hac_master_tpu   : integer := 2;
+  constant c_hac_master_si        : integer := 3;
 
   constant c_hac_address : t_wishbone_address_array(c_hac_wishbone_masters-1 downto 0) := (
-    c_hac_master_hmq  => x"00000000",   -- Host MQ
-    c_hac_master_cpu_csr  => x"00010000",    -- CPU CSR
-    c_hac_master_si => x"00200000"    -- SMEM
+    c_hac_master_hmq     => x"00000000",  -- Host MQ
+    c_hac_master_cpu_csr => x"00010000",  -- CPU CSR
+    c_hac_master_tpu     => x"00011000",  -- Trace/Profile Unit
+    c_hac_master_si      => x"00200000"   -- SMEM
     );
 
   constant c_hac_mask : t_wishbone_address_array(c_hac_wishbone_masters-1 downto 0) := (
-    c_hac_master_hmq  => x"003f0000",   -- Host MQ
-    c_hac_master_cpu_csr => x"003f0000",    -- CPU CSR
-    c_hac_master_si => x"00300000"    -- SMEM
+    c_hac_master_hmq     => x"003f0000",  -- Host MQ
+    c_hac_master_cpu_csr => x"003ff000",  -- CPU CSR
+    c_hac_master_tpu     => x"003ff000",  -- CPU CSR
+    c_hac_master_si      => x"00300000"   -- SMEM
     );
 
   signal hac_master_out : t_wishbone_master_out_array(c_hac_wishbone_masters-1 downto 0);
@@ -282,11 +300,10 @@ architecture rtl of wr_node_core is
   signal si_master_out : t_wishbone_master_out_array(c_si_wishbone_masters-1 downto 0);
 
 
-  signal cpu_csr_fromwb : t_wrn_cpu_csr_out_registers;
-  signal cpu_csr_towb   : t_wrn_cpu_csr_in_registers;
+  signal cpu_csr_fromwb                                     : t_wrn_cpu_csr_out_registers;
+  signal cpu_csr_towb : t_wrn_cpu_csr_in_registers;
 
   signal hmq_status, rmq_status : std_logic_vector(15 downto 0);
-
 
   signal cpu_index : integer := 0;
 
@@ -299,9 +316,6 @@ architecture rtl of wr_node_core is
   signal cpu_dbg_msg_data           : t_dbg_msg_data_array(g_config.cpu_count-1 downto 0);
   signal dbg_msg_data_read_ack      : std_logic;
 
-
-
-
   signal cpu_csr_towb_cb : t_wrn_cpu_csr_in_registers_array (g_config.cpu_count-1 downto 0);
   signal cpu_gpio_out    : t_gpio_out_array (g_config.cpu_count-1 downto 0);
 
@@ -309,6 +323,9 @@ architecture rtl of wr_node_core is
 
   signal host_remapped_in  : t_wishbone_slave_in;
   signal host_remapped_out : t_wishbone_slave_out;
+
+  signal cpu_pcs_valid : std_logic_vector(g_config.cpu_count-1 downto 0);
+  signal cpu_pcs       : t_pc_array(0 to g_config.cpu_count-1);
 
   function f_reduce_or (x : t_gpio_out_array) return std_logic_vector is
     variable rv : std_logic_vector(31 downto 0);
@@ -378,6 +395,27 @@ begin  -- rtl
       master_i  => si_master_in,
       master_o  => si_master_out);
 
+  
+  gen_with_tpu : if g_config.tpu_enable generate
+
+    U_TPU : mt_trace_profiler
+      generic map (
+        g_config => g_config)
+      port map (
+        clk_i          => clk_i,
+        rst_n_i        => rst_n_i,
+        cpu_pc_i       => cpu_pcs,
+        cpu_pc_valid_i => cpu_pcs_valid,
+        slave_i => hac_master_out(c_hac_master_tpu),
+        slave_o => hac_master_in(c_hac_master_tpu)
+        );
+
+  end generate gen_with_tpu;
+
+  gen_without_tpu : if not g_config.tpu_enable generate
+    hac_master_in(c_hac_master_tpu) <= cc_dummy_master_in;
+  end generate gen_without_tpu;
+
   sp_master_o                   <= si_master_out(c_si_master_sp);
   si_master_in (c_si_master_sp) <= sp_master_i;
 
@@ -420,6 +458,7 @@ begin  -- rtl
       regs_i                => cpu_csr_towb,
       regs_o                => cpu_csr_fromwb);
 
+
   hac_master_in(c_hac_master_cpu_csr).err <= '0';
   hac_master_in(c_hac_master_cpu_csr).rty <= '0';
 
@@ -430,7 +469,6 @@ begin  -- rtl
   cpu_csr_towb.core_memsize_i <= std_logic_vector(to_unsigned(g_config.cpu_memsizes(cpu_index), 32));
 
   gen_cpus : for i in 0 to g_config.cpu_count-1 generate
-
     U_CPU_Block : wrn_cpu_cb
       generic map (
         g_cpu_id            => i,
@@ -455,6 +493,8 @@ begin  -- rtl
         hmq_ready_i => hmq_status,
         gpio_o      => cpu_gpio_out(i),
         gpio_i      => gpio_i,
+        pc_o => cpu_pcs(i),
+        pc_valid_o => cpu_pcs_valid(i),
         dbg_drdy_o  => cpu_dbg_drdy(i),
         dbg_dack_i  => cpu_dbg_dack(i),
         dbg_data_o  => cpu_dbg_msg_data(i));

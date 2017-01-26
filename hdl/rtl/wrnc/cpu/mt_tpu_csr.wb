@@ -37,7 +37,7 @@
 
 peripheral {
 	 name = "Mock Turtle Trace/Priofile Unit Control Registers Block";
-	 prefix = "mt_tpu_csr";
+	 prefix = "tpu";
 	 hdl_entity = "mt_tpu_csr_wb_slave";
 
 
