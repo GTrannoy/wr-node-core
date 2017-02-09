@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-11-18
+-- Last update: 2017-02-06
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -56,6 +56,7 @@ package spec_node_pkg is
       g_fmc0_sdb        : t_sdb_record := c_unused_fmc0_record;
       g_fmc0_vic_vector : t_wishbone_address := x"00000000";
       g_simulation      : boolean := false;
+      g_sim_bypass_gennum : boolean := false;
       g_with_white_rabbit        : boolean := false;
       g_with_wr_phy     : boolean := true;
       g_double_wrnode_core_clock : boolean := false;
@@ -143,7 +144,10 @@ package spec_node_pkg is
       tm_clk_aux_locked_o  : out   std_logic_vector(0 downto 0);
       tm_time_valid_o      : out   std_logic;
       tm_tai_o             : out   std_logic_vector(39 downto 0);
-      tm_cycles_o          : out   std_logic_vector(27 downto 0));
+      tm_cycles_o          : out   std_logic_vector(27 downto 0);
+      sim_slave_i : in t_wishbone_slave_in := cc_dummy_slave_in;
+      sim_slave_o : out t_wishbone_slave_out
+      );
   end component spec_node_template;
 
  

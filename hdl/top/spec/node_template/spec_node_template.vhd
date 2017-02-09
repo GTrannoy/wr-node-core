@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-11-25
+-- Last update: 2017-02-08
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -69,6 +69,12 @@ entity spec_node_template is
 
 -- Reduces some timeouts to speed up simulations.
     g_simulation     : boolean := false;
+
+-- bypasses the gennum core and routes WB master to
+-- sim_master_(i/o) to speed up simulations where full PCIe
+-- access is not required
+    g_sim_bypass_gennum : boolean := false;
+    
 -- Enable/disable instantiation of the gigabit transceiver core.
 -- Speeds up the simulations a lot.
     g_with_wr_phy    : boolean := false;
@@ -214,7 +220,12 @@ entity spec_node_template is
       tm_clk_aux_locked_o  : out std_logic_vector(0 downto 0);
       tm_time_valid_o      : out std_logic;
       tm_tai_o             : out std_logic_vector(39 downto 0);
-      tm_cycles_o          : out std_logic_vector(27 downto 0)
+      tm_cycles_o          : out std_logic_vector(27 downto 0);
+
+-- virtual port for accessing internal Wishbone system bus (bypassing the gennum)
+-- reserved for simulation purposes. Used when g_sim_bypass_gennum is TRUE.
+      sim_slave_i : in t_wishbone_slave_in := cc_dummy_slave_in;
+      sim_slave_o : out t_wishbone_slave_out
       );
 
 end spec_node_template;
@@ -533,6 +544,8 @@ begin
   -- Gennum core
   -------------------------------------------------------------------------------
 
+gen_with_gennum :  if not g_sim_bypass_gennum generate
+  
   U_GN4124_Core : gn4124_core
     port map
     (
@@ -615,7 +628,14 @@ begin
       dma_reg_we_i  => '0'
       );
 
-  cnx_slave_in(c_MASTER_GENNUM).adr <= gn_wb_adr(29 downto 0) & "00";
+    cnx_slave_in(c_MASTER_GENNUM).adr <= gn_wb_adr(29 downto 0) & "00";
+
+  end generate gen_with_gennum;
+
+  gen_without_gennum : if g_sim_bypass_gennum generate
+    cnx_slave_in(c_MASTER_GENNUM) <= sim_slave_i;
+    sim_slave_o <= cnx_slave_out(c_MASTER_GENNUM);
+  end generate gen_without_gennum;
 
   gen_with_wr : if( g_with_white_rabbit ) generate
   
