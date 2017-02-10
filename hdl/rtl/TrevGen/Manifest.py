@@ -1,1 +1,1 @@
-modules = { "local" : [ "core", "wb"] };
+modules = { "local" : [ "core"] };
