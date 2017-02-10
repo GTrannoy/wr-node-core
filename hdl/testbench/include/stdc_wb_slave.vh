@@ -1,9 +1,9 @@
-`define ADDR_STDC_STATUS               4'h0
+`define ADDR_STDC_STATUS               5'h0
 `define STDC_STATUS_EMPTY_OFFSET 0
 `define STDC_STATUS_EMPTY 32'h00000001
 `define STDC_STATUS_OVF_OFFSET 1
 `define STDC_STATUS_OVF 32'h00000002
-`define ADDR_STDC_CTRL                 4'h4
+`define ADDR_STDC_CTRL                 5'h4
 `define STDC_CTRL_CLR_OFFSET 0
 `define STDC_CTRL_CLR 32'h00000001
 `define STDC_CTRL_CLR_OVF_OFFSET 1
@@ -12,5 +12,7 @@
 `define STDC_CTRL_NEXT 32'h00000004
 `define STDC_CTRL_FILTER_OFFSET 3
 `define STDC_CTRL_FILTER 32'h00000018
-`define ADDR_STDC_TDC_TS_TAI           4'h8
-`define ADDR_STDC_TDC_TS_NS            4'hc
+`define ADDR_STDC_TDC_TS_TAI_H         5'h8
+`define ADDR_STDC_TDC_TS_TAI_L         5'hc
+`define ADDR_STDC_TDC_TS_NS            5'h10
+`define ADDR_STDC_TDC_POLARITY         5'h14

@@ -81,11 +81,6 @@ add wave -noupdate -group Top /main/DUT/adc0_spi_din_i
 add wave -noupdate -group Top /main/DUT/adc0_spi_dout_o
 add wave -noupdate -group Top /main/DUT/adc0_spi_sck_o
 add wave -noupdate -group Top /main/DUT/adc0_spi_cs_adc_n_o
-add wave -noupdate -group Top /main/DUT/adc0_spi_cs_dac1_n_o
-add wave -noupdate -group Top /main/DUT/adc0_spi_cs_dac2_n_o
-add wave -noupdate -group Top /main/DUT/adc0_spi_cs_dac3_n_o
-add wave -noupdate -group Top /main/DUT/adc0_spi_cs_dac4_n_o
-add wave -noupdate -group Top /main/DUT/adc0_gpio_dac_clr_n_o
 add wave -noupdate -group Top /main/DUT/adc0_gpio_led_acq_o
 add wave -noupdate -group Top /main/DUT/adc0_gpio_led_trig_o
 add wave -noupdate -group Top /main/DUT/adc0_gpio_si570_oe_o
@@ -123,7 +118,6 @@ add wave -noupdate -group Top /main/DUT/tm_clk_aux_locked
 add wave -noupdate -group Top /main/DUT/tm_time_valid
 add wave -noupdate -group Top /main/DUT/tm_tai
 add wave -noupdate -group Top /main/DUT/tm_cycles
-add wave -noupdate -group Top /main/DUT/CONTROL
 add wave -noupdate -group Top /main/DUT/fmc0_clk_wr
 add wave -noupdate -group Top /main/DUT/fmc1_clk_wr
 add wave -noupdate -group Top /main/DUT/debug
@@ -132,20 +126,52 @@ add wave -noupdate -group Top /main/DUT/fmc_wb_muxed_in
 add wave -noupdate -group Top /main/DUT/scl_pad_oen
 add wave -noupdate -group Top /main/DUT/sda_pad_oen
 add wave -noupdate -group Top /main/DUT/clk_125m_pllref
-add wave -noupdate -expand -group Acq0 /main/DUT/U_D3S_ADC_Core/U_Acq/rst_n_sys_i
-add wave -noupdate -expand -group Acq0 /main/DUT/U_D3S_ADC_Core/U_Acq/clk_sys_i
-add wave -noupdate -expand -group Acq0 /main/DUT/U_D3S_ADC_Core/U_Acq/clk_acq_i
-add wave -noupdate -expand -group Acq0 /main/DUT/U_D3S_ADC_Core/U_Acq/data_i
-add wave -noupdate -expand -group Acq0 /main/DUT/U_D3S_ADC_Core/U_Acq/slave_i
-add wave -noupdate -expand -group Acq0 /main/DUT/U_D3S_ADC_Core/U_Acq/slave_o
-add wave -noupdate -expand -group Acq0 /main/DUT/U_D3S_ADC_Core/U_Acq/wr_addr
-add wave -noupdate -expand -group Acq0 /main/DUT/U_D3S_ADC_Core/U_Acq/done
-add wave -noupdate -expand -group Acq0 /main/DUT/U_D3S_ADC_Core/U_Acq/regs_in
-add wave -noupdate -expand -group Acq0 /main/DUT/U_D3S_ADC_Core/U_Acq/regs_out
-add wave -noupdate -expand -group Acq0 /main/DUT/U_D3S_ADC_Core/U_Acq/acq_in_progress
-add wave -noupdate -expand -group Acq0 /main/DUT/U_D3S_ADC_Core/U_Acq/rst_n_acq
+add wave -noupdate -group Acq0 /main/DUT/U_D3S_ADC_Core/U_Acq/rst_n_sys_i
+add wave -noupdate -group Acq0 /main/DUT/U_D3S_ADC_Core/U_Acq/clk_sys_i
+add wave -noupdate -group Acq0 /main/DUT/U_D3S_ADC_Core/U_Acq/clk_acq_i
+add wave -noupdate -group Acq0 /main/DUT/U_D3S_ADC_Core/U_Acq/data_i
+add wave -noupdate -group Acq0 /main/DUT/U_D3S_ADC_Core/U_Acq/slave_i
+add wave -noupdate -group Acq0 /main/DUT/U_D3S_ADC_Core/U_Acq/slave_o
+add wave -noupdate -group Acq0 /main/DUT/U_D3S_ADC_Core/U_Acq/wr_addr
+add wave -noupdate -group Acq0 /main/DUT/U_D3S_ADC_Core/U_Acq/done
+add wave -noupdate -group Acq0 /main/DUT/U_D3S_ADC_Core/U_Acq/regs_in
+add wave -noupdate -group Acq0 /main/DUT/U_D3S_ADC_Core/U_Acq/regs_out
+add wave -noupdate -group Acq0 /main/DUT/U_D3S_ADC_Core/U_Acq/acq_in_progress
+add wave -noupdate -group Acq0 /main/DUT/U_D3S_ADC_Core/U_Acq/rst_n_acq
+add wave -noupdate -expand -group TrevGen /main/DUT/U_D3S_ADC_slave_core/cmp_TrevGen/rst_n_sys_i
+add wave -noupdate -expand -group TrevGen /main/DUT/U_D3S_ADC_slave_core/cmp_TrevGen/clk_sys_i
+add wave -noupdate -expand -group TrevGen /main/DUT/U_D3S_ADC_slave_core/cmp_TrevGen/clk_125m_i
+add wave -noupdate -expand -group TrevGen /main/DUT/U_D3S_ADC_slave_core/cmp_TrevGen/enable_i
+add wave -noupdate -expand -group TrevGen /main/DUT/U_D3S_ADC_slave_core/cmp_TrevGen/tm_time_valid_i
+add wave -noupdate -expand -group TrevGen /main/DUT/U_D3S_ADC_slave_core/cmp_TrevGen/tm_tai_i
+add wave -noupdate -expand -group TrevGen /main/DUT/U_D3S_ADC_slave_core/cmp_TrevGen/tm_cycles_i
+add wave -noupdate -expand -group TrevGen /main/DUT/U_D3S_ADC_slave_core/cmp_TrevGen/bunch_tick_i
+add wave -noupdate -expand -group TrevGen /main/DUT/U_D3S_ADC_slave_core/cmp_TrevGen/Trev_tick_o
+add wave -noupdate -expand -group TrevGen /main/DUT/U_D3S_ADC_slave_core/cmp_TrevGen/wb_adr_i
+add wave -noupdate -expand -group TrevGen /main/DUT/U_D3S_ADC_slave_core/cmp_TrevGen/wb_dat_i
+add wave -noupdate -expand -group TrevGen /main/DUT/U_D3S_ADC_slave_core/cmp_TrevGen/wb_dat_o
+add wave -noupdate -expand -group TrevGen /main/DUT/U_D3S_ADC_slave_core/cmp_TrevGen/wb_cyc_i
+add wave -noupdate -expand -group TrevGen /main/DUT/U_D3S_ADC_slave_core/cmp_TrevGen/wb_sel_i
+add wave -noupdate -expand -group TrevGen /main/DUT/U_D3S_ADC_slave_core/cmp_TrevGen/wb_stb_i
+add wave -noupdate -expand -group TrevGen /main/DUT/U_D3S_ADC_slave_core/cmp_TrevGen/wb_we_i
+add wave -noupdate -expand -group TrevGen /main/DUT/U_D3S_ADC_slave_core/cmp_TrevGen/wb_ack_o
+add wave -noupdate -expand -group TrevGen /main/DUT/U_D3S_ADC_slave_core/cmp_TrevGen/wb_stall_o
+add wave -noupdate -expand -group TrevGen /main/DUT/U_D3S_ADC_slave_core/cmp_TrevGen/s_state
+add wave -noupdate -expand -group TrevGen /main/DUT/U_D3S_ADC_slave_core/cmp_TrevGen/s_BclkGate
+add wave -noupdate -expand -group TrevGen /main/DUT/U_D3S_ADC_slave_core/cmp_TrevGen/s_Trev_tick
+add wave -noupdate -expand -group TrevGen /main/DUT/U_D3S_ADC_slave_core/cmp_TrevGen/s_phase
+add wave -noupdate -expand -group TrevGen /main/DUT/U_D3S_ADC_slave_core/cmp_TrevGen/s_WRcycTarget
+add wave -noupdate -expand -group TrevGen /main/DUT/U_D3S_ADC_slave_core/cmp_TrevGen/s_regs_i
+add wave -noupdate -expand -group TrevGen /main/DUT/U_D3S_ADC_slave_core/cmp_TrevGen/s_regs_o
+add wave -noupdate -expand -group TrevGen /main/DUT/U_D3S_ADC_slave_core/cmp_TrevGen/CONTROL
+add wave -noupdate -expand -group TrevGen /main/DUT/U_D3S_ADC_slave_core/cmp_TrevGen/CLK
+add wave -noupdate -expand -group TrevGen /main/DUT/U_D3S_ADC_slave_core/cmp_TrevGen/TRIG0
+add wave -noupdate -expand -group TrevGen /main/DUT/U_D3S_ADC_slave_core/cmp_TrevGen/TRIG1
+add wave -noupdate -expand -group TrevGen /main/DUT/U_D3S_ADC_slave_core/cmp_TrevGen/TRIG2
+add wave -noupdate -expand -group TrevGen /main/DUT/U_D3S_ADC_slave_core/cmp_TrevGen/TRIG3
 TreeUpdate [SetDefaultTree]
-WaveRestoreCursors {{Cursor 1} {101876000 ps} 0}
+WaveRestoreCursors {{Cursor 1} {32716409 ps} 0}
+quietly wave cursor active 1
 configure wave -namecolwidth 249
 configure wave -valuecolwidth 44
 configure wave -justifyvalue left

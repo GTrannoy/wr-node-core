@@ -3,7 +3,11 @@
 `include "mqueue_host.svh"
 `include "vme64x_bfm.svh"
 `include "svec_vme_buffers.svh"
+
 `include "d3s_acq_buffer_wb.vh"
+`include "wr_d3s_adc_slave.vh"
+`include "wr_d3s_adc.vh"
+`include "TrevGen_wb_slave.vh"
 
 module main;
 
@@ -38,34 +42,27 @@ module main;
    always #1ns adc_dco <= ~adc_dco;
    
    
-   svec_top #(
-              .g_with_wr_phy(0),
+   svec_top #(.g_with_wr_phy(0),
               .g_simulation(1)
-              ) DUT (
-		     .clk_125m_pllref_p_i(clk_125m),
-		     .clk_125m_pllref_n_i(~clk_125m),
-		     .clk_125m_gtp_p_i(clk_125m),
-		     .clk_125m_gtp_n_i(~clk_125m),
+              )
+	  DUT (.clk_125m_pllref_p_i(clk_125m),
+               .clk_125m_pllref_n_i(~clk_125m),
+	       .clk_125m_gtp_p_i(clk_125m),
+	       .clk_125m_gtp_n_i(~clk_125m),
 
-		     .adc0_dco_p_i(adc_dco),
-		     .adc0_dco_n_i(~adc_dco),
+               .adc0_dco_p_i(adc_dco),
+               .adc0_dco_n_i(~adc_dco),
 		     
 
 //		     .fmc0_wr_ref_clk_p_i(clk_125m),
 //		     .fmc0_wr_ref_clk_n_i(~clk_125m),
 
-		     .clk_20m_vcxo_i(clk_20m),
-		     .rst_n_a_i(rst_n),
+               .clk_20m_vcxo_i(clk_20m),
+               .rst_n_a_i(rst_n),
 
-
-		     `WIRE_VME_PINS(8)
-		     );
+               `WIRE_VME_PINS(8)
+               );
    
-
-   
-   
-   
-
   task automatic config_vme_function(ref CBusAccessor_VME64x acc, input int func, uint64_t base, int am);
       uint64_t addr = 'h7ff63 + func * 'h10;
       uint64_t val = (base) | (am << 2);
@@ -79,14 +76,10 @@ module main;
       acc.write(addr + 4, (val >> 16) & 'hff, CR_CSR|A32|D08Byte3);
       acc.write(addr + 8, (val >> 8)  & 'hff, CR_CSR|A32|D08Byte3);
       acc.write(addr + 12, (val >> 0) & 'hff, CR_CSR|A32|D08Byte3);
- 
-      
    endtask // config_vme_function
-   
    
    task automatic init_vme64x_core(ref CBusAccessor_VME64x acc);
       uint64_t rv;
-
 
       /* map func0 to 0x80000000, A32 */
 //      config_vme_function(acc, 0, 'h80000000, 'h09);
@@ -104,7 +97,6 @@ module main;
       uint64_t rv;
       int i;
       
-	
       acc.write(base_addr + `ADDR_ACQ_CR, `ACQ_CR_START );
 
       while (1 ) begin
@@ -128,7 +120,6 @@ module main;
    endtask // take_acquisition
    
    
-
    reg force_irq = 0;
    
    initial begin
@@ -149,8 +140,6 @@ module main;
       take_acquisition(acc, 'hc10100, 128);
       		
       $stop;
-      
-
       
    end
  
