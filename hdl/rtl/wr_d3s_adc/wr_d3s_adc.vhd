@@ -1,3 +1,35 @@
+-------------------------------------------------------------------------------
+-- Title      : WR d3s_adc core
+-- Project    : WR RF D3S ADC
+-------------------------------------------------------------------------------
+-- File       : svec_node_template.vhd
+-- Author     : Tomasz Włostowski, E. Calvo
+-- Company    : CERN BE-CO-HT
+-- Created    : 2014-04-01
+-- Last update: 2017-01-20
+-- Platform   : FPGA-generic
+-- Standard   : VHDL'93
+-------------------------------------------------------------------------------
+-- Copyright (c) 2014-2015 CERN
+-- 
+-- This source file is free software; you can redistribute it   
+-- and/or modify it under the terms of the GNU Lesser General   
+-- Public License as published by the Free Software Foundation; 
+-- either version 2.1 of the License, or (at your option) any   
+-- later version.                                               
+-- 
+-- This source is distributed in the hope that it will be       
+-- useful, but WITHOUT ANY WARRANTY; without even the implied   
+-- warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR      
+-- PURPOSE.  See the GNU Lesser General Public License for more 
+-- details.                                                     
+-- 
+-- You should have received a copy of the GNU Lesser General    
+-- Public License along with this source; if not, download it   
+-- from http://www.gnu.org/licenses/lgpl-2.1.html
+-- 
+-------------------------------------------------------------------------------
+
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
@@ -12,6 +44,18 @@ use work.stdc_wbgen2_pkg.all;
 library UNISIM;
 use UNISIM.vcomponents.all;
 
+
+-- The following lines have been added to generate doc in doxygen
+-------------------------------------------------------------------------------
+--! Description: 
+--!                                                                           
+--! The following core implements the logic required so that the fmc-adc-subsampling 
+--! card replays an RF signals from the compressed RF data received.
+--! 
+--! This module constains a WB slave (automatically generate by means of WBGen2, whose
+--! registers can be consulted at: doc/wr_d3s_adc.html
+--!
+-------------------------------------------------------------------------------
 entity wr_d3s_adc is
   generic (
     g_use_fake_data : boolean := false);
@@ -729,8 +773,8 @@ begin
   ------------------------------------------
   cmp_stdc : stdc_hostif
     generic map (
-      D_WIDTH => 72,                    -- Length of the fifo words
-      D_DEPTH => 4)  -- Depth of the fifo storing the event time stamps
+      D_WIDTH => 73,  -- Length of the fifo words
+      D_DEPTH => 10)  -- Depth of the fifo storing event time stamps
     port map(
       sys_rst_n_i     => rst_n_sys_i,
       clk_sys_i       => clk_sys_i,     -- 62.5 MHz
