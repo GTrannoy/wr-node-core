@@ -415,6 +415,9 @@
     <file xil_pn:name="../../../ip_cores/wr-cores/modules/wr_eca/eca_offset.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
     </file>
+    <file xil_pn:name="../../../rtl/TrevGen/core/TrevGen_wbgen2_pkg.vhd" xil_pn:type="FILE_VHDL">
+      <association xil_pn:name="Implementation" xil_pn:seqID="146"/>
+    </file>
     <file xil_pn:name="../../../ip_cores/general-cores/modules/common/gc_dual_pi_controller.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
     </file>
@@ -871,9 +874,6 @@
     <file xil_pn:name="../../../ip_cores/general-cores/modules/wishbone/wb_lm32/generated/xwb_lm32.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="Implementation" xil_pn:seqID="160"/>
     </file>
-    <file xil_pn:name="../../../rtl/TrevGen/wb/TrevGen_wb_slave.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="175"/>
-    </file>
     <file xil_pn:name="../../../rtl/wrnc/cpu/wrn_cpu_cb.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="Implementation" xil_pn:seqID="145"/>
     </file>
@@ -885,9 +885,6 @@
     </file>
     <file xil_pn:name="../../../ip_cores/general-cores/modules/wishbone/wb_spi/wb_spi.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
-    </file>
-    <file xil_pn:name="../../../rtl/TrevGen/wb/TrevGen_wbgen2_pkg.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="Implementation" xil_pn:seqID="146"/>
     </file>
     <file xil_pn:name="../../../ip_cores/wr-cores/modules/wr_endpoint/ep_1000basex_pcs.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="Implementation" xil_pn:seqID="89"/>
@@ -1272,6 +1269,9 @@
     </file>
     <file xil_pn:name="../../../ip_cores/general-cores/modules/wishbone/wb_irq/irqm_core.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
+    </file>
+    <file xil_pn:name="../../../rtl/TrevGen/core/TrevGen_wb_slave.vhd" xil_pn:type="FILE_VHDL">
+      <association xil_pn:name="Implementation" xil_pn:seqID="175"/>
     </file>
     <file xil_pn:name="../../../ip_cores/etherbone-core/hdl/eb_slave_core/eb_tx_mux.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="Implementation" xil_pn:seqID="99"/>
