@@ -6,23 +6,24 @@ library unisim;
 use unisim.vcomponents.all;
 
 entity stdc is
-	port(
-		-- system signals
-		sys_clk_i        : in std_logic;
-		sys_rst_n_i      : in std_logic;
-		
-		-- SERDES
-		serdes_clk_i     : in std_logic;
-		serdes_strobe_i  : in std_logic;
-		
-		-- TDC input
-		stdc_input_i     : in std_logic;
-		
-		-- timestamp output
-		detect_o         : out std_logic;
-		polarity_o       : out std_logic;
-		timestamp_8th_o  : out std_logic_vector(2 downto 0)
-	);
+   port(
+      -- system signals
+      sys_clk_i       : in std_logic;
+      sys_rst_n_i     : in std_logic;
+      
+      -- SERDES
+      serdes_clk_i    : in std_logic;
+      serdes_strobe_i : in std_logic;
+      
+      -- TDC input
+      stdc_input_i    : in std_logic;
+      
+      -- timestamp output
+      detect_o        : out std_logic;                   -- Egde detection strobe
+      polarity_o      : out std_logic;                   -- Edge polarity (1=rising, 0=falling)
+      timestamp_8th_o : out std_logic_vector(2 downto 0) -- Number of serdes_clk_i tics between
+                                                         -- serdes_strobe_i and stdc_input_i edges 
+   );
 end entity;
 
 architecture rtl of stdc is
@@ -97,18 +98,16 @@ begin
 	
 	iserdes2_rst <= not(sys_rst_n_i) ;
 	
-	-- analyse samples and generate events
+	-- The following process analyse the samples and generate events
 	p_serdes_change_detection : process(sys_clk_i)
--- process(sys_rst_n_i, sys_clk_i)
 	begin
-		if rising_edge(sys_clk_i) then    -- let's make the reset synchronous
+		if rising_edge(sys_clk_i) then    
 			if sys_rst_n_i = '0' then
-				detect_o <= '0';
+				detect_o   <= '0';
 				polarity_o <= '0';
 				timestamp_8th_o <= (timestamp_8th_o'range => '0');
 				looking_for <= '1';
 			else 
---			elsif rising_edge(sys_clk_i) then
 				detect_o <= '0';
 				for i in 0 to 7 loop
 					if samples(i) = looking_for then

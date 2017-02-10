@@ -35,8 +35,8 @@ entity stdc_hostif is
     stdc_input_i : in std_logic;
 
     -- Timing stamps
-	 tai_i    : in  std_logic_vector(39 downto 0);
-	 cycles_i : in std_logic_vector(27 downto 0);
+    tai_i     : in  std_logic_vector(39 downto 0);
+    cycles_i  : in  std_logic_vector(27 downto 0);
 
     -- TDC outputs                      
     strobe_o  : out std_logic;
@@ -89,7 +89,7 @@ architecture rtl of stdc_hostif is
       clk_sys_i : in std_logic;
 
       -- Wishbone interface
-      wb_adr_i   : in  std_logic_vector(1 downto 0);
+      wb_adr_i   : in  std_logic_vector(2 downto 0);
       wb_dat_i   : in  std_logic_vector(31 downto 0);
       wb_dat_o   : out std_logic_vector(31 downto 0);
       wb_cyc_i   : in  std_logic;
@@ -102,26 +102,27 @@ architecture rtl of stdc_hostif is
       regs_o     : out t_stdc_out_registers);
   end component;
 
-  signal detect                          : std_logic;
-  signal polarity                        : std_logic;
-  signal timestamp_8th, timestamp_resync : std_logic_vector(2 downto 0);
+  signal detect        : std_logic;
+  signal polarity      : std_logic;
+  signal timestamp_8th : std_logic_vector(2 downto 0);
+  signal timestamp_8th_reg : std_logic_vector(2 downto 0);
+  signal cycles_reg    : std_logic_vector(27 downto 0);
+  signal tai_reg       : std_logic_vector(39 downto 0);
 
-  signal fifo_clear : std_logic;
-  signal fifo_full  : std_logic;
-  signal fifo_we    : std_logic;
-  signal fifo_di    : std_logic_vector(D_WIDTH-1 downto 0);
-  signal fifo_empty : std_logic;
-  signal fifo_re    : std_logic;
-  signal fifo_do    : std_logic_vector(D_WIDTH-1 downto 0);
+  signal got_a_pulse   : std_logic;
+
+  signal fifo_clear    : std_logic;
+  signal fifo_full     : std_logic;
+  signal fifo_we       : std_logic;
+  signal fifo_di       : std_logic_vector(D_WIDTH-1 downto 0);
+  signal fifo_empty    : std_logic;
+  signal fifo_re       : std_logic;
+  signal fifo_do       : std_logic_vector(D_WIDTH-1 downto 0);
 
   signal regs_i : t_stdc_in_registers;
   signal regs_o : t_stdc_out_registers;
 
-  signal cycles_reg  : std_logic_vector(27 downto 0);
-  signal tai_reg     : std_logic_vector(39 downto 0);
 
-  signal got_a_pulse : std_logic;
-  
 begin
 
 
@@ -142,7 +143,7 @@ begin
   cmp_fifo : stdc_fifo
     generic map(
       D_DEPTH => D_DEPTH,
-      D_WIDTH => D_WIDTH  --Before it was 32 but we add TAI(40 bits)
+      D_WIDTH => D_WIDTH 
       )
     port map(
       sys_clk_i => clk_125m_i,
@@ -155,12 +156,12 @@ begin
       data_o    => fifo_do
       );
 
-  -- instantiate the wb interface generated with wbgen2
+  -- instantiate the wb interface generated with Wbgen2
   comp_stdc_wb_slave : stdc_wb_slave
     port map(
       rst_n_i    => sys_rst_n_i,
       clk_sys_i  => clk_sys_i,
-      wb_adr_i   => wb_addr_i(3 downto 2),
+      wb_adr_i   => wb_addr_i(4 downto 2),
       wb_dat_i   => wb_data_i,
       wb_dat_o   => wb_data_o,
       wb_cyc_i   => wb_cyc_i,
@@ -174,15 +175,12 @@ begin
       );
 
 
---      fifo_di <= polarity & std_logic_vector(unsigned(cycles_reg)-0) & timestamp_resync when timestamp_resync(2)='0' else
---                 polarity & std_logic_vector(unsigned(cycles_reg)-1) & timestamp_resync;
-
-  timestamp_resync <= std_logic_vector(unsigned(timestamp_8th)+1);
-
   -- if next =1 and fifo not empty, send to tdc_data next fifo element
-  --regs_i.tdc_data_i <= fifo_do;  -- Replaced by 2 registers to include wr_tai
-  regs_i.tdc_ts_tai_i <= fifo_do(62 downto 31);  -- Atention: MSB bits are discarded!
-  regs_i.tdc_ts_ns_i  <= fifo_do(30 downto 0);
+  regs_i.tdc_polarity_i <= fifo_do(72);
+  regs_i.tdc_ts_tai_h_i (31 downto 8) <= (others =>'0');
+  regs_i.tdc_ts_tai_h_i ( 7 downto 0) <= fifo_do(71 downto 64);
+  regs_i.tdc_ts_tai_l_i <= fifo_do(63 downto 32);
+  regs_i.tdc_ts_ns_i    <= '0' & fifo_do(31 downto  4) & fifo_do(2 downto  0); -- fifo_di(3)='0' removed
 
   -- if clear command, send a reset to the fifo
   fifo_clear <= regs_o.ctrl_clr_o or (not(sys_rst_n_i));
@@ -191,58 +189,77 @@ begin
   regs_i.status_empty_i <= fifo_empty;
   regs_i.status_ovf_i   <= fifo_we and fifo_full;
 
-  got_a_pulse <= detect and ((polarity and regs_o.ctrl_filter_o(0)) or (not polarity and regs_o.ctrl_filter_o(1)));
-  
-  
   -- FIFO data structure:
   --     ------------------------------------------------------------------
   --     |  Edge polarity  |  TAI   |   WR Cycles  |  ns within WR_cycle  |
   --     ------------------------------------------------------------------
-  --  Edge polarity:        1 bit   (71) 
-  --  TAI:                 40 bits  (70 downto 31)
-  --  WR Cycles:           28 bits  (30 downto 3)
-  --  ns withing WR_cycle:  3 bits  (2 downto 0)
+  --  Edge polarity:        1 bit   (72) 
+  --  TAI:                 40 bits  (71 downto 32)
+  --  WR Cycles:           28 bits  (31 downto 4)
+  --  ns withing WR_cycle:  4 bits  ( 3 downto 0)
   
-  pc_reg_fifo_xclk_hdl : process (sys_rst_n_i, clk_125m_i)
+  pc_reg_fifo_xclk_hdl : process (clk_125m_i)
   begin
-    if sys_rst_n_i = '0' then
-      fifo_we <= '0';
-      fifo_re <= '0';
-    elsif rising_edge(clk_125m_i) then
-      -- if enabled edge detected write in the fifo       
-      fifo_we <= got_a_pulse;
-      fifo_re <= regs_o.ctrl_next_o and not(fifo_re);
-      if detect = '1' then
-          fifo_di(71 downto 31) <= polarity & tai_reg;
-		  if (timestamp_resync(2) = '0') then
-          --fifo_di <= polarity & std_logic_vector(unsigned(cycles_reg)-1) & timestamp_resync;
-			 fifo_di(30 downto 0) <= std_logic_vector(unsigned(cycles_reg)-1) & timestamp_resync;
-        else
-          --fifo_di <= polarity & std_logic_vector(unsigned(cycles_reg)-2) & timestamp_resync;
-			 fifo_di(30 downto 0) <= std_logic_vector(unsigned(cycles_reg)-2) & timestamp_resync;
-        end if;
-      end if;
+    if rising_edge(clk_125m_i) then
+       if sys_rst_n_i = '0' then
+          fifo_we <= '0';
+          fifo_re <= '0';
+       else
+          -- if enabled edge detected write in the fifo       
+          fifo_we <= got_a_pulse;
+          fifo_re <= regs_o.ctrl_next_o and not(fifo_re);
+          if got_a_pulse = '1' then
+             fifo_di(72)           <= polarity;
+             fifo_di(71 downto 32) <= tai_reg ;
+             fifo_di(31 downto  4) <= cycles_reg;  
+             fifo_di( 3 downto  0) <= '0' & timestamp_8th_reg; -- '0' added for readability in the simul!
+          end if;
+       end if;
     end if;
   end process;
 
-  ts_nsec_o   <= fifo_di(30 downto 0);  
-  ts_tai_o    <= fifo_di(70 downto 31); 
+
+  ts_nsec_o   <= cycles_reg & timestamp_8th_reg;
+  ts_tai_o    <= tai_reg; 
   strobe_o    <= fifo_we;
 
   p_reg_cycles : process(sys_rst_n_i, clk_125m_i)
   begin
     if sys_rst_n_i = '0' then
-      cycles_reg <= (others => '0');
-	  tai_reg    <= (others => '0');
-		
+       cycles_reg <= (others => '0');
+       tai_reg    <= (others => '0');
+       -- Filter the edges w.r.t. the polarity programmed
+       got_a_pulse <= '0';
     elsif rising_edge(clk_125m_i) then
-      if got_a_pulse = '1' then
-        cycles_reg <= cycles_i;
-	tai_reg    <= tai_i;
-      end if;
+       -- Filter the edges w.r.t. the polarity programmed
+       got_a_pulse <= detect and ((polarity and regs_o.ctrl_filter_o(0)) or (not polarity and regs_o.ctrl_filter_o(1)));
+       if detect = '1' then
+          if (unsigned(timestamp_8th) <= 4) then
+             -- timestamp_8th is measured w.r.t. serializer serdestrobe signal
+              -- We wish it w.r.t. WRcycl change
+              timestamp_8th_reg <= std_logic_vector(unsigned(timestamp_8th) + 3);  
+              if (unsigned(cycles_i) > 3) then
+                 -- 'got_a_pulse' takes 3 WR cycles that we should substract
+                 cycles_reg <= std_logic_vector(unsigned(cycles_i)-3);
+                 tai_reg    <= tai_i; 
+              else
+                 tai_reg    <= std_logic_vector(unsigned(tai_i)-1);
+                 cycles_reg <= std_logic_vector(unsigned(cycles_i)-3+125000000);
+              end if;
+          else  
+             -- timestamp_8th is measured w.r.t. serializer serdestrobe signal
+             -- but we wish to measure w.r.t. the WRcyc that in this case just change +1
+             timestamp_8th_reg <= std_logic_vector(unsigned(timestamp_8th) -5); 
+             if (unsigned(cycles_i) > 2) then
+                cycles_reg <= std_logic_vector(unsigned(cycles_i)-2);
+                tai_reg    <= tai_i;             
+             else           
+                tai_reg    <= std_logic_vector(unsigned(tai_i)-1);
+                cycles_reg <= std_logic_vector(unsigned(cycles_i)-2 + 125000000);
+             end if;
+          end if;  
+       end if;
     end if;
   end process;
-  
-  
   
 end architecture;

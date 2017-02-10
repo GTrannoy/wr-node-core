@@ -15,7 +15,7 @@ peripheral {
 				 description = "if 1 the fifo is empty";
 				 type = BIT;
 				 access_bus = READ_ONLY;
-         access_dev = WRITE_ONLY;
+                 access_dev = WRITE_ONLY;
 			};
 			field {
 				 name = "FIFO overflown";
@@ -70,8 +70,20 @@ peripheral {
 			};
 	};
 	reg {
-			prefix = "TDC_TS_TAI";
-			name = "FIFO timestamp element";
+			prefix = "TDC_TS_TAI_H";
+			name = "FIFO timestamp element (32 MSB)";
+			description = "Time stamp of a transition expresed as TAI";
+			field {
+				 name = "FIFO timestamp TAI element";
+				 type = SLV;
+				 size = 32;
+				 access_bus = READ_ONLY;
+				 access_dev = WRITE_ONLY;
+			};
+	};
+  reg {
+			prefix = "TDC_TS_TAI_L";
+			name = "FIFO timestamp element (32 LSB)";
 			description = "Time stamp of a transition expresed as TAI";
 			field {
 				 name = "FIFO timestamp TAI element";
@@ -84,18 +96,30 @@ peripheral {
 		reg {
 			prefix = "TDC_TS_NS";
 			name = "FIFO timestamp element";
-			description = "Time stamp of a transition: \
+			description = "Time stamp of a transition expresed as ns within TAI: \
 					28 bits for WR cycle tick \
-					3 LSB bits for 1/8th of a cycle";
+					 4 LSB bits for 1/8th of a cycle";
 			field {
 				 name = "FIFO timestamp element";
 				 type = SLV;
-				 size = 31;
+				 size = 32;
 				 access_bus = READ_ONLY;
 				 access_dev = WRITE_ONLY;
 			};
 	};
-
+      reg {
+			prefix = "TDC_POLARITY";
+			name = "Polarity of the transition detected";
+			description = "Polarity of the transition detected \
+					1 = Rising edge \
+					0 = Falling edge ";
+			field {
+				 name = "FIFO timestamp element";
+				 type = BIT;
+				 access_bus = READ_ONLY;
+				 access_dev = WRITE_ONLY;
+			};
+	};
 };
 
 
