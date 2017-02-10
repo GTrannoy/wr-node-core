@@ -79,7 +79,7 @@ VHDL_SRC := ../../rtl/wr_d3s/wr_d3s_core.vhd \
 ../../ip_cores/wr-cores/modules/wr_eca/eca_sdp.vhd \
 ../../rtl/wrnc/mqueue/wrn_eb_cycle_gen.vhd \
 ../../ip_cores/general-cores/modules/common/gc_glitch_filt.vhd \
-../../rtl/TrevGen/wb/TrevGen_wbgen2_pkg.vhd \
+../../ip_cores/general-cores/modules/wishbone/wb_crossbar/xwb_crossbar.vhd \
 ../../ip_cores/etherbone-core/hdl/eb_slave_core/eb_slave_core.vhd \
 ../../ip_cores/wr-cores/modules/wr_eca/eca_walker.vhd \
 ../../ip_cores/general-cores/modules/wishbone/wb_crossbar/xwb_sdb_crossbar.vhd \
@@ -149,6 +149,7 @@ VHDL_SRC := ../../rtl/wr_d3s/wr_d3s_core.vhd \
 ../../ip_cores/wr-cores/modules/wr_eca/wr_eca.vhd \
 ../../ip_cores/general-cores/modules/genrams/memory_loader_pkg.vhd \
 ../../ip_cores/general-cores/modules/wishbone/wb_irq/wb_irq_slave.vhd \
+../../ip_cores/wr-cores/modules/wr_endpoint/ep_rx_vlan_unit.vhd \
 ../../rtl/wr_d3s_adc/wr_d3s_adc_slave_wbgen2_pkg.vhd \
 ../../ip_cores/wr-cores/modules/wr_endpoint/ep_wishbone_controller.vhd \
 ../../ip_cores/wr-cores/modules/wr_eca/eca.vhd \
@@ -188,7 +189,6 @@ VHDL_SRC := ../../rtl/wr_d3s/wr_d3s_core.vhd \
 ../../ip_cores/wr-cores/modules/wr_endpoint/endpoint_private_pkg.vhd \
 ../../ip_cores/wr-cores/modules/wr_softpll_ng/spll_bangbang_pd.vhd \
 ../../ip_cores/etherbone-core/hdl/eb_slave_core/eb_cfg_fifo.vhd \
-../../rtl/wr_d3s/wb/dds_wb_slave.vhd \
 ../../ip_cores/wr-cores/platform/xilinx/wr_gtp_phy/gtp_phase_align_virtex6.vhd \
 ../../ip_cores/etherbone-core/hdl/eb_master_core/eb_commit_len_fifo.vhd \
 ../../ip_cores/general-cores/modules/common/gc_moving_average.vhd \
@@ -197,9 +197,8 @@ VHDL_SRC := ../../rtl/wr_d3s/wr_d3s_core.vhd \
 ../../ip_cores/general-cores/modules/wishbone/wb_uart/xwb_simple_uart.vhd \
 ../../rtl/wrnc/wb_remapper.vhd \
 ../../ip_cores/wr-cores/modules/wrc_core/wrc_periph.vhd \
-../../ip_cores/wr-cores/modules/wr_endpoint/ep_rx_vlan_unit.vhd \
+../../rtl/TrevGen/core/TrevGen_wbgen2_pkg.vhd \
 ../../ip_cores/general-cores/modules/wishbone/wb_lm32/generated/xwb_lm32.vhd \
-../../rtl/TrevGen/wb/TrevGen_wb_slave.vhd \
 ../../rtl/wrnc/cpu/wrn_cpu_cb.vhd \
 ../../ip_cores/wr-cores/modules/wr_eca/eca_pkg.vhd \
 ../../ip_cores/wr-cores/modules/wrc_core/wb_reset.vhd \
@@ -298,7 +297,7 @@ VHDL_SRC := ../../rtl/wr_d3s/wr_d3s_core.vhd \
 ../../ip_cores/wr-cores/platform/xilinx/wr_gtp_phy/gtx_reset.vhd \
 ../../ip_cores/etherbone-core/hdl/eb_slave_core/eb_tag_fifo.vhd \
 ../../ip_cores/etherbone-core/hdl/eb_slave_core/eb_slave_top.vhd \
-../../ip_cores/general-cores/modules/wishbone/wb_crossbar/xwb_crossbar.vhd \
+../../rtl/wr_d3s/wb/dds_wb_slave.vhd \
 ../../rtl/wrnc/mqueue/wrn_mqueue_wishbone_slave.vhd \
 ../../rtl/wr_d3s/misc/max5870_serializer.vhd \
 ../../ip_cores/etherbone-core/hdl/eb_slave_core/eb_commit_fifo.vhd \
@@ -321,6 +320,7 @@ VHDL_SRC := ../../rtl/wr_d3s/wr_d3s_core.vhd \
 ../../ip_cores/wr-cores/modules/wr_mini_nic/xwr_mini_nic.vhd \
 ../../ip_cores/wr-cores/modules/timing/multi_dmtd_with_deglitcher.vhd \
 ../../ip_cores/wr-cores/modules/wr_eca/eca_gpio_channel.vhd \
+../../rtl/TrevGen/core/TrevGen_wb_slave.vhd \
 ../../ip_cores/etherbone-core/hdl/eb_slave_core/eb_tx_mux.vhd \
 ../../rtl/wrnc/mqueue/wrn_mqueue_host.vhd \
 ../../ip_cores/wr-cores/modules/wr_endpoint/ep_rx_path.vhd \
@@ -373,7 +373,7 @@ work/eb_hdr_pkg/.eb_hdr_pkg_vhd \
 work/eca_sdp/.eca_sdp_vhd \
 work/wrn_eb_cycle_gen/.wrn_eb_cycle_gen_vhd \
 work/gc_glitch_filt/.gc_glitch_filt_vhd \
-work/TrevGen_wbgen2_pkg/.TrevGen_wbgen2_pkg_vhd \
+work/xwb_crossbar/.xwb_crossbar_vhd \
 work/eb_slave_core/.eb_slave_core_vhd \
 work/eca_walker/.eca_walker_vhd \
 work/xwb_sdb_crossbar/.xwb_sdb_crossbar_vhd \
@@ -443,6 +443,7 @@ work/gc_big_adder/.gc_big_adder_vhd \
 work/wr_eca/.wr_eca_vhd \
 work/memory_loader_pkg/.memory_loader_pkg_vhd \
 work/wb_irq_slave/.wb_irq_slave_vhd \
+work/ep_rx_vlan_unit/.ep_rx_vlan_unit_vhd \
 work/wr_d3s_adc_slave_wbgen2_pkg/.wr_d3s_adc_slave_wbgen2_pkg_vhd \
 work/ep_wishbone_controller/.ep_wishbone_controller_vhd \
 work/eca/.eca_vhd \
@@ -482,7 +483,6 @@ work/spi_master/.spi_master_vhd \
 work/endpoint_private_pkg/.endpoint_private_pkg_vhd \
 work/spll_bangbang_pd/.spll_bangbang_pd_vhd \
 work/eb_cfg_fifo/.eb_cfg_fifo_vhd \
-work/dds_wb_slave/.dds_wb_slave_vhd \
 work/gtp_phase_align_virtex6/.gtp_phase_align_virtex6_vhd \
 work/eb_commit_len_fifo/.eb_commit_len_fifo_vhd \
 work/gc_moving_average/.gc_moving_average_vhd \
@@ -491,9 +491,8 @@ work/wb_i2c_master/.wb_i2c_master_vhd \
 work/xwb_simple_uart/.xwb_simple_uart_vhd \
 work/wb_remapper/.wb_remapper_vhd \
 work/wrc_periph/.wrc_periph_vhd \
-work/ep_rx_vlan_unit/.ep_rx_vlan_unit_vhd \
+work/TrevGen_wbgen2_pkg/.TrevGen_wbgen2_pkg_vhd \
 work/xwb_lm32/.xwb_lm32_vhd \
-work/TrevGen_wb_slave/.TrevGen_wb_slave_vhd \
 work/wrn_cpu_cb/.wrn_cpu_cb_vhd \
 work/eca_pkg/.eca_pkg_vhd \
 work/wb_reset/.wb_reset_vhd \
@@ -592,7 +591,7 @@ work/xwb_tics/.xwb_tics_vhd \
 work/gtx_reset/.gtx_reset_vhd \
 work/eb_tag_fifo/.eb_tag_fifo_vhd \
 work/eb_slave_top/.eb_slave_top_vhd \
-work/xwb_crossbar/.xwb_crossbar_vhd \
+work/dds_wb_slave/.dds_wb_slave_vhd \
 work/wrn_mqueue_wishbone_slave/.wrn_mqueue_wishbone_slave_vhd \
 work/max5870_serializer/.max5870_serializer_vhd \
 work/eb_commit_fifo/.eb_commit_fifo_vhd \
@@ -615,6 +614,7 @@ work/simple_uart_pkg/.simple_uart_pkg_vhd \
 work/xwr_mini_nic/.xwr_mini_nic_vhd \
 work/multi_dmtd_with_deglitcher/.multi_dmtd_with_deglitcher_vhd \
 work/eca_gpio_channel/.eca_gpio_channel_vhd \
+work/TrevGen_wb_slave/.TrevGen_wb_slave_vhd \
 work/eb_tx_mux/.eb_tx_mux_vhd \
 work/wrn_mqueue_host/.wrn_mqueue_host_vhd \
 work/ep_rx_path/.ep_rx_path_vhd \
@@ -770,6 +770,7 @@ work/wr_d3s_adc_slave/.wr_d3s_adc_slave_vhd \
 work/wishbone_pkg/.wishbone_pkg_vhd \
 ../include/wr_d3s_adc_slave.vh \
 ../../sim/if_wb_master.svh \
+RF_Gen2_class.svh \
 work/wr_d3s_adc/.wr_d3s_adc_vhd \
 ../../sim/if_wishbone_accessor.svh \
 ../include/vhd_wishbone_master.svh \
@@ -1031,7 +1032,8 @@ work/gencores_pkg/.gencores_pkg_vhd
 		@mkdir -p $(dir $@) && touch $@ 
 
 
-work/TrevGen_wbgen2_pkg/.TrevGen_wbgen2_pkg_vhd: ../../rtl/TrevGen/wb/TrevGen_wbgen2_pkg.vhd
+work/xwb_crossbar/.xwb_crossbar_vhd: ../../ip_cores/general-cores/modules/wishbone/wb_crossbar/xwb_crossbar.vhd \
+work/wishbone_pkg/.wishbone_pkg_vhd
 		vcom $(VCOM_FLAGS)  -work work $< 
 		@mkdir -p $(dir $@) && touch $@ 
 
@@ -1129,6 +1131,7 @@ work/gc_sync_ffs/.gc_sync_ffs_vhd
 
 work/wr_d3s_adc_slave/.wr_d3s_adc_slave_vhd: ../../rtl/wr_d3s_adc/wr_d3s_adc_slave.vhd \
 work/wishbone_pkg/.wishbone_pkg_vhd \
+work/TrevGen_Module/.TrevGen_Module_vhd \
 work/wr_d3s_adc_slave_wb/.wr_d3s_adc_slave_wb_vhd \
 work/d3s_upsample/.d3s_upsample_v \
 work/gencores_pkg/.gencores_pkg_vhd \
@@ -1589,6 +1592,14 @@ work/wishbone_pkg/.wishbone_pkg_vhd
 		@mkdir -p $(dir $@) && touch $@ 
 
 
+work/ep_rx_vlan_unit/.ep_rx_vlan_unit_vhd: ../../ip_cores/wr-cores/modules/wr_endpoint/ep_rx_vlan_unit.vhd \
+work/wr_fabric_pkg/.wr_fabric_pkg_vhd \
+work/ep_registers_pkg/.ep_registers_pkg_vhd \
+work/endpoint_private_pkg/.endpoint_private_pkg_vhd
+		vcom $(VCOM_FLAGS)  -work work $< 
+		@mkdir -p $(dir $@) && touch $@ 
+
+
 work/wr_d3s_adc_slave_wbgen2_pkg/.wr_d3s_adc_slave_wbgen2_pkg_vhd: ../../rtl/wr_d3s_adc/wr_d3s_adc_slave_wbgen2_pkg.vhd \
 work/wbgen2_pkg/.wbgen2_pkg_vhd
 		vcom $(VCOM_FLAGS)  -work work $< 
@@ -1903,12 +1914,6 @@ work/wishbone_pkg/.wishbone_pkg_vhd
 		@mkdir -p $(dir $@) && touch $@ 
 
 
-work/dds_wb_slave/.dds_wb_slave_vhd: ../../rtl/wr_d3s/wb/dds_wb_slave.vhd \
-work/dds_wbgen2_pkg/.dds_wbgen2_pkg_vhd
-		vcom $(VCOM_FLAGS)  -work work $< 
-		@mkdir -p $(dir $@) && touch $@ 
-
-
 work/gtp_phase_align_virtex6/.gtp_phase_align_virtex6_vhd: ../../ip_cores/wr-cores/platform/xilinx/wr_gtp_phy/gtp_phase_align_virtex6.vhd
 		vcom $(VCOM_FLAGS)  -work work $< 
 		@mkdir -p $(dir $@) && touch $@ 
@@ -1971,10 +1976,7 @@ work/xwr_syscon_wb/.xwr_syscon_wb_vhd
 		@mkdir -p $(dir $@) && touch $@ 
 
 
-work/ep_rx_vlan_unit/.ep_rx_vlan_unit_vhd: ../../ip_cores/wr-cores/modules/wr_endpoint/ep_rx_vlan_unit.vhd \
-work/wr_fabric_pkg/.wr_fabric_pkg_vhd \
-work/ep_registers_pkg/.ep_registers_pkg_vhd \
-work/endpoint_private_pkg/.endpoint_private_pkg_vhd
+work/TrevGen_wbgen2_pkg/.TrevGen_wbgen2_pkg_vhd: ../../rtl/TrevGen/core/TrevGen_wbgen2_pkg.vhd
 		vcom $(VCOM_FLAGS)  -work work $< 
 		@mkdir -p $(dir $@) && touch $@ 
 
@@ -1982,12 +1984,6 @@ work/endpoint_private_pkg/.endpoint_private_pkg_vhd
 work/xwb_lm32/.xwb_lm32_vhd: ../../ip_cores/general-cores/modules/wishbone/wb_lm32/generated/xwb_lm32.vhd \
 work/wishbone_pkg/.wishbone_pkg_vhd \
 work/lm32_allprofiles/.lm32_allprofiles_v
-		vcom $(VCOM_FLAGS)  -work work $< 
-		@mkdir -p $(dir $@) && touch $@ 
-
-
-work/TrevGen_wb_slave/.TrevGen_wb_slave_vhd: ../../rtl/TrevGen/wb/TrevGen_wb_slave.vhd \
-work/TrevGen_wbgen2_pkg/.TrevGen_wbgen2_pkg_vhd
 		vcom $(VCOM_FLAGS)  -work work $< 
 		@mkdir -p $(dir $@) && touch $@ 
 
@@ -2767,8 +2763,8 @@ work/eb_cfg_fifo/.eb_cfg_fifo_vhd
 		@mkdir -p $(dir $@) && touch $@ 
 
 
-work/xwb_crossbar/.xwb_crossbar_vhd: ../../ip_cores/general-cores/modules/wishbone/wb_crossbar/xwb_crossbar.vhd \
-work/wishbone_pkg/.wishbone_pkg_vhd
+work/dds_wb_slave/.dds_wb_slave_vhd: ../../rtl/wr_d3s/wb/dds_wb_slave.vhd \
+work/dds_wbgen2_pkg/.dds_wbgen2_pkg_vhd
 		vcom $(VCOM_FLAGS)  -work work $< 
 		@mkdir -p $(dir $@) && touch $@ 
 
@@ -2922,6 +2918,12 @@ work/gc_sync_ffs/.gc_sync_ffs_vhd
 work/eca_gpio_channel/.eca_gpio_channel_vhd: ../../ip_cores/wr-cores/modules/wr_eca/eca_gpio_channel.vhd \
 work/eca_pkg/.eca_pkg_vhd \
 work/wishbone_pkg/.wishbone_pkg_vhd
+		vcom $(VCOM_FLAGS)  -work work $< 
+		@mkdir -p $(dir $@) && touch $@ 
+
+
+work/TrevGen_wb_slave/.TrevGen_wb_slave_vhd: ../../rtl/TrevGen/core/TrevGen_wb_slave.vhd \
+work/TrevGen_wbgen2_pkg/.TrevGen_wbgen2_pkg_vhd
 		vcom $(VCOM_FLAGS)  -work work $< 
 		@mkdir -p $(dir $@) && touch $@ 
 
