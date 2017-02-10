@@ -11,6 +11,11 @@
 #include <stdint.h>
 
 #include "rt.h"
+#include "hw/TrevGen_wb_slave.h"
+#include "hw/wr_d3s_adc_slave.h"
+
+#define BASE_D3S_ADC_SLAVE 0x2000  // Base address of D3S_ADC_SLAVE core 
+#define BASE_TrevGen 0x100  //Trev Generator
 
 uint32_t _lm32_read_ea()
 {
@@ -41,10 +46,21 @@ main()
   volatile int n = 0;
 
   puts("Test\n");
+   
+    for (n=1;n<3;n++) 
+    {
+       volatile int WR_cycles = lr_readl(WRN_CPU_LR_REG_TAI_CYCLES);
+       volatile int next_Trev_ts_ns = (WR_cycles + 100 <<3) ;
+       // Try to write something to d3s_adc_slave
+         
+       dp_writel(next_Trev_ts_ns     , BASE_D3S_ADC_SLAVE + D3SS_REG_FREV_TS_NS);
+       dp_writel( D3SS_FREV_CR_VALID , BASE_D3S_ADC_SLAVE + D3SS_REG_FREV_CR);
+       dp_writel(~D3SS_FREV_CR_VALID , BASE_D3S_ADC_SLAVE + D3SS_REG_FREV_CR);
 
-
-    volatile int x = dp_readl(0x1000); // try  to read something from silabs
-
+       // Try to write something to TrevGenerator
+       dp_writel(next_Trev_ts_ns    , BASE_D3S_ADC_SLAVE + BASE_TrevGen + TREVGEN_REG_RM_NEXT_TICK);  
+       dp_writel(next_Trev_ts_ns    , BASE_D3S_ADC_SLAVE + BASE_TrevGen + TREVGEN_REG_STROBE_P);
+   }
 
   for(;;);
 
