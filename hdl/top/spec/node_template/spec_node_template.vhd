@@ -74,7 +74,7 @@ entity spec_node_template is
 -- sim_master_(i/o) to speed up simulations where full PCIe
 -- access is not required
     g_sim_bypass_gennum : boolean := false;
-    
+
 -- Enable/disable instantiation of the gigabit transceiver core.
 -- Speeds up the simulations a lot.
     g_with_wr_phy    : boolean := false;
@@ -88,8 +88,11 @@ entity spec_node_template is
 
     -- clk_sys_o speed (& CPU speed). Currently only a discrete set of
     -- frequencies is supported
-    g_system_clock_freq : integer := 62500000
+    g_system_clock_freq : integer := 62500000;
     
+    -- Value to be loaded by default in the 25MHz VCXO DAC if WR core 
+    -- is not instantiated.
+    g_fixed_dac25MHz : integer := 39321
     );
 
   port (
@@ -103,23 +106,23 @@ entity spec_node_template is
       rst_n_sys_o : out std_logic;
       clk_sys_o   : out std_logic;
       
-      clk_20m_vcxo_i : in std_logic;    -- 20MHz VCXO clock
+      clk_20m_vcxo_i : in std_logic :='0';    -- 20MHz VCXO clock
 
       clk_125m_pllref_p_i : in std_logic;  -- 125 MHz PLL reference
       clk_125m_pllref_n_i : in std_logic;
 
-      clk_125m_gtp_n_i : in std_logic;  -- 125 MHz GTP reference
-      clk_125m_gtp_p_i : in std_logic;
+      clk_125m_gtp_n_i : in std_logic := '1';   -- 125 MHz GTP reference
+      clk_125m_gtp_p_i : in std_logic := '0';
 
       l_rst_n : in std_logic;   -- reset from gn4124 (rstout18_n)
 
       -- general purpose interface
       gpio       : inout std_logic_vector(1 downto 0);  -- gpio[0] -> gn4124 gpio8
-                                        -- gpio[1] -> gn4124 gpio9
+                                                        -- gpio[1] -> gn4124 gpio9
       -- pcie to local [inbound data] - rx
       p2l_rdy    : out   std_logic;     -- rx buffer full flag
       p2l_clkn   : in    std_logic;     -- receiver source synchronous clock-
-      p2l_clkp  : in    std_logic;     -- receiver source synchronous clock+
+      p2l_clkp  : in    std_logic;      -- receiver source synchronous clock+
       p2l_data  : in    std_logic_vector(15 downto 0);  -- parallel receive data
       p2l_dframe : in    std_logic;     -- receive frame
       p2l_valid  : in    std_logic;     -- receive data valid
@@ -173,7 +176,7 @@ entity spec_node_template is
       sfp_rxp_i : in std_logic := '0';
       sfp_rxn_i : in std_logic := '1';
 
-      sfp_mod_def0_b    : in    std_logic;  -- detect pin
+      sfp_mod_def0_i    : in    std_logic := '0';  -- detect pin  -- EvaC 'sfp_mod_def0_i' was before 'sfp_mod_def0_b'. Default value added.
       sfp_mod_def1_b    : inout std_logic;  -- scl
       sfp_mod_def2_b    : inout std_logic;  -- sda
       sfp_rate_select_b : inout std_logic := '0';
@@ -194,7 +197,7 @@ entity spec_node_template is
       -------------------------------------------------------------------------
 
       -- aux clock for WR core to lock-
-      fmc0_clk_aux_i  : in  std_logic;
+      fmc0_clk_aux_i  : in  std_logic    := '0';
       -- host Wishbone bus (i.e. for the device driver to access the mezzanine regs)
       fmc0_host_wb_o  : out t_wishbone_master_out;
       fmc0_host_wb_i  : in  t_wishbone_master_in;
@@ -204,10 +207,10 @@ entity spec_node_template is
       -- Shared Peripheral port
 
       dp_master_o : out t_wishbone_master_out_array(0 to g_wr_node_config.cpu_count-1);
-      dp_master_i : in t_wishbone_master_in_array(0 to g_wr_node_config.cpu_count-1);
+      dp_master_i : in  t_wishbone_master_in_array(0 to g_wr_node_config.cpu_count-1);
       
       sp_master_o : out t_wishbone_master_out;
-      sp_master_i: in t_wishbone_master_in := cc_dummy_master_in;
+      sp_master_i:  in  t_wishbone_master_in := cc_dummy_master_in;
     
       -------------------------------------------------------------------------
       -- WR Core timing interface.
@@ -262,6 +265,9 @@ architecture rtl of spec_node_template is
   signal dac_dpll_load_p1 : std_logic;
   signal dac_hpll_data    : std_logic_vector(15 downto 0);
   signal dac_dpll_data    : std_logic_vector(15 downto 0);
+  signal dac_fixed        : std_logic_vector(15 downto 0);
+  signal dac_fixed_load   : std_logic;
+  signal dac_loaded       : std_logic;
 
   signal phy_tx_data      : std_logic_vector(7 downto 0);
   signal phy_tx_k         : std_logic;
@@ -434,17 +440,6 @@ begin
       rst_button_n_a_i => '1',
       rst_n_o          => local_reset_n);
 
-  U_Buf_CLK_GTP : IBUFDS
-    generic map (
-      DIFF_TERM    => true,
-      IBUF_LOW_PWR => false  -- Low power (TRUE) vs. performance (FALSE) setting for referenced
-      )
-    port map (
-      O  => clk_125m_gtp,
-      I  => clk_125m_gtp_p_i,
-      IB => clk_125m_gtp_n_i
-      );
-
   U_Buf_CLK_PLL : IBUFGDS
     generic map (
       DIFF_TERM    => true,
@@ -464,10 +459,10 @@ begin
       DIVCLK_DIVIDE      => 1,
       CLKFBOUT_MULT      => 8,
       CLKFBOUT_PHASE     => 0.000,
-      CLKOUT0_DIVIDE     => f_calc_sys_divider(g_system_clock_freq),         -- 62.5 MHz
+      CLKOUT0_DIVIDE     => f_calc_sys_divider(g_system_clock_freq),         -- 10
       CLKOUT0_PHASE      => 0.000,
       CLKOUT0_DUTY_CYCLE => 0.500,
-      CLKOUT1_DIVIDE     => 8,         -- 125 MHz
+      CLKOUT1_DIVIDE     => 8,         
       CLKOUT1_PHASE      => 0.000,
       CLKOUT1_DUTY_CYCLE => 0.500,
       CLKOUT2_DIVIDE     => 16,
@@ -477,8 +472,8 @@ begin
       REF_JITTER         => 0.016)
     port map (
       CLKFBOUT => pllout_clk_fb_pllref,
-      CLKOUT0  => pllout_clk_sys,
-      CLKOUT1  => pllout_clk_cpu,
+      CLKOUT0  => pllout_clk_sys,        -- 100 MHz
+      CLKOUT1  => pllout_clk_cpu,        -- 125 MHz
       CLKOUT2  => open,
       CLKOUT3  => open,
       CLKOUT4  => open,
@@ -488,37 +483,7 @@ begin
       CLKFBIN  => pllout_clk_fb_pllref,
       CLKIN    => clk_125m_pllref);
 
-  cmp_dmtd_clk_pll : PLL_BASE
-    generic map (
-      BANDWIDTH          => "OPTIMIZED",
-      CLK_FEEDBACK       => "CLKFBOUT",
-      COMPENSATION       => "INTERNAL",
-      DIVCLK_DIVIDE      => 1,
-      CLKFBOUT_MULT      => 50,
-      CLKFBOUT_PHASE     => 0.000,
-      CLKOUT0_DIVIDE     => 16,         -- 62.5 MHz
-      CLKOUT0_PHASE      => 0.000,
-      CLKOUT0_DUTY_CYCLE => 0.500,
-      CLKOUT1_DIVIDE     => 16,         -- 62.5 MHz
-      CLKOUT1_PHASE      => 0.000,
-      CLKOUT1_DUTY_CYCLE => 0.500,
-      CLKOUT2_DIVIDE     => 8,
-      CLKOUT2_PHASE      => 0.000,
-      CLKOUT2_DUTY_CYCLE => 0.500,
-      CLKIN_PERIOD       => 50.0,
-      REF_JITTER         => 0.016)
-    port map (
-      CLKFBOUT => pllout_clk_fb_dmtd,
-      CLKOUT0  => pllout_clk_dmtd,
-      CLKOUT1  => open,                 --pllout_clk_sys,
-      CLKOUT2  => open,
-      CLKOUT3  => open,
-      CLKOUT4  => open,
-      CLKOUT5  => open,
-      LOCKED   => open,
-      RST      => '0',
-      CLKFBIN  => pllout_clk_fb_dmtd,
-      CLKIN    => clk_20m_vcxo_buf);
+  
 
   cmp_clk_sys_buf : BUFG
     port map (
@@ -530,22 +495,16 @@ begin
       O => clk_cpu,
       I => pllout_clk_cpu);
 
-  cmp_clk_dmtd_buf : BUFG
-    port map (
-      O => clk_dmtd,
-      I => pllout_clk_dmtd);
 
-  cmp_clk_vcxo : BUFG
-    port map (
-      O => clk_20m_vcxo_buf,
-      I => clk_20m_vcxo_i);
+
+  
   
   -------------------------------------------------------------------------------
   -- Gennum core
   -------------------------------------------------------------------------------
 
 gen_with_gennum :  if not g_sim_bypass_gennum generate
-  
+
   U_GN4124_Core : gn4124_core
     port map
     (
@@ -628,7 +587,7 @@ gen_with_gennum :  if not g_sim_bypass_gennum generate
       dma_reg_we_i  => '0'
       );
 
-    cnx_slave_in(c_MASTER_GENNUM).adr <= gn_wb_adr(29 downto 0) & "00";
+  cnx_slave_in(c_MASTER_GENNUM).adr <= gn_wb_adr(29 downto 0) & "00";
 
   end generate gen_with_gennum;
 
@@ -637,6 +596,74 @@ gen_with_gennum :  if not g_sim_bypass_gennum generate
     sim_slave_o <= cnx_slave_out(c_MASTER_GENNUM);
   end generate gen_without_gennum;
 
+
+    U_Intercon : xwb_sdb_crossbar
+    generic map (
+      g_num_masters => c_NUM_WB_SLAVES,
+      g_num_slaves  => c_NUM_WB_MASTERS,
+      g_registered  => true,
+      g_wraparound  => true,
+      g_layout      => c_INTERCONNECT_LAYOUT,
+      g_sdb_addr    => c_SDB_ADDRESS)
+    port map (
+      clk_sys_i => clk_sys,
+      rst_n_i   => local_reset_n,
+      slave_i   => cnx_slave_in,
+      slave_o   => cnx_slave_out,
+      master_i  => cnx_master_in,
+      master_o  => cnx_master_out);
+
+  U_VIC : xwb_vic
+    generic map (
+      g_interface_mode      => PIPELINED,
+      g_address_granularity => BYTE,
+      g_num_interrupts      => 3,
+      g_init_vectors        => c_VIC_VECTOR_TABLE,
+      g_retry_timeout => 10000) -- hack - 100us retry timeout to make SPEC work
+    port map (
+      clk_sys_i    => clk_sys,
+      rst_n_i      => local_reset_n,
+      slave_i      => cnx_master_out(c_SLAVE_VIC),
+      slave_o      => cnx_master_in(c_SLAVE_VIC),
+      irqs_i(0)    => fmc0_host_irq_i,
+      irqs_i(1)    => wrn_irq,
+      irqs_i(2)    => wrn_debug_msg_irq,
+      irq_master_o => vic_master_irq);
+
+  gpio(0) <= vic_master_irq;
+
+    -- The SFP is permanently enabled.
+  sfp_tx_disable_o <= '0';
+
+  -- Debug signals assignments (FP lemos)
+
+  rst_n_sys_o <= local_reset_n;
+  clk_sys_o   <= clk_sys;
+
+-- forward timing to the FMC cores in the top level.
+  tm_link_up_o        <= tm_link_up;
+  tm_dac_value_o      <= tm_dac_value;
+  tm_dac_wr_o         <= tm_dac_wr;
+  tm_clk_aux_lock_en  <= tm_clk_aux_lock_en_i;
+  tm_time_valid_o     <= tm_time_valid;
+  tm_tai_o            <= tm_tai;
+  tm_cycles_o         <= tm_cycles;
+  tm_clk_aux_locked_o <= tm_clk_aux_locked;
+
+  tm.cycles                 <= tm_cycles;
+  tm.tai                    <= tm_tai;
+  tm.time_valid             <= tm_time_valid;
+  tm.link_up                <= tm_link_up;
+  tm.aux_locked(0 downto 0) <= tm_clk_aux_locked;
+  tm.aux_locked(7 downto 1) <= (others => '0');
+
+  fmc0_host_wb_o              <= cnx_master_out(c_SLAVE_FMC0);
+  cnx_master_in(c_SLAVE_FMC0) <= fmc0_host_wb_i;
+
+  --------------------------------------------------------------------------------
+  -- Instantiated only if g_with_white_rabbit = TRUE
+  --------------------------------------------------------------------------------
+  
   gen_with_wr : if( g_with_white_rabbit ) generate
   
   -- Tristates for SFP EEPROM
@@ -648,6 +675,52 @@ gen_with_gennum :  if not g_sim_bypass_gennum generate
   carrier_onewire_b <= '0' when wrc_owr_en(0) = '1' else 'Z';
   wrc_owr_in(0) <= carrier_onewire_b;
 
+
+-- Eva C comment: Shall we put this PLL and 2 BUFGs (cmp_clk_vcxo and cmp_clk_dmtd_buf) within  the
+-- "if( g_with_white_rabbit ) generate" since we do not need if FALSE. Right ?
+
+  cmp_clk_vcxo : BUFG
+    port map (
+      O => clk_20m_vcxo_buf,
+      I => clk_20m_vcxo_i);
+		
+  cmp_dmtd_clk_pll : PLL_BASE
+    generic map (
+      BANDWIDTH          => "OPTIMIZED",
+      CLK_FEEDBACK       => "CLKFBOUT",
+      COMPENSATION       => "INTERNAL",
+      DIVCLK_DIVIDE      => 1,
+      CLKFBOUT_MULT      => 50,
+      CLKFBOUT_PHASE     => 0.000,
+      CLKOUT0_DIVIDE     => 16,         -- 62.5 MHz
+      CLKOUT0_PHASE      => 0.000,
+      CLKOUT0_DUTY_CYCLE => 0.500,
+      CLKOUT1_DIVIDE     => 16,         -- 62.5 MHz   NOT USED
+      CLKOUT1_PHASE      => 0.000,
+      CLKOUT1_DUTY_CYCLE => 0.500,
+      CLKOUT2_DIVIDE     => 8,          -- 125 MHz   NOT USED
+      CLKOUT2_PHASE      => 0.000,
+      CLKOUT2_DUTY_CYCLE => 0.500,
+      CLKIN_PERIOD       => 50.0,
+      REF_JITTER         => 0.016)
+    port map (
+      CLKFBOUT => pllout_clk_fb_dmtd,
+      CLKOUT0  => pllout_clk_dmtd,
+      CLKOUT1  => open,                 
+      CLKOUT2  => open,
+      CLKOUT3  => open,
+      CLKOUT4  => open,
+      CLKOUT5  => open,
+      LOCKED   => open,
+      RST      => '0',
+      CLKFBIN  => pllout_clk_fb_dmtd,
+      CLKIN    => clk_20m_vcxo_buf);
+
+  cmp_clk_dmtd_buf : BUFG
+    port map (
+      O => clk_dmtd,
+      I => pllout_clk_dmtd);
+		
   U_WR_CORE : xwr_core
     generic map (
       g_simulation                => f_bool2int(g_simulation),
@@ -698,7 +771,7 @@ gen_with_gennum :  if not g_sim_bypass_gennum generate
       sfp_scl_i => sfp_scl_in,
       sfp_sda_o => sfp_sda_out,
       sfp_sda_i => sfp_sda_in,
-      sfp_det_i => sfp_mod_def0_b,
+      sfp_det_i => sfp_mod_def0_i,  -- EvaC 'sfp_mod_def0_i' was before 'sfp_mod_def0_b',
 
       uart_rxd_i => uart_rxd_i,
       uart_txd_o => uart_txd_o,
@@ -756,48 +829,6 @@ gen_with_gennum :  if not g_sim_bypass_gennum generate
 
   end generate gen_with_wr;
 
-  gen_without_wr: if ( not g_with_white_rabbit ) generate
-    cnx_master_in(c_SLAVE_WR_CORE).ack <= '1';
-    cnx_master_in(c_SLAVE_WR_CORE).stall <= '0';
-    cnx_master_in(c_SLAVE_WR_CORE).err <= '0';
-    cnx_master_in(c_SLAVE_WR_CORE).rty <= '0';
-  end generate gen_without_wr;
-
-  U_Intercon : xwb_sdb_crossbar
-    generic map (
-      g_num_masters => c_NUM_WB_SLAVES,
-      g_num_slaves  => c_NUM_WB_MASTERS,
-      g_registered  => true,
-      g_wraparound  => true,
-      g_layout      => c_INTERCONNECT_LAYOUT,
-      g_sdb_addr    => c_SDB_ADDRESS)
-    port map (
-      clk_sys_i => clk_sys,
-      rst_n_i   => local_reset_n,
-      slave_i   => cnx_slave_in,
-      slave_o   => cnx_slave_out,
-      master_i  => cnx_master_in,
-      master_o  => cnx_master_out);
-
-  U_VIC : xwb_vic
-    generic map (
-      g_interface_mode      => PIPELINED,
-      g_address_granularity => BYTE,
-      g_num_interrupts      => 3,
-      g_init_vectors        => c_VIC_VECTOR_TABLE,
-      g_retry_timeout => 10000) -- hack - 100us retry timeout to make SPEC work
-    port map (
-      clk_sys_i    => clk_sys,
-      rst_n_i      => local_reset_n,
-      slave_i      => cnx_master_out(c_SLAVE_VIC),
-      slave_o      => cnx_master_in(c_SLAVE_VIC),
-      irqs_i(0)    => fmc0_host_irq_i,
-      irqs_i(1)    => wrn_irq,
-      irqs_i(2)    => wrn_debug_msg_irq,
-      irq_master_o => vic_master_irq);
-
- gpio(0) <= vic_master_irq;
-
   gen_wr_node_with_white_rabbit : if g_with_white_rabbit generate
   
   U_WR_Node : wr_node_core_with_etherbone
@@ -806,7 +837,7 @@ gen_with_gennum :  if not g_sim_bypass_gennum generate
       g_double_core_clock => g_double_wrnode_core_clock)
     port map (
       clk_i          => clk_sys,
-      clk_cpu_i => clk_cpu,
+      clk_cpu_i      => clk_cpu,  -- Only used when g_double_wrnode_core_clock=TRUE
       clk_ref_i      => clk_125m_pllref,
       rst_n_i        => local_reset_n,
       rst_net_n_i    => rst_net_n,
@@ -828,37 +859,23 @@ gen_with_gennum :  if not g_sim_bypass_gennum generate
       );
 
   end generate gen_wr_node_with_white_rabbit;
-
-  gen_wr_node_without_white_rabbit:  if not g_with_white_rabbit generate
-    
-    U_WR_Node : wr_node_core
-      generic map (
-        g_config            => g_wr_node_config,
-        g_double_core_clock => g_double_wrnode_core_clock,
-        g_with_rmq          => false,
-        g_with_white_rabbit => false,
-        g_system_clock_freq => g_system_clock_freq)
-      port map (
-        clk_i           => clk_sys,
-        clk_cpu_i       => clk_cpu,
-        rst_n_i         => local_reset_n,
-
-        dp_master_o => dp_master_o,
-        dp_master_i => dp_master_i,
-        
-        host_slave_i   => cnx_master_out(c_SLAVE_WR_NODE),
-        host_slave_o   => cnx_master_in(c_SLAVE_WR_NODE),
-        host_irq_o     => wrn_irq,
-        gpio_o         => wrn_gpio_out,
-        gpio_i         => wrn_gpio_in,
-        debug_msg_irq_o => wrn_debug_msg_irq,
-        tm_i => tm
-    );
-    
-  end generate gen_wr_node_without_white_rabbit;
   
   gen_with_phy : if(g_with_wr_phy and g_with_white_rabbit ) generate
 
+    -- EvaC's comments moved buffer U_Buf_CLK_GTP here since signal clk_125m_gtp is only used by 
+	 -- 'wr_gtp_phy_spartan6' module.
+	 
+	 U_Buf_CLK_GTP : IBUFDS
+    generic map (
+      DIFF_TERM    => true,
+      IBUF_LOW_PWR => false  -- Low power (TRUE) vs. performance (FALSE) setting for referenced
+      )
+    port map (
+      O  => clk_125m_gtp,
+      I  => clk_125m_gtp_p_i,
+      IB => clk_125m_gtp_n_i
+      );
+		
     U_GTP : wr_gtp_phy_spartan6
       generic map (
         g_enable_ch0 => 0,
@@ -901,39 +918,93 @@ gen_with_gennum :  if not g_sim_bypass_gennum generate
         pad_rxp1_i         => sfp_rxp_i);
 
   end generate gen_with_phy;
+  
+  --------------------------------------------------------------------------------
+  -- Instantiated only if g_with_white_rabbit = FALSE
+  --------------------------------------------------------------------------------
 
-  -- The SFP is permanently enabled.
-  sfp_tx_disable_o <= '0';
+  gen_without_wr: if ( not g_with_white_rabbit ) generate
+    cnx_master_in(c_SLAVE_WR_CORE).ack <= '1';
+    cnx_master_in(c_SLAVE_WR_CORE).stall <= '0';
+    cnx_master_in(c_SLAVE_WR_CORE).err <= '0';
+    cnx_master_in(c_SLAVE_WR_CORE).rty <= '0';
+  end generate gen_without_wr;
 
-  -- Debug signals assignments (FP lemos)
+  gen_wr_node_without_white_rabbit:  if not g_with_white_rabbit generate
+    
+    U_WR_Node : wr_node_core
+      generic map (
+        g_config            => g_wr_node_config,
+        g_double_core_clock => g_double_wrnode_core_clock,
+        g_with_rmq          => false,
+        g_with_white_rabbit => false,
+        g_system_clock_freq => g_system_clock_freq)
+      port map (
+        clk_i           => clk_sys,
+        clk_cpu_i       => clk_cpu,  -- Only used when g_double_wrnode_core_clock=TRUE
+        rst_n_i         => local_reset_n,
 
-  rst_n_sys_o <= local_reset_n;
-  clk_sys_o   <= clk_sys;
+        dp_master_o => dp_master_o,
+        dp_master_i => dp_master_i,
+        
+        host_slave_i   => cnx_master_out(c_SLAVE_WR_NODE),
+        host_slave_o   => cnx_master_in(c_SLAVE_WR_NODE),
+        host_irq_o     => wrn_irq,
+        gpio_o         => wrn_gpio_out,
+        gpio_i         => wrn_gpio_in,
+        debug_msg_irq_o => wrn_debug_msg_irq,
+        tm_i => tm
+    );
+    
+  -- Added ! If the WR core is not instantiated the SPEC node template should
+  -- still take care of the setup of the DACs controlling the VCX0.
+  -- Let's programm it to a fix value wich provides max. stability of the VCXO.
+  -- That is controlling voltage= 1.5V. Voltage Ref. of DAC=2.5V. 
+  -- From DAC datasheet: Code = 65536 * (Vout/Vref) = 39321.6
 
--- forward timing to the FMC cores in the top level.
-  tm_link_up_o        <= tm_link_up;
-  tm_dac_value_o      <= tm_dac_value;
-  tm_dac_wr_o         <= tm_dac_wr;
-  tm_clk_aux_lock_en  <= tm_clk_aux_lock_en_i;
-  tm_time_valid_o     <= tm_time_valid;
-  tm_tai_o            <= tm_tai;
-  tm_cycles_o         <= tm_cycles;
-  tm_clk_aux_locked_o <= tm_clk_aux_locked;
+  dac_fixed <= std_logic_vector(to_unsigned(g_fixed_dac25MHz,16)); -- '1001100110011001';  
 
-  tm.cycles                 <= tm_cycles;
-  tm.tai                    <= tm_tai;
-  tm.time_valid             <= tm_time_valid;
-  tm.link_up                <= tm_link_up;
-  tm.aux_locked(0 downto 0) <= tm_clk_aux_locked;
-  tm.aux_locked(7 downto 1) <= (others => '0');
+  U_DAC_ARB : spec_serial_dac_arb
+    generic map (
+      g_invert_sclk    => false,
+      g_num_extra_bits => 8)
 
-  fmc0_host_wb_o              <= cnx_master_out(c_SLAVE_FMC0);
-  cnx_master_in(c_SLAVE_FMC0) <= fmc0_host_wb_i;
+    port map (
+      clk_i   => clk_sys,
+      rst_n_i => local_reset_n,
 
+      val1_i  => dac_fixed,
+      load1_i => dac_loaded,      -- monostable: 1-clk-tick-long pulse
+
+      val2_i  => (others=>'0'),   -- What value for second DAC?
+      load2_i => '0',
+
+      dac_cs_n_o(0) => dac_cs1_n_o,
+      dac_cs_n_o(1) => dac_cs2_n_o,
+      dac_sclk_o    => dac_sclk_o,
+      dac_din_o     => dac_din_o);
+
+  -- mono-stable to load the value into the spec_serial_dac_arb
+  p_DAC_load: process(clk_sys)
+  begin
+    if rising_edge(clk_sys) then
+      if (local_reset_n ='0') then
+        dac_fixed_load <= '0';
+        dac_loaded <= '0';
+      else 
+        dac_fixed_load <= not(dac_loaded);
+        dac_loaded <= '1';
+      end if;
+    end if;
+  end process;
+    
+
+  end generate gen_wr_node_without_white_rabbit;
+ 
   gen_leds_without_wr: if not g_with_white_rabbit  generate
-    led_red <= wrn_gpio_out(0);
+    led_red   <= wrn_gpio_out(0);
     led_green <= wrn_gpio_out(1);
-    end generate gen_leds_without_wr;
+  end generate gen_leds_without_wr;
 
   
 end rtl;

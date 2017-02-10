@@ -61,16 +61,17 @@ package spec_node_pkg is
       g_with_wr_phy     : boolean := true;
       g_double_wrnode_core_clock : boolean := false;
       g_wr_node_config  : t_wr_node_config;
-      g_system_clock_freq : integer := 62500000
+      g_system_clock_freq : integer := 62500000;
+      g_fixed_dac25MHz  : integer := 39321
       );
     port (
       rst_n_sys_o          : out   std_logic;
       clk_sys_o            : out   std_logic;
-      clk_20m_vcxo_i       : in    std_logic;
+      clk_20m_vcxo_i       : in    std_logic           :='0';
       clk_125m_pllref_p_i  : in    std_logic;
       clk_125m_pllref_n_i  : in    std_logic;
-      clk_125m_gtp_n_i     : in    std_logic;
-      clk_125m_gtp_p_i     : in    std_logic;
+      clk_125m_gtp_n_i     : in    std_logic           :='1';
+      clk_125m_gtp_p_i     : in    std_logic           :='0';
       l_rst_n : in std_logic;   -- reset from gn4124 (rstout18_n)
 
       -- general purpose interface
@@ -79,15 +80,15 @@ package spec_node_pkg is
       -- pcie to local [inbound data] - rx
       p2l_rdy    : out   std_logic;     -- rx buffer full flag
       p2l_clkn   : in    std_logic;     -- receiver source synchronous clock-
-      p2l_clkp  : in    std_logic;     -- receiver source synchronous clock+
-      p2l_data  : in    std_logic_vector(15 downto 0);  -- parallel receive data
+      p2l_clkp   : in    std_logic;     -- receiver source synchronous clock+
+      p2l_data   : in    std_logic_vector(15 downto 0);  -- parallel receive data
       p2l_dframe : in    std_logic;     -- receive frame
       p2l_valid  : in    std_logic;     -- receive data valid
 
       -- inbound buffer request/status
-      p_wr_req : in  std_logic_vector(1 downto 0);  -- pcie write request
-      p_wr_rdy : out std_logic_vector(1 downto 0);  -- pcie write ready
-      rx_error : out std_logic;                     -- receive error
+      p_wr_req   : in  std_logic_vector(1 downto 0);  -- pcie write request
+      p_wr_rdy   : out std_logic_vector(1 downto 0);  -- pcie write ready
+      rx_error   : out std_logic;                     -- receive error
 
       -- local to parallel [outbound data] - tx
       l2p_data   : out std_logic_vector(15 downto 0);  -- parallel transmit data
@@ -102,7 +103,7 @@ package spec_node_pkg is
       l_wr_rdy   : in std_logic_vector(1 downto 0);  -- local-to-pcie write
       p_rd_d_rdy : in std_logic_vector(1 downto 0);  -- pcie-to-local read response data ready
       tx_error   : in std_logic;        -- transmit error
-      vc_rdy    : in std_logic_vector(1 downto 0);  -- channel ready
+      vc_rdy     : in std_logic_vector(1 downto 0);  -- channel ready
 
       -- front panel leds
       led_red   : out std_logic;
@@ -119,7 +120,7 @@ package spec_node_pkg is
       sfp_txn_o            : out   std_logic;
       sfp_rxp_i            : in    std_logic                    := '0';
       sfp_rxn_i            : in    std_logic                    := '1';
-      sfp_mod_def0_b       : in    std_logic;
+      sfp_mod_def0_i       : in    std_logic                    := '0';    
       sfp_mod_def1_b       : inout std_logic;
       sfp_mod_def2_b       : inout std_logic;
       sfp_rate_select_b    : inout std_logic                    := '0';
@@ -134,7 +135,7 @@ package spec_node_pkg is
       fmc0_host_irq_i      : in    std_logic;
 
       dp_master_o : out t_wishbone_master_out_array(0 to g_wr_node_config.cpu_count-1);
-      dp_master_i : in t_wishbone_master_in_array(0 to g_wr_node_config.cpu_count-1);
+      dp_master_i : in  t_wishbone_master_in_array(0 to g_wr_node_config.cpu_count-1);
       sp_master_o          : out   t_wishbone_master_out;
       sp_master_i          : in    t_wishbone_master_in         := cc_dummy_master_in;
       tm_link_up_o         : out   std_logic;
@@ -147,7 +148,7 @@ package spec_node_pkg is
       tm_cycles_o          : out   std_logic_vector(27 downto 0);
       sim_slave_i : in t_wishbone_slave_in := cc_dummy_slave_in;
       sim_slave_o : out t_wishbone_slave_out
-      );
+);
   end component spec_node_template;
 
  
