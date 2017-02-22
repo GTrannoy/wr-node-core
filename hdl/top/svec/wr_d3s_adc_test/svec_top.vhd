@@ -440,12 +440,6 @@ architecture rtl of svec_top is
 --        CONSTANTS DECLARATION  
 ------------------------------------------
 
-  -- Number of master port(s) on the wishbone crossbar
-  constant c_NUM_WB_MASTERS : integer := 3;
-
-  -- Number of slave port(s) on the wishbone crossbar
-  constant c_NUM_WB_SLAVES : integer := 3;
-
   -- Device SDB description
   constant c_D3S_ADC_SDB_DEVICE : t_sdb_device := (
     abi_class     => x"0000",              -- undocumented device
@@ -463,6 +457,11 @@ architecture rtl of svec_top is
         date      => x"20160427",
         name      => "WR-D3S-ADC_Core    ")));
 
+  constant c_d3s0_sdb_record : t_sdb_record       := f_sdb_embed_device(c_D3S_ADC_SDB_DEVICE, x"00010000");
+  constant c_d3s1_sdb_record : t_sdb_record       := f_sdb_embed_device(c_D3S_ADC_SDB_DEVICE, x"00012000");
+  constant c_d3s_vector      : t_wishbone_address := x"ffffffff";
+
+  -- Wr-node-configuration
   constant c_hmq_config : t_wrn_mqueue_config :=
     (
       out_slot_count  => 4,
@@ -496,7 +495,6 @@ architecture rtl of svec_top is
         others       => (0, 0)
         )
       );
-
   
   constant c_node_config : t_wr_node_config :=
     (
@@ -507,6 +505,10 @@ architecture rtl of svec_top is
       rmq_config      => c_rmq_config,
       shared_mem_size => 8192
       );
+
+  -- WB buses
+  constant c_NUM_WB_MASTERS : integer := 3;  -- N. of master port(s) on the xwb_crossbar
+  constant c_NUM_WB_SLAVES  : integer := 3;  -- N. of slave port(s) on the xwb_crossbar
 
   constant c_slave_addr : t_wishbone_address_array(c_NUM_WB_SLAVES-1 downto 0) :=
     (0 => x"00000000",
@@ -522,10 +524,7 @@ architecture rtl of svec_top is
   constant c_FMC_1 : integer := 2;      -- Fmc1: fmc-d3s (d3s_adc_slave core)
   constant c_SI57x : integer := 1;      -- Si570 VCXO Silicon Labs WB interface
 
-  constant c_d3s0_sdb_record : t_sdb_record       := f_sdb_embed_device(c_D3S_ADC_SDB_DEVICE, x"00010000");
-  constant c_d3s1_sdb_record : t_sdb_record       := f_sdb_embed_device(c_D3S_ADC_SDB_DEVICE, x"00012000");
-  constant c_d3s_vector      : t_wishbone_address := x"ffffffff";
-
+  
 ------------------------------------------
 --        SIGNALS DECLARATION  
 ------------------------------------------
@@ -533,10 +532,14 @@ architecture rtl of svec_top is
   signal clk_sys : std_logic;
   signal rst_n   : std_logic;
 
+  -- WB buses
   signal fmc_host_wb_out, fmc_dp_wb_out : t_wishbone_master_out_array(0 to c_NUM_WB_MASTERS-1);
   signal fmc_host_wb_in, fmc_dp_wb_in   : t_wishbone_master_in_array(0 to c_NUM_WB_MASTERS-1);
   signal fmc_host_irq                   : std_logic_vector(c_NUM_WB_MASTERS downto 0);
 
+  signal fmc_wb_muxed_out : t_wishbone_master_out_array(c_NUM_WB_SLAVES-1 downto 0);
+  signal fmc_wb_muxed_in  : t_wishbone_master_in_array(c_NUM_WB_SLAVES-1 downto 0);
+  
   signal tm_link_up         : std_logic;
   signal tm_dac_value       : std_logic_vector(23 downto 0);
   signal tm_dac_wr          : std_logic_vector(1 downto 0);
@@ -550,9 +553,6 @@ architecture rtl of svec_top is
   signal fmc0_clk_wr, fmc1_clk_wr : std_logic;
 
   signal debug : std_logic_vector(3 downto 0);
-
-  signal fmc_wb_muxed_out : t_wishbone_master_out_array(c_NUM_WB_SLAVES-1 downto 0);
-  signal fmc_wb_muxed_in  : t_wishbone_master_in_array(c_NUM_WB_SLAVES-1 downto 0);
 
   signal scl_pad_oen, sda_pad_oen : std_logic;
   signal clk_125m_pllref          : std_logic;
@@ -689,7 +689,7 @@ begin
       tm_tai_o             => tm_tai,
       tm_cycles_o          => tm_cycles,
 		
-		pps_o                => wr_pps
+      pps_o                => wr_pps
       );
 
 
@@ -724,10 +724,11 @@ begin
 
   U_D3S_ADC_Core : wr_d3s_adc
     port map (
+      -- system signals
       rst_n_sys_i       => rst_n,
       clk_sys_i         => clk_sys,
-      clk_wr_o          => fmc0_clk_wr,
-
+      -- WR timing signals
+      clk_wr_o             => fmc0_clk_wr,
       tm_link_up_i         => tm_link_up,
       tm_time_valid_i      => tm_time_valid,
       tm_tai_i             => tm_tai,

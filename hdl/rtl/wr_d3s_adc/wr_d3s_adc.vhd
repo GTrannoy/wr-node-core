@@ -330,7 +330,7 @@ architecture rtl of wr_d3s_adc is
   signal dco_clk, dco_clk_buf : std_logic;
   signal clk_wr               : std_logic;
   signal clk_fb               : std_logic;
-  signal clk_fb_buf           : std_logic;
+--  signal clk_fb_buf           : std_logic;   -- Not used. 
   signal locked_in            : std_logic;
   signal locked_out           : std_logic;
   signal serdes_clk           : std_logic;
