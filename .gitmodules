@@ -10,12 +10,6 @@
 [submodule "hdl/ip_cores/vme64x-core"]
 	path = hdl/ip_cores/vme64x-core
 	url = git://ohwr.org/hdl-core-lib/vme64x-core.git
-[submodule "hdl/ip_cores/fine-delay"]
-	path = hdl/ip_cores/fine-delay
-	url = git://ohwr.org/fmc-projects/fmc-delay-1ns-8cha.git
-[submodule "hdl/ip_cores/fmc-tdc"]
-	path = hdl/ip_cores/fmc-tdc
-	url = git://ohwr.org/fmc-projects/fmc-tdc/fmc-tdc-1ns-5cha-gw.git
 [submodule "hdl/ip_cores/gn4124-core"]
 	path = hdl/ip_cores/gn4124-core
 	url = git://ohwr.org/hdl-core-lib/gn4124-core.git
