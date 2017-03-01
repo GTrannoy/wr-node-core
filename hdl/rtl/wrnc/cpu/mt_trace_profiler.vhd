@@ -21,7 +21,7 @@ entity mt_trace_profiler is
     cpu_pc_i       : in t_pc_array(0 to g_config.cpu_count-1);
     cpu_pc_valid_i : in std_logic_vector(g_config.cpu_count-1 downto 0);
 
-    slave_i : in t_wishbone_slave_in;
+    slave_i : in  t_wishbone_slave_in;
     slave_o : out t_wishbone_slave_out
     );
 
@@ -45,12 +45,12 @@ architecture rtl of mt_trace_profiler is
       regs_i     : in  t_tpu_in_registers;
       regs_o     : out t_tpu_out_registers);
   end component mt_tpu_csr_wb_slave;
-  
-  constant c_ACTION_START_REC   : std_logic_vector(3 downto 0) := x"0";
-  constant c_ACTION_STOP_REC    : std_logic_vector(3 downto 0) := x"1";
-  constant c_ACTION_PROBE_START : std_logic_vector(3 downto 0) := x"2";
-  constant c_ACTION_PROBE_END   : std_logic_vector(3 downto 0) := x"3";
-  constant c_ACTION_DISABLED    : std_logic_vector(3 downto 0) := x"f";
+
+  constant c_ACTION_DISABLED    : std_logic_vector(3 downto 0) := x"0";
+  constant c_ACTION_START_REC   : std_logic_vector(3 downto 0) := x"1";
+  constant c_ACTION_STOP_REC    : std_logic_vector(3 downto 0) := x"2";
+  constant c_ACTION_PROBE_START : std_logic_vector(3 downto 0) := x"3";
+  constant c_ACTION_PROBE_END   : std_logic_vector(3 downto 0) := x"4";
 
   type t_channel is record
     core_id  : std_logic_vector(2 downto 0);
@@ -93,11 +93,11 @@ architecture rtl of mt_trace_profiler is
   signal channel_id : integer range 0 to g_config.tpu_channels-1;
 
   signal regs_out : t_tpu_out_registers;
-  signal regs_in : t_tpu_in_registers;
+  signal regs_in  : t_tpu_in_registers;
   
 begin
 
-  U_WB_Regs: mt_tpu_csr_wb_slave
+  U_WB_Regs : mt_tpu_csr_wb_slave
     port map (
       rst_n_i    => rst_n_i,
       clk_sys_i  => clk_i,
@@ -112,7 +112,7 @@ begin
       wb_stall_o => slave_o.stall,
       regs_i     => regs_in,
       regs_o     => regs_out);
-  
+
   p_ts_counter : process(clk_i)
   begin
     if rising_edge(clk_i) then
@@ -151,11 +151,11 @@ begin
 
           if (ch(i).action = c_ACTION_START_REC) then
             start_rec_v(i) <= '1';
-            ch(i).hit <= '1';
+            ch(i).hit      <= '1';
           elsif (ch(i).action = c_ACTION_STOP_REC) then
             stop_rec_v(i) <= '1';
-            ch(i).hit <= '1';
-          elsif ( state = ST_RECORDING ) then
+            ch(i).hit     <= '1';
+          elsif (state = ST_RECORDING) then
             ch(i).hit <= '1';
             
           end if;
@@ -165,13 +165,13 @@ begin
 
     p_gen_arb_req_ack : process(state, ch, arb_input_req)
     begin
-      if ( ch(i).hit = '1' ) then
+      if (ch(i).hit = '1') then
         arb_input_valid(i) <= '1';
       else
         arb_input_valid(i) <= '0';
       end if;
 
-      arb_input_data(32 * (i+1) -1 downto 32 * i) <= std_logic_vector(to_unsigned(i, 5)) &  std_logic_vector(ch(i).ts) ;
+      arb_input_data(32 * (i+1) -1 downto 32 * i) <= std_logic_vector(to_unsigned(i, 5)) & std_logic_vector(ch(i).ts);
       ch(i).ack                                   <= ch(i).hit and arb_input_req(i);
     end process;
 
@@ -227,7 +227,7 @@ begin
   begin
     if rising_edge(clk_i) then
       if rst_n_i = '0' or regs_out.csr_enable_o = '0' then
-        state <= ST_IDLE;
+        state    <= ST_IDLE;
         mem_addr <= (others => '0');
       else
         case state is
@@ -270,12 +270,12 @@ begin
   end process;
 
 
-  regs_in.buf_count_i       <= std_logic_vector (resize(mem_addr, 16));
+  regs_in.buf_count_i       <= std_logic_vector (resize(mem_addr + 1, 16));
   regs_in.buf_size_i        <= std_logic_vector (to_unsigned(g_config.tpu_buffer_size, 16));
   regs_in.csr_probe_count_i <= std_logic_vector(to_unsigned (g_config.tpu_channels, 5));
   regs_in.buf_data_id_i     <= mem_rdata(31 downto 27);
   regs_in.buf_data_tstamp_i <= mem_rdata(26 downto 0);
-
+  regs_in.csr_present_i     <= '1';
 
 
 end rtl;

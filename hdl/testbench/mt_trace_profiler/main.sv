@@ -22,11 +22,11 @@ typedef struct {
 
 class CMockTurtleTPU;
 
-   static const int ACT_StartRecording = 0;
-   static const int ACT_StopRecording = 1;
-   static const int ACT_ProbeStart = 2;
-   static const int ACT_ProbeEnd = 3;
-   static const int ACT_Disabled = 'hf;
+   static const int ACT_StartRecording = 1;
+   static const int ACT_StopRecording = 2;
+   static const int ACT_ProbeStart = 3;
+   static const int ACT_ProbeEnd = 4;
+   static const int ACT_Disabled = 'h0;
       
 
    protected CBusAccessor m_acc;
