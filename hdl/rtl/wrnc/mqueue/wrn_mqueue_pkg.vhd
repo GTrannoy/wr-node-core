@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2016-11-29
+-- Last update: 2017-03-07
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -43,11 +43,16 @@ use work.wishbone_pkg.all;
 
 package wrn_mqueue_pkg is
 
+  constant c_MT_STREAM_TAG_HEADER : std_logic_vector(1 downto 0) := "00";
+  constant c_MT_STREAM_TAG_PAYLOAD : std_logic_vector(1 downto 0) := "01";
+  
+  
   type t_mt_stream_sink_in is record
     data : std_logic_vector(31 downto 0);
     tag : std_logic_vector(1 downto 0);
     valid : std_logic;
     last : std_logic;
+    error : std_logic;
   end record;
 
   type t_mt_stream_sink_out is record
