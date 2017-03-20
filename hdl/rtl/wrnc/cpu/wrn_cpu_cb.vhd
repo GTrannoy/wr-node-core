@@ -57,7 +57,8 @@ entity wrn_cpu_cb is
     g_iram_size         : integer;
     g_system_clock_freq : integer;
     g_double_core_clock : boolean;
-    g_with_white_rabbit : boolean
+    g_with_white_rabbit : boolean;
+    g_cpu_arch          : string
     );
 
   port (
@@ -134,6 +135,24 @@ architecture rtl of wrn_cpu_cb is
       pc_valid_o : out std_logic;
       cpu_csr_i  : in  t_wrn_cpu_csr_out_registers;
       cpu_csr_o  : out t_wrn_cpu_csr_in_registers);
+  end component;
+
+  component wrn_urv_wrapper
+    generic (
+      g_iram_size         : integer;
+      g_cpu_id            : integer;
+      g_double_core_clock : boolean);
+    port (
+      clk_sys_i : in  std_logic;
+      clk_cpu_i : in  std_logic;
+      rst_n_i   : in  std_logic;
+      irq_i     : in  std_logic_vector(31 downto 0) := x"00000000";
+      dwb_o     : out t_wishbone_master_out;
+      dwb_i     : in  t_wishbone_master_in;
+      pc_o       : out std_logic_vector(c_mt_pc_bits-1 downto 0);
+      pc_valid_o : out std_logic;
+      cpu_csr_i : in  t_wrn_cpu_csr_out_registers;
+      cpu_csr_o : out t_wrn_cpu_csr_in_registers);
   end component;
 
   constant c_local_wishbone_masters : integer := 3;
@@ -329,6 +348,12 @@ begin  -- rtl
     end if;
   end process;
 
+  gen_check_cpu_arch : if g_cpu_arch /= "LM32" and g_cpu_arch /= "URV" generate
+    assert false report "Unsupported CPU architecture specified in g_cpu_arch. We currently support LM32 and uRV" severity failure;
+  end generate gen_check_cpu_arch;
+
+gen_with_lm32 : if g_cpu_arch = "LM32" generate
+
   U_TheCoreCPU : wrn_lm32_wrapper
     generic map (
       g_iram_size         => g_iram_size,
@@ -345,6 +370,28 @@ begin  -- rtl
       pc_o       => pc_o,
       cpu_csr_i  => cpu_csr_i,
       cpu_csr_o  => cpu_csr_o);
+
+end generate gen_with_lm32;
+
+gen_with_urv : if g_cpu_arch = "URV" generate
+    U_TheCoreCPU : wrn_urv_wrapper
+      generic map (
+        g_iram_size         => g_iram_size,
+        g_cpu_id            => g_cpu_id,
+        g_double_core_clock => g_double_core_clock)
+      port map (
+        clk_sys_i => clk_sys_i,
+        clk_cpu_i => clk_cpu_i,
+        rst_n_i   => rst_n_i,
+        irq_i     => x"00000000",  -- no irqs, we want to be deterministic...
+        dwb_o     => cpu_dwb_out,
+        dwb_i     => cpu_dwb_in,
+        pc_valid_o => pc_valid_o,
+        pc_o       => pc_o,
+        cpu_csr_i => cpu_csr_i,
+        cpu_csr_o => cpu_csr_o);
+
+end generate gen_with_urv;
 
 
   U_Local_Registrers : wrn_cpu_lr_wb_slave

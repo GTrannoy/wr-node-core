@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2017-01-25
+-- Last update: 2017-03-20
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -238,7 +238,8 @@ begin
       g_with_wr_phy          => true,
       g_wr_node_config       => c_node_config,
       -- we drive the FP leds from our demo CPUs instead of the WR core
-      g_use_external_fp_leds => true)
+      g_use_external_fp_leds => true,
+      g_cpu_arch => "URV")
     port map (
       rst_n_a_i           => rst_n_a_i,
       rst_n_sys_o         => rst_n_sys,

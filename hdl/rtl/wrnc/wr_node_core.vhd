@@ -60,7 +60,9 @@ entity wr_node_core is
 -- Frequency of clk_sys_i, in Hz
     g_system_clock_freq : integer          := 62500000;
 -- Enables/disables WR support
-    g_with_white_rabbit : boolean          := false
+    g_with_white_rabbit : boolean          := false;
+-- Choice of the CPU core used: LM32 or URV
+    g_cpu_arch : string := "LM32"
     );
 
   port (
@@ -104,7 +106,8 @@ architecture rtl of wr_node_core is
       g_iram_size         : integer;
       g_system_clock_freq : integer;
       g_double_core_clock : boolean;
-      g_with_white_rabbit : boolean);
+      g_with_white_rabbit : boolean;
+      g_cpu_arch : string);
     port (
       clk_sys_i   : in  std_logic;
       rst_n_i     : in  std_logic;
@@ -475,7 +478,8 @@ begin  -- rtl
         g_iram_size         => g_config.cpu_memsizes(i),
         g_double_core_clock => g_double_core_clock,
         g_with_white_rabbit => g_with_white_rabbit,
-        g_system_clock_freq => g_system_clock_freq)
+        g_system_clock_freq => g_system_clock_freq,
+        g_cpu_arch => g_cpu_arch)
       port map (
         clk_sys_i   => clk_i,
         rst_n_i     => rst_n_i,

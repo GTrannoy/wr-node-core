@@ -102,7 +102,8 @@ package wr_node_pkg is
       g_double_core_clock : boolean := false;
       g_with_rmq          : boolean := true;
       g_system_clock_freq : integer := 62500000;
-      g_with_white_rabbit : boolean := false);
+      g_with_white_rabbit : boolean := false;
+	  g_cpu_arch : string := "LM32");
     port (
       clk_i           : in  std_logic;
       clk_cpu_i       : in  std_logic                                             := '0';
@@ -129,7 +130,8 @@ package wr_node_pkg is
   component wr_node_core_with_etherbone is
     generic (
       g_config            : t_wr_node_config;
-      g_double_core_clock : boolean := false);
+      g_double_core_clock : boolean := false;
+	  g_cpu_arch : string := "LM32");
     port (
       clk_i           : in  std_logic;
       clk_cpu_i       : in  std_logic                                             := '0';

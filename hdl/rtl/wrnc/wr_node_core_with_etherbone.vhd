@@ -51,7 +51,8 @@ entity wr_node_core_with_etherbone is
   
   generic (
     g_config : t_wr_node_config := c_default_node_config;
-    g_double_core_clock : boolean := false);
+    g_double_core_clock : boolean := false;
+    g_cpu_arch          : string           := "LM32");
 
   port (
     clk_i       : in std_logic;
@@ -203,7 +204,8 @@ begin
       g_config => g_config,
       g_double_core_clock => g_double_core_clock,
       g_with_white_rabbit =>true,
-      g_with_rmq =>true)
+      g_with_rmq =>true,
+      g_cpu_arch => g_cpu_arch)
     port map (
       clk_i        => clk_i,
       clk_cpu_i => clk_cpu_i,
