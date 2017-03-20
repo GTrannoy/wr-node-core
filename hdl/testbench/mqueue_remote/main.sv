@@ -316,10 +316,105 @@ stream_mon mon(
 
 endmodule // test_tx_path
 
+module test_rx_path;
+
+   reg rst_n = 0;
+   
+   reg clk_sys = 0;
+
+   always #4ns clk_sys <= ~clk_sys;
+   
+   initial begin
+      repeat(20) @(posedge clk_sys);
+      rst_n = 1;
+   end
+
+   typedef uint32_t vec32_t[$];
+   
+   
+   function vec32_t make_vector(int length);
+      vec32_t rv;
+      int i;
+
+      for(i=0;i<length;i++)
+	rv.push_back(i);
+
+      return rv;
+   endfunction // make_vector
+   
+
+   t_mt_stream_source_out src_out;
+   t_mt_stream_source_in src_in;
+   t_mt_stream_sink_out snk_out;
+   t_mt_stream_sink_in snk_in;
+
+//   assign snk_out.ready = 1;
+
+stream_mon mon(
+      .clk_i(clk_sys),
+      .rst_n_i(rst_n),
+      .snk_in_i(src_out),
+      .snk_out_i(src_in)
+);
+   
+   
+   stream_source SRC
+     (
+      .clk_i(clk_sys),
+      .rst_n_i(rst_n),
+      .src_o(src_out),
+      .src_i(src_in)
+      );
+
+   stream_sink SNK
+     (
+      .clk_i(clk_sys),
+      .rst_n_i(rst_n),
+      .snk_o(snk_out),
+      .snk_i(snk_in)
+      );
+   
+
+   initial begin
+      repeat(100)@(posedge clk_sys);
+
+   end
+   
+   mt_rmq_tx_deframer
+     DUT (
+	  
+	  .clk_i   (clk_sys),
+	  .rst_n_i (rst_n),
+
+	  .snk_i ( src_out ),
+	  .snk_o ( src_in ),
+
+	  .src_i(snk_out),
+	  .src_o(snk_in),
 
 
-`include "vhd_wishbone_master.svh"
-`include "mqueue_host.svh"
+	  .p_header_valid_o (),
+	  .p_is_udp_o(),
+	  .p_is_raw_o(),
+	  .p_is_tlv_o(),
+	  .p_src_mac_o(),
+	  .p_dst_mac_o(),
+	  .p_ethertype_o(),
+	  .p_src_port_o      (),
+	  .p_dst_port_o      (),
+	  .p_src_ip_o        (),
+	  .p_dst_ip_o        (),
+	  .p_udp_length_o(),
+	  .p_tlv_type_o(),
+	  .p_tlv_size_o(),
+	  .p_payload_words_i ()
+    );
+
+
+
+endmodule // test_tx_path
+
+
 
 `ifdef disabled
 module main;
