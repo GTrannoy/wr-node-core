@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2017-03-20
+-- Last update: 2017-03-22
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -91,7 +91,9 @@ architecture wrapper of wrn_urv_wrapper is
       dm_store_o       : out std_logic;
       dm_load_o        : out std_logic;
       dm_load_done_i   : in  std_logic;
-      dm_store_done_i  : in  std_logic
+      dm_store_done_i  : in  std_logic;
+      trace_pc_o : out std_logic_vector(31 downto 0);
+      trace_pc_valid_o : out std_logic
       );
   end component;
 
@@ -176,12 +178,76 @@ architecture wrapper of wrn_urv_wrapper is
   signal dm_wb_write, dm_select_wb : std_logic;
   signal dm_data_write             : std_logic;
 
-  
+    component chipscope_ila
+    port (
+      CONTROL : inout std_logic_vector(35 downto 0);
+      CLK     : in    std_logic;
+      TRIG0   : in    std_logic_vector(31 downto 0);
+      TRIG1   : in    std_logic_vector(31 downto 0);
+      TRIG2   : in    std_logic_vector(31 downto 0);
+      TRIG3   : in    std_logic_vector(31 downto 0));
+  end component;
+
+  component chipscope_icon
+    port (
+      CONTROL0 : inout std_logic_vector (35 downto 0));
+  end component;
+
+  signal CONTROL : std_logic_vector(35 downto 0);
+  signal CLK     : std_logic;
+  signal TRIG0   : std_logic_vector(31 downto 0);
+  signal TRIG1   : std_logic_vector(31 downto 0);
+  signal TRIG2   : std_logic_vector(31 downto 0);
+  signal TRIG3   : std_logic_vector(31 downto 0);
+
+  signal trace_pc_valid : std_logic;
+  signal trace_pc : std_logic_vector(31 downto 0);
+
+  signal dwb_out : t_wishbone_master_out;
+  signal bus_timeout_hit : std_logic;
+  signal bus_timeout_cnt : unsigned(7 downto 0);
 begin
 
+  dwb_o <= dwb_out;
+  
   pc_valid_o <= '0';
 
+  gen_cc: if (g_cpu_id = 0) generate
+    chipscope_ila_1 : chipscope_ila
+      port map (
+        CONTROL => CONTROL,
+        CLK     => clk_sys_i,
+        TRIG0   => TRIG0,
+        TRIG1   => TRIG1,
+        TRIG2   => TRIG2,
+        TRIG3   => TRIG3);
 
+    chipscope_icon_1 : chipscope_icon
+      port map (
+        CONTROL0 => CONTROL);
+
+
+    trig0(0) <= trace_pc_valid;
+    trig0(1) <= dwb_out.cyc;
+    trig0(2) <= dwb_out.stb;
+    trig0(3) <= dwb_out.we;
+    trig0(4) <= dwb_i.ack;
+    trig0(5) <= dwb_i.err;
+    trig0(6) <= dwb_i.stall;
+    trig0(7) <= ha_im_write;
+    trig0(8) <= cpu_rst;
+    
+    trig0(31 downto 16) <= ha_im_wdata(31 downto 16);
+    
+    
+    trig1 <= trace_pc;
+    trig2 <= dwb_out.adr;
+    trig3(15 downto 0) <= im_addr_muxed(15 downto 0);
+    trig3(31 downto 16) <= im_data(15 downto 0);
+
+    
+  end generate gen_cc;
+  
 
   gen_with_double_core_clock : if g_double_core_clock generate
     assert false report "Double core clock option not supported for uRV" severity failure;
@@ -203,7 +269,9 @@ begin
       dm_store_o       => dm_store,
       dm_load_o        => dm_load,
       dm_load_done_i   => dm_load_done,
-      dm_store_done_i  => dm_store_done);
+      dm_store_done_i  => dm_store_done,
+      trace_pc_o => trace_pc,
+      trace_pc_valid_o => trace_pc_valid);
 
   dm_data_write <= not dm_is_wishbone and dm_store;
 
@@ -237,11 +305,23 @@ begin
       if(rst_n_i = '0') then
         ha_im_write    <= '0';
       else
-        ha_im_wdata <= f_swap_endian_32(cpu_csr_i.udata_o);
-        ha_im_write   <= cpu_csr_i.udata_load_o and core_sel_match;
-        ha_im_addr(21 downto 0) <= cpu_csr_i.uaddr_addr_o & "00";
-        ha_im_addr(31 downto 22) <= (others => '0');
-        cpu_csr_o.udata_i <= f_swap_endian_32(im_data);
+        if ( cpu_csr_i.udata_load_o = '1' and core_sel_match = '1') then
+
+          ha_im_wdata <= f_swap_endian_32(cpu_csr_i.udata_o);
+          ha_im_write   <= '1';
+        else
+          ha_im_write <= '0';
+        end if;
+
+        if (core_sel_match = '1') then
+          ha_im_addr(21 downto 0) <= cpu_csr_i.uaddr_addr_o & "00";
+          ha_im_addr(31 downto 22) <= (others => '0');
+
+          cpu_csr_o.udata_i <= f_swap_endian_32(im_data);
+          else
+          cpu_csr_o.udata_i <= (others => '0');
+        end if;
+        
         
       end if;
     end if;
@@ -254,8 +334,8 @@ begin
   p_wishbone_master: process(clk_sys_i)
   begin
     if rising_edge(clk_sys_i) then
-      if(rst_n_i = '0') then
-        dwb_o.cyc            <= '0';
+      if(rst_n_i = '0' or cpu_rst = '1') then
+        dwb_out.cyc            <= '0';
         dm_cycle_in_progress <= '0';
         dm_load_done         <= '0';
         dm_store_done        <= '0';
@@ -279,19 +359,20 @@ begin
             end if;
           else
             if(dm_load = '1' or dm_store = '1') then
-              dwb_o.cyc   <= '1';
-              dwb_o.stb   <= '1';
-              dwb_o.we    <= dm_store;
+              dwb_out.cyc   <= '1';
+              dwb_out.stb   <= '1';
+              dwb_out.we    <= dm_store;
               dm_wb_write <= dm_store;
 
-              dwb_o.adr <= dm_addr;
-              dwb_o.dat <= dm_data_s;
-              dwb_o.sel <= dm_data_select;
+              dwb_out.adr <= dm_addr;
+              dwb_out.dat <= dm_data_s;
+              dwb_out.sel <= dm_data_select;
 
 
               dm_load_done         <= '0';
               dm_store_done        <= '0';
               dm_cycle_in_progress <= '1';
+              bus_timeout_cnt <= (others => '0');
             else
               dm_store_done        <= '0';
               dm_load_done         <= '0';
@@ -300,10 +381,12 @@ begin
           end if;
         else
           if(dwb_i.stall = '0') then
-            dwb_o.stb <= '0';
+            dwb_out.stb <= '0';
           end if;
 
-          if(dwb_i.ack = '1') then
+          bus_timeout_cnt <= bus_timeout_cnt + 1;
+
+          if(dwb_i.ack = '1' or bus_timeout_cnt = 100) then
             if(dm_wb_write = '0') then
               dm_wb_rdata  <= dwb_i.dat;
               dm_select_wb <= '1';
@@ -314,7 +397,7 @@ begin
             end if;
 
             dm_cycle_in_progress <= '0';
-            dwb_o.cyc            <= '0';
+            dwb_out.cyc            <= '0';
           end if;
         end if;
       end if;
