@@ -6,6 +6,9 @@ import etherbone_pkg::*;
 import wr_fabric_pkg::*;
 import wrn_mqueue_pkg::*;
 
+typedef uint32_t vec32_t[$];
+
+
 
 module stream_sink
 (
@@ -18,12 +21,16 @@ module stream_sink
 
 
    int 	idle = 1;
-   uint32_t data[$];
+   vec32_t data;
+   vec32_t packets[$];
+   
 
    int 	f_out = 0;
 
    parameter int g_throttle = 50;
 
+   
+   
    always@(posedge clk_i)
      snk_o.ready <= $dist_uniform(seed, 0,100) < g_throttle ;
    
@@ -39,7 +46,7 @@ module stream_sink
    
       for(i=0;i<d.size();i++)
 	begin
-	   $display("Word %x: %x", i, d[i]);
+//	   $display("Word %x: %x", i, d[i]);
 	   $fwrite(f_out,$sformatf("%08x %02x %02x XX\n", i*2, d[i] >> 8, d[i]&'hff));
 	end
       
@@ -63,6 +70,7 @@ module stream_sink
 		if(snk_i.last)
 		  begin
 		     dump( data );
+		     packets.push_back(data);
 		     data={};
 		  end
 	     end
@@ -203,7 +211,6 @@ module test_tx_path;
       rst_n = 1;
    end
 
-   typedef uint32_t vec32_t[$];
    
    
    function vec32_t make_vector(int length);
@@ -332,15 +339,29 @@ module test_rx_path;
    typedef uint32_t vec32_t[$];
    
    
-   function vec32_t make_vector(int length);
+
+   function vec32_t read_packet(string filename);
+      int i,f ;
       vec32_t rv;
-      int i;
+      
+      f = $fopen(filename,"rb");
 
-      for(i=0;i<length;i++)
-	rv.push_back(i);
+      while(!$feof(f))
+	begin
+	   string dummy;
+	   int 	  offs, b1, b2, r;
+	   
+	   if( $fscanf(f, "%x %x %x %s", offs,b1,b2,dummy) == 4)
+	     rv.push_back((b1 << 8) | b2);
+	   else
+	     break;
+	end
 
+      $fclose(f);
       return rv;
-   endfunction // make_vector
+      
+   endfunction // read_packet
+   
    
 
    t_mt_stream_source_out src_out;
@@ -350,12 +371,14 @@ module test_rx_path;
 
 //   assign snk_out.ready = 1;
 
+/* -----\/----- EXCLUDED -----\/-----
 stream_mon mon(
       .clk_i(clk_sys),
       .rst_n_i(rst_n),
       .snk_in_i(src_out),
       .snk_out_i(src_in)
 );
+ -----/\----- EXCLUDED -----/\----- */
    
    
    stream_source SRC
@@ -376,11 +399,15 @@ stream_mon mon(
    
 
    initial begin
+      vec32_t pkt;
+      
       repeat(100)@(posedge clk_sys);
-
+      pkt = read_packet("packets.txt");
+      SRC.send(pkt);
+      
    end
    
-   mt_rmq_tx_deframer
+   mt_rmq_rx_path
      DUT (
 	  
 	  .clk_i   (clk_sys),
@@ -406,13 +433,13 @@ stream_mon mon(
 	  .p_dst_ip_o        (),
 	  .p_udp_length_o(),
 	  .p_tlv_type_o(),
-	  .p_tlv_size_o(),
-	  .p_payload_words_i ()
+	  .p_tlv_size_o()
     );
 
 
 
-endmodule // test_tx_path
+endmodule // test_rx_path
+
 
 
 

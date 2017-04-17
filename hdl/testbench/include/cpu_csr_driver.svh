@@ -163,11 +163,13 @@ class NodeCPUDbgQueue;
    protected NodeCPUControl cctl;
    protected int core_id;
 
-   int 		 queue[$];
+   protected string currentMsg;
+   
    
    function new ( NodeCPUControl cctl_, int core_id_);
       cctl = cctl_;
       core_id = core_id_;
+      currentMsg = "";
    endfunction // new
    
 
@@ -180,8 +182,19 @@ class NodeCPUDbgQueue;
       
       cctl.writel(`ADDR_WRN_CPU_CSR_CORE_SEL, core_id);
       cctl.readl(`ADDR_WRN_CPU_CSR_DBG_MSG, rval);
-      queue.push_back(rval);
-      $display("dbg rx '%c'", rval);
+
+      
+      if(rval == 0)
+	begin
+	   $display("CPU%-0d: %s", core_id, currentMsg);
+	   currentMsg = "";
+	end else begin
+      currentMsg = {currentMsg, rval};
+	end
+      
+      
+//      queue.push_back(rval);
+      
    	   
    endtask // update
    

@@ -6,58 +6,7 @@ import wr_fabric_pkg::*;
 `include "vhd_wishbone_master.svh"
 `include "cpu_csr_driver.svh"
 `include "mqueue_host.svh"
-
-class CWRNode;
-
-   function  new ( CBusAccessor acc_, input uint32_t base_);
-
-   endfunction // new
-   
-      
-endclass // CWRNode
-
-module
- VHDWBMonitor
-   #(
-     parameter string g_name = "" 
-     )
-   (
- input clk_i,
- input t_wishbone_master_out in,
- input t_wishbone_master_in out);
-
-   reg cyc_d0 = 0;
-   int xfer_count = 0;
-   
-   
-   
-   
-   always@(posedge clk_i)
-     cyc_d0 <= in.cyc;
-
-   always@(posedge clk_i)
-     begin
-	if(!cyc_d0 && in.cyc)
-	  begin
-	     $display("%s: start-of-cycle", g_name);
-	     xfer_count = 0;
-	  end
-	
-	
-	if(in.cyc && in.stb && !out.stall && in.we)
-	  begin
-	     $display("%s: write[%d]: addr %x data %x", g_name, xfer_count, in.adr, in.dat);
-	     xfer_count++;
-	     
-	     end
-	
-	if(cyc_d0 && !in.cyc)
-	  $display("%s: end-of-cycle", g_name);
-     end
-   
-   
-
-endmodule // VHDWBMonitor
+`include "stream_utils.svh"
 
 
 
@@ -91,123 +40,134 @@ module main;
    end
 
    IVHDWishboneMaster Host ( clk_sys, rst_n );
-   IVHDWishboneMaster EBConfig ( clk_sys, rst_n );
-
 
    t_wishbone_master_out host_wb_out;
    t_wishbone_master_in host_wb_in;
 
-   t_wrf_source_out wr_src_out;
-   t_wrf_source_in wr_src_in;
-
-/* -----\/----- EXCLUDED -----\/-----
-   assign  wr_src_in.stall = 0;
-   assign  wr_src_in.err = 0;
-   assign  wr_src_in.rty = 0;
-   always@(posedge clk_sys)
-     wr_src_in.ack <= wr_src_out.cyc & wr_src_out.stb;
- -----/\----- EXCLUDED -----/\----- */
-   
 
    wire t_wrn_timing_if timing;
 
    assign timing.tai = tai;
    assign timing.cycles = cycles;
-   
-   wr_node_core_with_etherbone DUT (
+
+   t_mt_stream_sink_out snk_out;
+   t_mt_stream_sink_in snk_in;
+   t_mt_stream_source_out src_out;
+   t_mt_stream_source_in src_in;
+
+   stream_sink SNK
+     (
+      .clk_i(clk_sys),
+      .rst_n_i(rst_n),
+      .snk_o(snk_out),
+      .snk_i(snk_in)
+      ); 
+
+   stream_source SRC
+     (
+      .clk_i(clk_sys),
+      .rst_n_i(rst_n),
+      .src_o(src_out),
+      .src_i(src_in)
+      );
+  
+   wr_node_core DUT (
 				    .clk_i   (clk_sys),
 				    .rst_n_i (rst_n),
-				    .rst_net_n_i(1'b1),
 
 				    .clk_ref_i(clk_ref),
 				
 				    .host_slave_i (Host.master.out),
 				    .host_slave_o (Host.master.in),
 
-				    .eb_config_i (EBConfig.master.out),
-				    .eb_config_o (EBConfig.master.in),
+				    .rmq_src_i(snk_out),
+				    .rmq_src_o(snk_in),
+				    .rmq_snk_i(src_out),
+				    .rmq_snk_o(src_in),
 
-				    .wr_src_i(wr_src_in),
-				    .wr_src_o(wr_src_out),
-
-				    .wr_snk_i(wr_src_out),
-				    .wr_snk_o(wr_src_in),
 				    .tm_i(timing)
 				    );
 
-   wire t_wishbone_master_in m_in;
-   wire t_wishbone_master_out m_out;
-
-   assign m_out.cyc = DUT.ebm_mux_out.cyc;
-   assign m_out.stb = DUT.ebm_mux_out.stb;
-   assign m_out.we = DUT.ebm_mux_out.we;
-   assign m_out.sel = DUT.ebm_mux_out.sel;
-   assign m_out.adr = DUT.ebm_mux_out.adr;
-   assign m_out.dat = DUT.ebm_mux_out.dat;
-
-   assign m_in.ack = DUT.ebm_mux_in.ack;
-   assign m_in.stall = DUT.ebm_mux_in.stall;
-   
-   
-
-
-   
-   VHDWBMonitor #("ebm") Mon_EB (
-			.clk_i(clk_sys),
-			.in(m_out),
-			.out(m_in));
-
-  
-  
  
    
    initial begin
       NodeCPUControl cpu_csr;
       MQueueHost hmq;
-      CBusAccessor eb = EBConfig.get_accessor();
+   
+      uint32_t payload[$]='{
+			    'hffff,
+			    'hffff,
+			    'hffff,
+			    'h0000,
+			    'h0000,
+			    'h0000,
+			    'h0800,
+			    'h4500,
+			    'h002c,
+			    'h0000,
+			    'h4000,
+			    'h3c11,
+			    'h83c2,
+			    'hffff,
+			    'hffff,
+			    'hffff,
+			    'hffff,
+			    'h1234,
+			    'hebd1,
+			    'h0018,
+			    'h0000,
+			    'hcafe,
+			    'hbabe,
+			    'h0000,
+			    'h0001,
+			    'h0000,
+			    'h0002,
+			    'h0000,
+			    'h0003
+			    };
+      
       
       
       #10us;
 
       
-      cpu_csr = new ( Host.get_accessor(), 'h10000 );
+      cpu_csr = new ( Host.get_accessor(), 'hc000 );
       hmq = new ( Host.get_accessor(), 0 );
 
       //eb.write('h30, 0);
       
       cpu_csr.init();
 
-      cpu_csr.load_firmware (0, "../../sw/hmq-test-host/hmq-test.ram");
+      $display("Load Firmware");
+      
+      cpu_csr.load_firmware (0, "../../sw/rmq-test/rmq-test.ram");
       cpu_csr.reset_core(0, 0);
 
-      
+      $display("CPU0 started");
 
+      #10us;
       
-/* -----\/----- EXCLUDED -----\/-----
-
-      hmq.send(0, '{1,2,3} );
-
-      eb.write(0, 'hdeadbeef);
- -----/\----- EXCLUDED -----/\----- */
+      SRC.send(payload);
       
+      payload[18] = 'hcafe; // change UDP port
+
+      SRC.send(payload);
+
+      payload[26] = 'h0005;
+      SRC.send(payload);
+      payload[26] = 'h0006;
+      SRC.send(payload);
+      payload[26] = 'h0007;
+      SRC.send(payload);
+      payload[26] = 'h0008;
+      SRC.send(payload);
       
       forever begin
-         hmq.update();
+         cpu_csr.update();
          #1us;
       end
       
          
-         
-      
-      
-/* -----\/----- EXCLUDED -----\/-----
-      #1us;
-
-      forever begin
-         hmq.update();
-         #100ns;
-      end
- -----/\----- EXCLUDED -----/\----- */
 
    end // initial begin
    
