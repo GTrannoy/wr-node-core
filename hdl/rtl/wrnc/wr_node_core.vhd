@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2016-11-28
+-- Last update: 2017-03-30
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -74,11 +74,11 @@ entity wr_node_core is
     dp_master_o : out t_wishbone_master_out_array(0 to g_config.cpu_count-1);
     dp_master_i : in  t_wishbone_master_in_array(0 to g_config.cpu_count-1) := f_dummy_master_in_array(g_config.cpu_count);
 
-    ebm_master_o : out t_wishbone_master_out;
-    ebm_master_i : in  t_wishbone_master_in := cc_dummy_master_in;
+    rmq_src_o : out t_mt_stream_source_out;
+    rmq_src_i : in t_mt_stream_source_in;
+    rmq_snk_o : out t_mt_stream_sink_out;
+    rmq_snk_i : in t_mt_stream_sink_in;
 
-    ebs_slave_o : out t_wishbone_slave_out;
-    ebs_slave_i : in  t_wishbone_slave_in := cc_dummy_slave_in;
 
     host_slave_i : in  t_wishbone_slave_in;
     host_slave_o : out t_wishbone_slave_out;
@@ -164,23 +164,22 @@ architecture rtl of wr_node_core is
       hmq_status_o : out std_logic_vector(15 downto 0));
   end component;
 
-  component wrn_mqueue_remote
+  component mt_mqueue_remote is
     generic (
       g_config : t_wrn_mqueue_config);
     port (
       clk_i        : in  std_logic;
       rst_n_i      : in  std_logic;
-      rmq_swrst_o : out std_logic;
       si_slave_i   : in  t_wishbone_slave_in;
       si_slave_o   : out t_wishbone_slave_out;
-      ebm_master_o : out t_wishbone_master_out;
-      ebm_master_i : in  t_wishbone_master_in := cc_dummy_master_in;
-      ebs_slave_o  : out t_wishbone_slave_out;
-      ebs_slave_i  : in  t_wishbone_slave_in  := cc_dummy_slave_in;
+      src_o        : out t_mt_stream_source_out;
+      src_i        : in  t_mt_stream_source_in;
+      snk_o        : out t_mt_stream_sink_out;
+      snk_i        : in  t_mt_stream_sink_in;
+      rmq_swrst_o  : out std_logic;
       rmq_status_o : out std_logic_vector(15 downto 0);
-      debug_o      : out std_logic_vector(31 downto 0)
-      );
-  end component;
+      debug_o      : out std_logic_vector(31 downto 0));
+  end component mt_mqueue_remote;
 
   component wrn_shared_mem is
     generic (
@@ -251,8 +250,8 @@ architecture rtl of wr_node_core is
   -- remapping to squeeze the host address space to 128 kB
   constant c_smem_remap_base_out : t_wishbone_address_array(4 downto 0) := (
     0 => x"00000000",                   -- 0x0000-0x3fff -> HMQ GCR
-    1 => x"00004000",                   -- 0x4000-0x7fff -> HMQ IN
-    2 => x"00008000",                   -- 0x8000-0xbfff -> HMQ OUT
+    1 => x"00004000",                   -- 0x4000-0x7fff -> HMQ IN (muxed)
+    2 => x"00008000",                   -- 0x8000-0xbfff -> HMQ OUT (muxed)
     3 => x"00010000",                   -- 0xc000-0xffff -> CPU CSR
     4 => x"00200000"                    -- 0x10000-0x1ffff -> SMEM
     );
@@ -290,17 +289,17 @@ architecture rtl of wr_node_core is
   constant c_si_slave_cpu0 : integer := 2;
   
   constant c_si_address : t_wishbone_address_array(c_si_wishbone_masters-1 downto 0) := (
-    c_si_master_hmq  => x"00010000",    -- Host MQ
-    c_si_master_rmq  => x"00020000",    -- Remote MQ
+    c_si_master_hmq  => x"00000000",    -- Host MQ
+    c_si_master_rmq  => x"00100000",    -- Remote MQ
     c_si_master_smem => x"00200000",    -- Shared Memory
-    c_si_master_sp   => x"00100000"
+    c_si_master_sp   => x"08000000"
     );
 
   constant c_si_mask : t_wishbone_address_array(c_si_wishbone_masters-1 downto 0) := (
-    c_si_master_hmq  => x"003f0000",    -- Host MQ
-    c_si_master_rmq  => x"003f0000",    -- Remote MQ
-    c_si_master_smem => x"00300000",    -- Shared Memory
-    c_si_master_sp   => x"00300000"
+    c_si_master_hmq  => x"0ff00000",    -- Host MQ
+    c_si_master_rmq  => x"0ff00000",    -- Remote MQ
+    c_si_master_smem => x"0ff00000",    -- Shared Memory
+    c_si_master_sp   => x"08000000"
     );
 
   signal si_slave_in  : t_wishbone_slave_in_array(c_si_wishbone_slaves-1 downto 0);
@@ -517,31 +516,28 @@ begin  -- rtl
 
   gen_with_rmq : if g_with_rmq generate
     
-    U_Remote_MQ : wrn_mqueue_remote
+    U_Remote_MQ : mt_mqueue_remote
       generic map (
         g_config => g_config.rmq_config)
       port map (
-        clk_i        => clk_i,
-        rst_n_i      => rst_n_i,
-        rmq_swrst_o  => rmq_swrst_o,
-        si_slave_i   => si_master_out(c_si_master_rmq),
-        si_slave_o   => si_master_in(c_si_master_rmq),
-        ebm_master_o => ebm_master,
-        ebm_master_i => ebm_master_i,
-        ebs_slave_o  => ebs_slave_o,
-        ebs_slave_i  => ebs_slave_i,
+        clk_i       => clk_i,
+        rst_n_i     => rst_n_i,
+        rmq_swrst_o => rmq_swrst_o,
+        si_slave_i  => si_master_out(c_si_master_rmq),
+        si_slave_o  => si_master_in(c_si_master_rmq),
+        src_o       => rmq_src_o,
+        src_i       => rmq_src_i,
+        snk_i => rmq_snk_i,
+        snk_o => rmq_snk_o,
         rmq_status_o => rmq_status,
         debug_o      => trig2);
 
-    ebm_master_o <= ebm_master;
     
   end generate gen_with_rmq;
 
   gen_without_rmq : if not g_with_rmq generate
     
     rmq_status                    <= (others => '0');
-    ebm_master_o                  <= cc_dummy_master_out;
-    ebs_slave_o                   <= cc_dummy_slave_out;
     si_master_in(c_si_master_rmq) <= cc_dummy_slave_out;
 
   end generate gen_without_rmq;
@@ -595,39 +591,6 @@ begin  -- rtl
 
   gpio_o <= f_reduce_or(cpu_gpio_out);
 
-  --------------------------------------------
-  --         Chip Scope
-  --------------------------------------------
-
-  chipscope_icon_1 : chipscope_icon
-    port map (
-      CONTROL0 => CONTROL);
-
-  chipscope_ila_1 : chipscope_ila
-    port map (
-      CONTROL => CONTROL,
-      CLK     => clk_i,
-      TRIG0   => TRIG0,
-      TRIG1   => TRIG1,
-      TRIG2   => TRIG2,
-      TRIG3   => TRIG3);
-
-  TRIG0(15 downto 0) <= rmq_status;     -- std_logic_vector(15 downto 0)
-
-  TRIG0(16) <= ebm_master.stb;
-  TRIG0(17) <= ebm_master.we;
-  TRIG0(18) <= ebm_master.cyc;
-
-  TRIG0(22) <= ebm_master_i.ack;
-  TRIG0(23) <= ebm_master_i.stall;
-  TRIG0(24) <= ebm_master_i.err;
-  TRIG0(25) <= ebm_master_i.rty;
-  TRIG0(26) <= ebm_master_i.int;
-
-  TRIG1(31 downto 0) <= ebm_master.dat(31 downto 0);  -- t_wishbone_master_out
-  TRIG3(31 downto 0) <= ebm_master.adr(31 downto 0);  -- t_wishbone_master_out
-  
-  
   
   
 end rtl;

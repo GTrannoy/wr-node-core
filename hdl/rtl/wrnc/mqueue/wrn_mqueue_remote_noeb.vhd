@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2017-03-14
+-- Last update: 2017-03-24
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -751,15 +751,17 @@ architecture rtl of mt_rmq_tx_path is
 
 begin
 
+fwd_pipe(0) <= snk_i;
+snk_o <= rev_pipe(0);
 
-  U_Packer : mt_rmq_tx_packer
-    port map (
-      clk_i   => clk_i,
-      rst_n_i => rst_n_i,
-      snk_i   => snk_i,
-      snk_o   => snk_o,
-      src_i   => rev_pipe(0),
-      src_o   => fwd_pipe(0));
+  --U_Packer : mt_rmq_tx_packer
+  --  port map (
+  --    clk_i   => clk_i,
+  --    rst_n_i => rst_n_i,
+  --    snk_i   => snk_i,
+  --    snk_o   => snk_o,
+  --    src_i   => rev_pipe(0),
+  --    src_o   => fwd_pipe(0));
 
   U_UDPFramer : mt_udp_tx_framer
     port map (
@@ -821,7 +823,7 @@ entity mt_rmq_rx_deframer is
     p_dst_port_o     : out std_logic_vector(15 downto 0);
     p_src_ip_o       : out std_logic_vector(31 downto 0);
     p_dst_ip_o       : out std_logic_vector(31 downto 0);
-    p_udp_length_o : out std_logic_vector(15 downto 0);
+    p_udp_length_o   : out std_logic_vector(15 downto 0);
     p_tlv_type_o     : out std_logic_vector(31 downto 0);
     p_tlv_size_o     : out std_logic_vector(15 downto 0)
     );
@@ -829,8 +831,8 @@ entity mt_rmq_rx_deframer is
 end mt_rmq_rx_deframer;
 
 architecture rtl of mt_rmq_rx_deframer is
-  type t_state is (IDLE, DMAC0, DMAC1, SMAC0, SMAC1, SMAC2, ETHERTYPE, IP_HDR0, IP_HDR1, IP_HDR2, IP_HDR3, IP_HDR4, IP_HDR5, IP_SRC_IP_MSB, IP_SRC_IP_LSB, IP_DST_IP_MSB, IP_DST_IP_LSB, UDP_SRC_PORT, UDP_DST_PORT, UDP_CHECKSUM, UDP_LENGTH, PAYLOAD );
- 
+  type t_state is (IDLE, DMAC0, DMAC1, SMAC0, SMAC1, SMAC2, ETHERTYPE, IP_HDR0, IP_HDR1, IP_HDR2, IP_HDR3, IP_HDR4, IP_HDR5, IP_SRC_IP_MSB, IP_SRC_IP_LSB, IP_DST_IP_MSB, IP_DST_IP_LSB, UDP_SRC_PORT, UDP_DST_PORT, UDP_CHECKSUM, UDP_LENGTH, PAYLOAD);
+
   function f_pick(cond : boolean; if_true : t_state; if_false : t_state) return t_state is
   begin
     if(cond) then
@@ -842,15 +844,13 @@ architecture rtl of mt_rmq_rx_deframer is
 
   procedure f_rx(signal state : inout t_state; next_state : t_state; signal target : out std_logic_vector) is
   begin
-    if (snk_i.valid = '1') then
+    if (snk_i.valid = '1' and src_i.ready = '1') then
       if (snk_i.error = '1') then
---        src_o.error <= '1';
-        state       <= IDLE;
+        state <= IDLE;
       elsif (snk_i.last = '1') then
---        src_o.last <= '1';
-        state      <= IDLE;
+        state <= IDLE;
       else
-        target <= snk_i.data;
+        target <= snk_i.data(15 downto 0);
         state  <= next_state;
       end if;
     end if;
@@ -859,8 +859,15 @@ architecture rtl of mt_rmq_rx_deframer is
   signal dummy : std_logic_vector(15 downto 0);
   signal state : t_state;
 
+  signal valid_mask : std_logic;
   
 begin
+
+  snk_o.ready <= src_i.ready;
+  src_o.last  <= snk_i.last;
+  src_o.error <= snk_i.error;
+  src_o.valid <= snk_i.valid and valid_mask;
+  src_o.data  <= snk_i.data;
 
   p_fsm : process(clk_i)
     variable next_state : t_state;
@@ -869,14 +876,16 @@ begin
       if rst_n_i = '0' then
         state            <= IDLE;
         p_header_valid_o <= '0';
+        valid_mask       <= '0';
       else
         
         case state is
           when IDLE =>
             p_header_valid_o <= '0';
-            p_is_raw_o <= '0';
-            p_is_udp_o <= '0';
-            
+            p_is_raw_o       <= '0';
+            p_is_udp_o       <= '0';
+            valid_mask       <= '0';
+
             f_rx(state, DMAC0, p_dst_mac_o(47 downto 32));
           when DMAC0 =>
             f_rx(state, DMAC1, p_dst_mac_o(31 downto 16));
@@ -890,13 +899,19 @@ begin
             f_rx(state, ETHERTYPE, p_src_mac_o(15 downto 0));
           when ETHERTYPE =>
 
-            if (snk_i.data = x"0800") then
+            if (snk_i.data(15 downto 0) = x"0800") then
               next_state := IP_HDR0;
-  --          elsif (snk_i.data = x"dead") then
+            --          elsif (snk_i.data = x"dead") then
 --              next_state := TLV_HDR0;
             else
+
+              if (snk_i.valid = '1' and src_i.ready = '1') then
+                valid_mask <= '1';
+              end if;
+
+
               p_is_raw_o <= '1';
-              next_state       := PAYLOAD;
+              next_state := PAYLOAD;
             end if;
 
             f_rx(state, next_state, p_ethertype_o(15 downto 0));
@@ -938,11 +953,17 @@ begin
             f_rx(state, UDP_CHECKSUM, dummy);
             
           when UDP_CHECKSUM =>
+            if (snk_i.valid = '1' and src_i.ready = '1') then
+              valid_mask <= '1';
+            end if;
+
             f_rx(state, PAYLOAD, dummy);
 
           when PAYLOAD =>
+
             p_header_valid_o <= '1';
-            
+            f_rx(state, PAYLOAD, dummy);
+
 --            f_rx(
         end case;
 
@@ -952,7 +973,215 @@ begin
 
   end process;
 
-p_is_tlv_o <= '0';
+  p_is_tlv_o <= '0';
   
   
 end rtl;
+
+
+
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+use work.wishbone_pkg.all;
+use work.wrn_mqueue_pkg.all;
+use work.wr_fabric_pkg.all;
+
+entity mt_rmq_tx_packer is
+  port (
+    clk_i   : in std_logic;
+    rst_n_i : in std_logic;
+
+    snk_i : in  t_mt_stream_sink_in;    -- 32-bit data
+    snk_o : out t_mt_stream_sink_out;
+
+    src_i : in  t_mt_stream_source_in;  -- 16-bit data
+    src_o : out t_mt_stream_source_out
+    );
+
+end entity;
+
+architecture rtl of mt_rmq_tx_packer is
+
+  component mt_rmq_stream_register is
+    port (
+      clk_i   : in  std_logic;
+      rst_n_i : in  std_logic;
+      snk_i   : in  t_mt_stream_sink_in;
+      snk_o   : out t_mt_stream_sink_out;
+      src_i   : in  t_mt_stream_source_in;
+      src_o   : out t_mt_stream_source_out);
+  end component mt_rmq_stream_register;
+
+
+  type t_state is (HI_WORD, LO_WORD);
+
+  signal tmp_out : t_mt_stream_source_out;
+  signal tmp_in  : t_mt_stream_source_in;
+  signal state   : t_state;
+  
+begin
+  mt_rmq_stream_register_1 : mt_rmq_stream_register
+    port map (
+      clk_i   => clk_i,
+      rst_n_i => rst_n_i,
+      snk_i   => tmp_out,
+      snk_o   => tmp_in,
+      src_i   => src_i,
+      src_o   => src_o);
+
+  p_comb : process(state, snk_i, tmp_out, tmp_in)
+  begin
+    if state = HI_WORD then
+      tmp_out.valid             <= snk_i.valid;
+      tmp_out.data(15 downto 0) <= snk_i.data(31 downto 16);
+      tmp_out.last              <= '0';
+      snk_o.ready               <= '0';
+    else
+      tmp_out.valid             <= snk_i.valid;
+      tmp_out.data(15 downto 0) <= snk_i.data(15 downto 0);
+      tmp_out.last              <= snk_i.last;
+      snk_o.ready               <= tmp_in.ready;
+    end if;
+  end process;
+
+  p_fsm : process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      if rst_n_i = '0' then
+        state <= HI_WORD;
+      else
+        case state is
+          when HI_WORD =>
+            if tmp_in.ready = '1' and snk_i.valid = '1' then
+              state <= LO_WORD;
+            end if;
+          when LO_WORD =>
+            if tmp_in.ready = '1' then
+              state <= HI_WORD;
+            end if;
+            
+        end case;
+      end if;
+    end if;
+  end process;
+  
+
+end rtl;
+
+
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+use work.wishbone_pkg.all;
+use work.wrn_mqueue_pkg.all;
+use work.wr_fabric_pkg.all;
+
+entity mt_rmq_rx_path is
+
+  port (
+    clk_i            : in  std_logic;
+    rst_n_i          : in  std_logic;
+    snk_i            : in  t_mt_stream_sink_in;
+    snk_o            : out t_mt_stream_sink_out;
+    src_i            : in  t_mt_stream_source_in;
+    src_o            : out t_mt_stream_source_out;
+    p_header_valid_o : out std_logic;
+    p_is_udp_o       : out std_logic;
+    p_is_raw_o       : out std_logic;
+    p_is_tlv_o       : out std_logic;
+    p_src_mac_o      : out std_logic_vector(47 downto 0);
+    p_dst_mac_o      : out std_logic_vector(47 downto 0);
+    p_ethertype_o    : out std_logic_vector(15 downto 0);
+    p_src_port_o     : out std_logic_vector(15 downto 0);
+    p_dst_port_o     : out std_logic_vector(15 downto 0);
+    p_src_ip_o       : out std_logic_vector(31 downto 0);
+    p_dst_ip_o       : out std_logic_vector(31 downto 0);
+    p_udp_length_o   : out std_logic_vector(15 downto 0);
+    p_tlv_type_o     : out std_logic_vector(31 downto 0);
+    p_tlv_size_o     : out std_logic_vector(15 downto 0)
+    );
+
+end entity mt_rmq_rx_path;
+
+architecture rtl of mt_rmq_rx_path is
+
+  component mt_rmq_rx_deframer is
+    port (
+      clk_i            : in  std_logic;
+      rst_n_i          : in  std_logic;
+      snk_i            : in  t_mt_stream_sink_in;
+      snk_o            : out t_mt_stream_sink_out;
+      src_i            : in  t_mt_stream_source_in;
+      src_o            : out t_mt_stream_source_out;
+      p_header_valid_o : out std_logic;
+      p_is_udp_o       : out std_logic;
+      p_is_raw_o       : out std_logic;
+      p_is_tlv_o       : out std_logic;
+      p_src_mac_o      : out std_logic_vector(47 downto 0);
+      p_dst_mac_o      : out std_logic_vector(47 downto 0);
+      p_ethertype_o    : out std_logic_vector(15 downto 0);
+      p_src_port_o     : out std_logic_vector(15 downto 0);
+      p_dst_port_o     : out std_logic_vector(15 downto 0);
+      p_src_ip_o       : out std_logic_vector(31 downto 0);
+      p_dst_ip_o       : out std_logic_vector(31 downto 0);
+      p_udp_length_o   : out std_logic_vector(15 downto 0);
+      p_tlv_type_o     : out std_logic_vector(31 downto 0);
+      p_tlv_size_o     : out std_logic_vector(15 downto 0));
+  end component mt_rmq_rx_deframer;
+
+  component mt_rmq_stream_register is
+    port (
+      clk_i   : in  std_logic;
+      rst_n_i : in  std_logic;
+      snk_i   : in  t_mt_stream_sink_in;
+      snk_o   : out t_mt_stream_sink_out;
+      src_i   : in  t_mt_stream_source_in;
+      src_o   : out t_mt_stream_source_out);
+  end component mt_rmq_stream_register;
+  
+  type t_mt_stream_source_out_array is array(integer range<>) of t_mt_stream_source_out;
+  type t_mt_stream_source_in_array is array(integer range<>) of t_mt_stream_source_in;
+
+  signal fwd_pipe : t_mt_stream_source_out_array(0 to 2);
+  signal rev_pipe : t_mt_stream_source_in_array(0 to 2);
+
+  
+  begin
+
+    U_rmq_rx_deframer:  mt_rmq_rx_deframer
+      port map (
+        clk_i            => clk_i,
+        rst_n_i          => rst_n_i,
+        snk_i            => snk_i,
+        snk_o            => snk_o,
+        src_i            => rev_pipe(0),
+        src_o            => fwd_pipe(0),
+        p_header_valid_o => p_header_valid_o,
+        p_is_udp_o       => p_is_udp_o,
+        p_is_raw_o       => p_is_raw_o,
+        p_is_tlv_o       => p_is_tlv_o,
+        p_src_mac_o      => p_src_mac_o,
+        p_dst_mac_o      => p_dst_mac_o,
+        p_ethertype_o    => p_ethertype_o,
+        p_src_port_o     => p_src_port_o,
+        p_dst_port_o     => p_dst_port_o,
+        p_src_ip_o       => p_src_ip_o,
+        p_dst_ip_o       => p_dst_ip_o,
+        p_udp_length_o   => p_udp_length_o,
+        p_tlv_type_o     => p_tlv_type_o,
+        p_tlv_size_o     => p_tlv_size_o);
+
+    U_stream_register: mt_rmq_stream_register
+      port map (
+        clk_i   => clk_i,
+        rst_n_i => rst_n_i,
+        snk_i   => fwd_pipe(0),
+        snk_o   => rev_pipe(0),
+        src_i   => src_i,
+        src_o   => src_o);
+    
+  end rtl;
+    

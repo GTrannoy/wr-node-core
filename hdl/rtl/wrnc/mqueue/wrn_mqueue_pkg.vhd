@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2017-03-07
+-- Last update: 2017-04-13
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -43,15 +43,64 @@ use work.wishbone_pkg.all;
 
 package wrn_mqueue_pkg is
 
-  constant c_MT_STREAM_TAG_HEADER : std_logic_vector(1 downto 0) := "00";
+  constant c_MT_STREAM_TAG_HEADER  : std_logic_vector(1 downto 0) := "00";
   constant c_MT_STREAM_TAG_PAYLOAD : std_logic_vector(1 downto 0) := "01";
-  
+
+  type t_rmq_outgoing_slot_config is record
+    dst_mac   : std_logic_vector(47 downto 0);
+    src_ip    : std_logic_vector(31 downto 0);
+    dst_ip    : std_logic_vector(31 downto 0);
+    src_port  : std_logic_vector(15 downto 0);
+    dst_port  : std_logic_vector(15 downto 0);
+    ethertype : std_logic_vector(15 downto 0);
+    is_udp    : std_logic;
+    payload_size : std_logic_vector(15 downto 0);
+  end record;
+
+  type t_rmq_incoming_slot_config is record
+    dst_mac   : std_logic_vector(47 downto 0);
+    dst_ip    : std_logic_vector(31 downto 0);
+    dst_port  : std_logic_vector(15 downto 0);
+    ethertype : std_logic_vector(15 downto 0);
+    type0 : std_logic_vector(31 downto 0);
+    type1 : std_logic_vector(31 downto 0);
+    type2 : std_logic_vector(31 downto 0);
+    type3 : std_logic_vector(31 downto 0);
+
+    is_tlv : std_logic;
+    filter_dst_mac : std_logic;
+    filter_dst_ip : std_logic;
+    filter_dst_port : std_logic;
+    filter_ethertype : std_logic;
+    filter_udp    : std_logic;
+    filter_type0 : std_logic;
+    filter_type1 : std_logic;
+    filter_type2 : std_logic;
+    filter_type3 : std_logic;
+    filter_raw : std_logic;
+  end record;
+
+  type t_rmq_rx_header is record
+    is_udp       : std_logic;
+    is_raw       : std_logic;
+    is_tlv       : std_logic;
+    src_mac      : std_logic_vector(47 downto 0);
+    dst_mac      : std_logic_vector(47 downto 0);
+    ethertype    : std_logic_vector(15 downto 0);
+    src_port    : std_logic_vector(15 downto 0);
+    dst_port     : std_logic_vector(15 downto 0);
+    src_ip       : std_logic_vector(31 downto 0);
+    dst_ip       : std_logic_vector(31 downto 0);
+    udp_length   : std_logic_vector(15 downto 0);
+    tlv_type     : std_logic_vector(31 downto 0);
+    tlv_size     : std_logic_vector(15 downto 0);
+  end record;
   
   type t_mt_stream_sink_in is record
-    data : std_logic_vector(31 downto 0);
-    tag : std_logic_vector(1 downto 0);
+    data  : std_logic_vector(31 downto 0);
+    tag   : std_logic_vector(1 downto 0);
     valid : std_logic;
-    last : std_logic;
+    last  : std_logic;
     error : std_logic;
   end record;
 
@@ -61,7 +110,11 @@ package wrn_mqueue_pkg is
 
   subtype t_mt_stream_source_in is t_mt_stream_sink_out;
   subtype t_mt_stream_source_out is t_mt_stream_sink_in;
-    
+
+  type t_mt_stream_sink_in_array is array(integer range<> ) of t_mt_stream_sink_in;
+  type t_mt_stream_sink_out_array is array(integer range<> ) of t_mt_stream_sink_out;
+  type t_rmq_outgoing_slot_config_array is array(integer range<> ) of t_rmq_outgoing_slot_config;
+
   type t_wrn_mqueue_slot_config is record
     width   : integer;
     entries : integer;
@@ -98,10 +151,10 @@ package wrn_mqueue_pkg is
       (0, 0), (0, 0)));
 
   type t_slot_bus_in is record
-    sel : std_logic;
-    dat : std_logic_vector(31 downto 0);
-    adr : std_logic_vector(9 downto 0);
-    we  : std_logic;
+    sel   : std_logic;
+    dat   : std_logic_vector(31 downto 0);
+    adr   : std_logic_vector(9 downto 0);
+    we    : std_logic;
     wmask : std_logic_vector(3 downto 0);
   end record;
 
@@ -113,15 +166,15 @@ package wrn_mqueue_pkg is
     full         : std_logic;
     empty        : std_logic;
     count        : std_logic_vector(7 downto 0);
-    current_size : std_logic_vector(7 downto 0);
+    current_size : std_logic_vector(15 downto 0);
     ready        : std_logic;
-    commit_mask : std_logic;
+    commit_mask  : std_logic;
   end record;
 
   type t_slot_bus_in_array is array(integer range <>) of t_slot_bus_in;
   type t_slot_bus_out_array is array(integer range <>) of t_slot_bus_out;
   type t_slot_status_out_array is array(integer range <>) of t_slot_status_out;
- 
+
 
   type t_wrn_irq_config is record
     mask_in   : std_logic_vector(15 downto 0);
@@ -131,13 +184,13 @@ package wrn_mqueue_pkg is
   end record;
 
   constant c_dummy_status_out : t_slot_status_out := (
-    '0', '0', x"00", x"00", '0', '0');
+    '0', '0', x"00", x"0000", '0', '0');
 
   constant c_dummy_slot_bus_in : t_slot_bus_out := (
     dat => x"00000000"
-  );
+    );
 
- 
+
   -----------------------------------------------------------------------------
   -- Components
   -----------------------------------------------------------------------------
@@ -155,7 +208,7 @@ package wrn_mqueue_pkg is
       outb_i        : in  t_slot_bus_in;
       outb_o        : out t_slot_bus_out;
       out_discard_i : in  std_logic := '0';
-      rmq_swrst_o : out std_logic);
+      rmq_swrst_o   : out std_logic);
   end component;
 
   component wrn_mqueue_wishbone_slave
