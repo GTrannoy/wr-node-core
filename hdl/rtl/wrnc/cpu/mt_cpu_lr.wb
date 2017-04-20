@@ -1,8 +1,8 @@
 -------------------------------------------------------------------------------
--- Title      : White Rabbit Node Core
--- Project    : White Rabbit
+-- Title      : Mock Turtle Core
+-- Project    : Mock Turtle
 -------------------------------------------------------------------------------
--- File       : wrn_cpu_lr.wb
+-- File       : mt_cpu_lr.wb
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
@@ -37,8 +37,8 @@
 
 peripheral {
 	 name = "WR Node CPU Local Registers";
-	 prefix = "wrn_cpu_lr";
-	 hdl_entity = "wrn_cpu_lr_wb_slave";
+	 prefix = "mt_cpu_lr";
+	 hdl_entity = "mt_cpu_lr_wb_slave";
 
 	 reg {
 			name = "CPU Polling Register";

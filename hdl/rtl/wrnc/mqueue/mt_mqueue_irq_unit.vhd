@@ -1,8 +1,8 @@
 -------------------------------------------------------------------------------
--- Title      : White Rabbit Node Core
--- Project    : White Rabbit
+-- Title      : Mock Turtle Node Core
+-- Project    : Mock Turtle
 -------------------------------------------------------------------------------
--- File       : wrn_mqueue_irq_unit.vhd
+-- File       : mt_mqueue_irq_unit.vhd
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
@@ -39,13 +39,13 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-use work.wrn_mqueue_pkg.all;
+use work.mt_mqueue_pkg.all;
 use work.genram_pkg.all;
 
-entity wrn_mqueue_irq_unit is
+entity mt_mqueue_irq_unit is
   
   generic (
-    g_config : t_wrn_mqueue_config);
+    g_config : t_mt_mqueue_config);
 
   port (
     clk_i   : in std_logic;
@@ -54,19 +54,19 @@ entity wrn_mqueue_irq_unit is
     incoming_status_i : t_slot_status_out_array(0 to g_config.in_slot_count-1);
     outgoing_status_i : t_slot_status_out_array(0 to g_config.out_slot_count-1);
 
-    irq_config_i : t_wrn_irq_config;
+    irq_config_i : t_mt_irq_config;
 
     irq_o : out std_logic
     );
 
-end wrn_mqueue_irq_unit;
+end mt_mqueue_irq_unit;
 
-architecture rtl of wrn_mqueue_irq_unit is
+architecture rtl of mt_mqueue_irq_unit is
 
-  constant c_wrn_clk_freq : integer := 62500000;
+  constant c_mt_clk_freq : integer := 62500000;
 
 
-  signal tmr_div     : unsigned(f_log2_size(c_wrn_clk_freq/1000+1)-1 downto 0);
+  signal tmr_div     : unsigned(f_log2_size(c_mt_clk_freq/1000+1)-1 downto 0);
   signal tmr_tick    : std_logic;
   signal tmr_timeout : unsigned(9 downto 0);
 
@@ -101,7 +101,7 @@ begin  -- rtl
         tmr_div  <= (others => '0');
         tmr_tick <= '0';
       else
-        if(tmr_div /= c_wrn_clk_freq/1000-1) then
+        if(tmr_div /= c_mt_clk_freq/1000-1) then
           tmr_div  <= tmr_div + 1;
           tmr_tick <= '1';
         else

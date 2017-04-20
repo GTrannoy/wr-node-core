@@ -1,8 +1,8 @@
 -------------------------------------------------------------------------------
--- Title      : White Rabbit Node Core
--- Project    : White Rabbit
+-- Title      : Mock Turtle Node Core
+-- Project    : Mock Turtle
 -------------------------------------------------------------------------------
--- File       : wrn_mqueue_wishbone_slave.vhd
+-- File       : mt_mqueue_wishbone_slave.vhd
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
@@ -40,13 +40,13 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 use work.wishbone_pkg.all;
-use work.wrn_mqueue_pkg.all;
+use work.mt_mqueue_pkg.all;
 
-entity wrn_mqueue_wishbone_slave is
+entity mt_mqueue_wishbone_slave is
   
   generic (
     g_with_gcr : boolean;
-    g_config   : t_wrn_mqueue_config
+    g_config   : t_mt_mqueue_config
     );
   port (
     clk_i   : in std_logic;
@@ -65,12 +65,12 @@ entity wrn_mqueue_wishbone_slave is
     slave_o : out t_wishbone_slave_out;
 
     
-    irq_config_o : out t_wrn_irq_config
+    irq_config_o : out t_mt_irq_config
     );
 
-end wrn_mqueue_wishbone_slave;
+end mt_mqueue_wishbone_slave;
 
-architecture rtl of wrn_mqueue_wishbone_slave is
+architecture rtl of mt_mqueue_wishbone_slave is
 
   constant c_gcr_slot_count        : std_logic_vector(3 downto 0) := x"0";
   constant c_gcr_slot_status       : std_logic_vector(3 downto 0) := x"1";
@@ -87,7 +87,7 @@ architecture rtl of wrn_mqueue_wishbone_slave is
 
   signal gcr_rd_data : std_logic_vector(31 downto 0) := x"00000000";
 
-  signal irq_config : t_wrn_irq_config;
+  signal irq_config : t_mt_irq_config;
   
   
 begin  -- rtl

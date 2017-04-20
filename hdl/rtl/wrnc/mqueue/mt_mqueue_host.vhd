@@ -1,8 +1,8 @@
 -------------------------------------------------------------------------------
--- Title      : White Rabbit Node Core
--- Project    : White Rabbit
+-- Title      : Mock Turtle Node Core
+-- Project    : Mock Turtle
 -------------------------------------------------------------------------------
--- File       : wrn_mqueue_host.vhd
+-- File       : mt_mqueue_host.vhd
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
@@ -41,11 +41,11 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 use work.wishbone_pkg.all;
-use work.wrn_mqueue_pkg.all;
+use work.mt_mqueue_pkg.all;
 
-entity wrn_mqueue_host is
+entity mt_mqueue_host is
   generic (
-    g_config : t_wrn_mqueue_config := c_wrn_default_mqueue_config
+    g_config : t_mt_mqueue_config := c_mt_default_mqueue_config
     );
 
   port (
@@ -62,9 +62,9 @@ entity wrn_mqueue_host is
     hmq_status_o : out std_logic_vector(15 downto 0)
     );
 
-end wrn_mqueue_host;
+end mt_mqueue_host;
 
-architecture rtl of wrn_mqueue_host is
+architecture rtl of mt_mqueue_host is
 
   signal si_incoming_in, host_incoming_in   : t_slot_bus_in_array(0 to g_config.in_slot_count-1);
   signal si_incoming_out, host_incoming_out : t_slot_bus_out_array(0 to g_config.in_slot_count-1);
@@ -76,7 +76,7 @@ architecture rtl of wrn_mqueue_host is
 
 
   signal hmq_status : std_logic_vector(g_config.in_slot_count-1 downto 0);
-  signal irq_config : t_wrn_irq_config;
+  signal irq_config : t_mt_irq_config;
 
   signal tmr_div     : unsigned(23 downto 0);
   signal tmr_tick    : std_logic;
@@ -86,7 +86,7 @@ architecture rtl of wrn_mqueue_host is
   
 begin  -- rtl
 
-  U_SI_Wishbone_Slave : wrn_mqueue_wishbone_slave
+  U_SI_Wishbone_Slave : mt_mqueue_wishbone_slave
     generic map (
       g_with_gcr => true,
       g_config   => g_config)
@@ -107,7 +107,7 @@ begin  -- rtl
   -- CB to Host direction (outgoing slots)
   gen_outgoing_slots : for i in 0 to g_config.out_slot_count-1 generate
 
-    U_Out_SlotX : wrn_mqueue_slot
+    U_Out_SlotX : mt_mqueue_slot
       generic map (
         g_entries => g_config.out_slot_config(i).entries,
         g_width   => g_config.out_slot_config(i).width)
@@ -125,7 +125,7 @@ begin  -- rtl
   -- Host to CB direction (incoming slots)
   gen_incoming_slots : for i in 0 to g_config.in_slot_count-1 generate
 
-    U_In_SlotX : wrn_mqueue_slot
+    U_In_SlotX : mt_mqueue_slot
       generic map (
         g_entries => g_config.in_slot_config(i).entries,
         g_width   => g_config.in_slot_config(i).width)
@@ -142,7 +142,7 @@ begin  -- rtl
 
   end generate gen_incoming_slots;
 
-  U_Host_Wishbone_Slave : wrn_mqueue_wishbone_slave
+  U_Host_Wishbone_Slave : mt_mqueue_wishbone_slave
     generic map (
       g_with_gcr => true,
       g_config   => g_config)

@@ -1,8 +1,8 @@
 -------------------------------------------------------------------------------
--- Title      : Wishbone Packet Fabric buffered packet sink
--- Project    : WR Cores Collection
+-- Title      : Mock Turtle Core
+-- Project    : Mock Turtle
 -------------------------------------------------------------------------------
--- File       : xwb_fabric_sink.vhd
+-- File       : mt_wr_sink.vhd
 -- Author     : Tomasz Wlostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2012-01-16
@@ -10,8 +10,7 @@
 -- Platform   : 
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
--- Description: A simple WB packet streaming sink with builtin FIFO buffer.
--- Outputs a trivial interface (start-of-packet, end-of-packet, data-valid)
+--
 -------------------------------------------------------------------------------
 --
 -- Copyright (c) 2011 CERN
@@ -43,7 +42,7 @@ use ieee.std_logic_1164.all;
 
 use work.genram_pkg.all;
 use work.wr_fabric_pkg.all;
-use work.wrn_mqueue_pkg.all;
+use work.mt_mqueue_pkg.all;
 
 entity mt_wr_sink is
   

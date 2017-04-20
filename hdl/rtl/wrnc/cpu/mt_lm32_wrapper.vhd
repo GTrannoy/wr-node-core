@@ -1,8 +1,8 @@
 -------------------------------------------------------------------------------
--- Title      : White Rabbit Node Core
--- Project    : White Rabbit
+-- Title      : Mock Turtle Node Core
+-- Project    : Mock Turtle
 -------------------------------------------------------------------------------
--- File       : wrn_lm32_wrapper.vhd
+-- File       : mt_lm32_wrapper.vhd
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
@@ -42,10 +42,10 @@ use ieee.numeric_std.all;
 
 use work.genram_pkg.all;
 use work.wishbone_pkg.all;
-use work.wrn_cpu_csr_wbgen2_pkg.all;
-use work.wrn_private_pkg.all;
+use work.mt_cpu_csr_wbgen2_pkg.all;
+use work.mt_private_pkg.all;
 
-entity wrn_lm32_wrapper is
+entity mt_lm32_wrapper is
   generic(
     g_iram_size         : integer;
     g_cpu_id            : integer;
@@ -62,12 +62,12 @@ entity wrn_lm32_wrapper is
     dwb_o : out t_wishbone_master_out;
     dwb_i : in  t_wishbone_master_in;
 
-    cpu_csr_i : in  t_wrn_cpu_csr_out_registers;
-    cpu_csr_o : out t_wrn_cpu_csr_in_registers
+    cpu_csr_i : in  t_mt_cpu_csr_out_registers;
+    cpu_csr_o : out t_mt_cpu_csr_in_registers
     );
-end wrn_lm32_wrapper;
+end mt_lm32_wrapper;
 
-architecture wrapper of wrn_lm32_wrapper is
+architecture wrapper of mt_lm32_wrapper is
 
   constant c_iram_addr_width : integer := f_log2_size(g_iram_size)-2;
 
@@ -123,7 +123,7 @@ architecture wrapper of wrn_lm32_wrapper is
 
   end component;
 
-  component wrn_cpu_iram
+  component mt_cpu_iram
     generic (
       g_size : integer);
     port (

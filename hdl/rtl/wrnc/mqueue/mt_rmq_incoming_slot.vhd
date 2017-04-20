@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
--- Title      : White Rabbit Node Core
--- Project    : White Rabbit
+-- Title      : Mock Turtle Node Core
+-- Project    : Mock Turtle
 -------------------------------------------------------------------------------
 -- File       : mt_rmq_incoming_slot.vhd
 -- Author     : Tomasz Włostowski
@@ -12,7 +12,7 @@
 -------------------------------------------------------------------------------
 -- Description: 
 --
--- Single slot (FIFO) of a Message Queue.
+-- Single incoming slot (world->MT) of the Remote Message Queue.
 -------------------------------------------------------------------------------
 --
 -- Copyright (c) 2014 CERN
@@ -40,7 +40,7 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 use work.genram_pkg.all;
-use work.wrn_mqueue_pkg.all;
+use work.mt_mqueue_pkg.all;
 
 entity mt_rmq_incoming_slot is
   

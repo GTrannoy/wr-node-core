@@ -1,8 +1,8 @@
 -------------------------------------------------------------------------------
--- Title      : White Rabbit Node Core
--- Project    : White Rabbit
+-- Title      : Mock Turtle Node Core
+-- Project    : Mock Turtle
 -------------------------------------------------------------------------------
--- File       : wrn_mqueue_etherbone_output.vhd
+-- File       : mt_rmq_packet_output.vhd
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
@@ -12,8 +12,7 @@
 -------------------------------------------------------------------------------
 -- Description: 
 --
--- Glue between MQ's outgoing slots and the Etherbone master core. Takes
--- data from a READY slot and passes it in a form digestible for EBM.
+-- Packet assembler for the TX path of the RMQ.
 -------------------------------------------------------------------------------
 --
 -- Copyright (c) 2014 CERN
@@ -41,15 +40,15 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 use work.wishbone_pkg.all;
-use work.wr_node_pkg.all;
-use work.wrn_mqueue_pkg.all;
+use work.mock_turtle_pkg.all;
+use work.mt_mqueue_pkg.all;
 use work.genram_pkg.all;
 
 
 entity mt_rmq_packet_output is
   
   generic (
-    g_config : t_wrn_mqueue_config);
+    g_config : t_mt_mqueue_config);
 
   port (
     clk_i       : in std_logic;

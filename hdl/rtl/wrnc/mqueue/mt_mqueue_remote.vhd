@@ -1,8 +1,8 @@
 -------------------------------------------------------------------------------
--- Title      : White Rabbit Node Core
--- Project    : White Rabbit
+-- Title      : Mock Turtle Node Core
+-- Project    : Mock Turtle
 -------------------------------------------------------------------------------
--- File       : wrn_mqueue_remote.vhd
+-- File       : mt_mqueue_remote.vhd
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
@@ -40,12 +40,12 @@ library ieee;
 use ieee.std_logic_1164.all;
 
 use work.wishbone_pkg.all;
-use work.wrn_mqueue_pkg.all;
+use work.mt_mqueue_pkg.all;
 use work.wr_fabric_pkg.all;
 
 entity mt_mqueue_remote is
   generic (
-    g_config : t_wrn_mqueue_config := c_wrn_default_mqueue_config;
+    g_config : t_mt_mqueue_config := c_mt_default_mqueue_config;
     g_use_wr_fabric : boolean := false
     );
 
@@ -102,7 +102,7 @@ architecture rtl of mt_mqueue_remote is
   
   component mt_rmq_packet_output is
     generic (
-      g_config : t_wrn_mqueue_config);
+      g_config : t_mt_mqueue_config);
     port (
       clk_i       : in  std_logic;
       rst_n_i     : in  std_logic;
@@ -208,7 +208,7 @@ begin  -- rtl
 
   rmq_swrst_o <= rmq_swrst_vec(0);
 
-  U_SI_Wishbone_Slave : wrn_mqueue_wishbone_slave
+  U_SI_Wishbone_Slave : mt_mqueue_wishbone_slave
     generic map (
       g_with_gcr => true,
       g_config   => g_config)

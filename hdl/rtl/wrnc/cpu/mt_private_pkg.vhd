@@ -1,8 +1,8 @@
 -------------------------------------------------------------------------------
--- Title      : White Rabbit Node Core
--- Project    : White Rabbit
+-- Title      : Mock Turtle Core
+-- Project    : Mock Turtle
 -------------------------------------------------------------------------------
--- File       : wrn_private_pkg.vhd
+-- File       : mt_private_pkg.vhd
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
@@ -12,7 +12,7 @@
 -------------------------------------------------------------------------------
 -- Description: 
 --
--- Private definitions for the WR node core.
+-- Private definitions for the Mock Turtle core.
 -------------------------------------------------------------------------------
 --
 -- Copyright (c) 2014 CERN
@@ -38,7 +38,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
-package wrn_private_pkg is
+package mt_private_pkg is
   function f_pick (
     cond : boolean;
     if_1 : std_logic;
@@ -65,7 +65,7 @@ package wrn_private_pkg is
   
 end package;
 
-package body wrn_private_pkg is
+package body mt_private_pkg is
 
   function f_pick (
     cond : boolean;

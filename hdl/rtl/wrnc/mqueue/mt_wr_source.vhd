@@ -3,7 +3,7 @@ use ieee.std_logic_1164.all;
 
 use work.genram_pkg.all;
 use work.wr_fabric_pkg.all;
-use work.wrn_mqueue_pkg.all;
+use work.mt_mqueue_pkg.all;
 
 entity mt_wr_source is
   

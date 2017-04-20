@@ -1,8 +1,8 @@
 -------------------------------------------------------------------------------
--- Title      : White Rabbit Node Core
--- Project    : White Rabbit
+-- Title      : Mock Turtle Node Core
+-- Project    : Mock Turtle
 -------------------------------------------------------------------------------
--- File       : wrn_mqueue_slot.vhd
+-- File       : mt_mqueue_slot.vhd
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
@@ -40,9 +40,9 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 use work.genram_pkg.all;
-use work.wrn_mqueue_pkg.all;
+use work.mt_mqueue_pkg.all;
 
-entity wrn_mqueue_slot is
+entity mt_mqueue_slot is
   
   generic (
     g_entries : integer;
@@ -65,9 +65,9 @@ entity wrn_mqueue_slot is
     out_discard_i : in std_logic := '0'
     );
 
-end wrn_mqueue_slot;
+end mt_mqueue_slot;
 
-architecture rtl of wrn_mqueue_slot is
+architecture rtl of mt_mqueue_slot is
 
   constant c_counter_bits     : integer := f_log2_size(g_entries);
   constant c_slot_offset_bits : integer := f_log2_size(g_width);

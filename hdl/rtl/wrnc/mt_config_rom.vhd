@@ -7,7 +7,7 @@ use work.wrn_mqueue_pkg.all;
 
 use work.wishbone_pkg.all;
 
-entity trtl_config_rom is
+entity mt_config_rom is
   generic(
     -- Message Queue and CPU configuration
     g_config            : t_wr_node_config := c_default_node_config;
@@ -35,11 +35,11 @@ entity trtl_config_rom is
     );
 end entity;
 
-architecture rtl of trtl_config_rom is
+architecture rtl of mt_config_rom is
 
   constant c_rom_size      : integer := 256;
   type t_rom_array is array(0 to c_rom_size-1) of std_logic_vector(31 downto 0);
-  constant c_trtl_revision : integer := 20161208;
+  constant c_mt_revision : integer := 20161208;
 
   function f_char_to_slv (c : character) return std_logic_vector is
   begin
@@ -83,7 +83,7 @@ architecture rtl of trtl_config_rom is
     variable cfg : t_rom_array;
   begin
     cfg(0) := f_char_to_slv('T') & f_char_to_slv('R') & f_char_to_slv('T') & f_char_to_slv('L');
-    cfg(1) := f_int_to_slv(c_trtl_revision);
+    cfg(1) := f_int_to_slv(c_mt_revision);
     if g_cpu_arch = "LM32" then
       cfg(2) := x"00000001";
     else

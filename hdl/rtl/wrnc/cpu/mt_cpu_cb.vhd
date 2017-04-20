@@ -1,8 +1,8 @@
 -------------------------------------------------------------------------------
--- Title      : White Rabbit Node Core
--- Project    : White Rabbit
+-- Title      : Mock Turtle Node Core
+-- Project    : Mock Turtle
 -------------------------------------------------------------------------------
--- File       : wrn_cpu_cb.vhd
+-- File       : mt_cpu_cb.vhd
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
@@ -44,12 +44,12 @@ use work.wishbone_pkg.all;
 use work.gencores_pkg.all;
 use work.genram_pkg.all;
 
-use work.wrn_cpu_csr_wbgen2_pkg.all;
-use work.wrn_cpu_lr_wbgen2_pkg.all;
+use work.mt_cpu_csr_wbgen2_pkg.all;
+use work.mt_cpu_lr_wbgen2_pkg.all;
 
-use work.wr_node_pkg.all;
+use work.mock_turtle_pkg.all;
 
-entity wrn_cpu_cb is
+entity mt_cpu_cb is
   
   generic (
     g_cpu_id            : integer;
@@ -69,7 +69,7 @@ entity wrn_cpu_cb is
 
     clk_cpu_i : in std_logic;
 
-    tm_i : in t_wrn_timing_if;
+    tm_i : in t_mt_timing_if;
 
     sh_master_i : in  t_wishbone_master_in := cc_dummy_master_in;
     sh_master_o : out t_wishbone_master_out;
@@ -77,8 +77,8 @@ entity wrn_cpu_cb is
     dp_master_i : in  t_wishbone_master_in := cc_dummy_master_in;
     dp_master_o : out t_wishbone_master_out;
 
-    cpu_csr_i : in  t_wrn_cpu_csr_out_registers;
-    cpu_csr_o : out t_wrn_cpu_csr_in_registers := c_wrn_cpu_csr_in_registers_init_value;
+    cpu_csr_i : in  t_mt_cpu_csr_out_registers;
+    cpu_csr_o : out t_mt_cpu_csr_in_registers := c_mt_cpu_csr_in_registers_init_value;
 
     rmq_ready_i : in std_logic_vector(15 downto 0);
     hmq_ready_i : in std_logic_vector(15 downto 0);
@@ -93,11 +93,11 @@ entity wrn_cpu_cb is
     );
 
 
-end wrn_cpu_cb;
+end mt_cpu_cb;
 
-architecture rtl of wrn_cpu_cb is
+architecture rtl of mt_cpu_cb is
 
-  component wrn_cpu_lr_wb_slave
+  component mt_cpu_lr_wb_slave
     port (
       rst_n_i          : in  std_logic;
       clk_sys_i        : in  std_logic;
@@ -111,11 +111,11 @@ architecture rtl of wrn_cpu_cb is
       wb_ack_o         : out std_logic;
       wb_stall_o       : out std_logic;
       tai_sec_rd_ack_o : out std_logic;
-      regs_i           : in  t_wrn_cpu_lr_in_registers;
-      regs_o           : out t_wrn_cpu_lr_out_registers);
+      regs_i           : in  t_mt_cpu_lr_in_registers;
+      regs_o           : out t_mt_cpu_lr_out_registers);
   end component;
 
-  component wrn_lm32_wrapper
+  component mt_lm32_wrapper
     generic (
       g_iram_size         : integer;
       g_cpu_id            : integer;
@@ -127,8 +127,8 @@ architecture rtl of wrn_cpu_cb is
       irq_i     : in  std_logic_vector(31 downto 0) := x"00000000";
       dwb_o     : out t_wishbone_master_out;
       dwb_i     : in  t_wishbone_master_in;
-      cpu_csr_i : in  t_wrn_cpu_csr_out_registers;
-      cpu_csr_o : out t_wrn_cpu_csr_in_registers);
+      cpu_csr_i : in  t_mt_cpu_csr_out_registers;
+      cpu_csr_o : out t_mt_cpu_csr_in_registers);
   end component;
 
   constant c_local_wishbone_masters : integer := 3;
@@ -153,8 +153,8 @@ architecture rtl of wrn_cpu_cb is
     );
 
   signal tai_sec_rd_ack : std_logic;
-  signal local_regs_in  : t_wrn_cpu_lr_in_registers;
-  signal local_regs_out : t_wrn_cpu_lr_out_registers;
+  signal local_regs_in  : t_mt_cpu_lr_in_registers;
+  signal local_regs_out : t_mt_cpu_lr_out_registers;
 
   signal cpu_dwb_out : t_wishbone_master_out;
   signal cpu_dwb_in  : t_wishbone_master_in;
@@ -324,7 +324,7 @@ begin  -- rtl
     end if;
   end process;
 
-  U_TheCoreCPU : wrn_lm32_wrapper
+  U_TheCoreCPU : mt_lm32_wrapper
     generic map (
       g_iram_size         => g_iram_size,
       g_cpu_id            => g_cpu_id,
@@ -340,7 +340,7 @@ begin  -- rtl
       cpu_csr_o => cpu_csr_o);
 
 
-  U_Local_Registrers : wrn_cpu_lr_wb_slave
+  U_Local_Registrers : mt_cpu_lr_wb_slave
     port map (
       rst_n_i          => rst_n_i,
       clk_sys_i        => clk_sys_i,
@@ -390,7 +390,7 @@ begin  -- rtl
   U_Debug_Message_FIFO : generic_sync_fifo
     generic map (
       g_data_width => 8,
-      g_size       => c_wrn_debug_message_fifo_size,
+      g_size       => c_mt_debug_message_fifo_size,
       g_show_ahead => true)
     port map (
       rst_n_i => rst_n_i,

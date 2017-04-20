@@ -1,8 +1,8 @@
 -------------------------------------------------------------------------------
--- Title      : White Rabbit Node Core
--- Project    : White Rabbit
+-- Title      : Mock Turtle Node Core
+-- Project    : Mock Turtle
 -------------------------------------------------------------------------------
--- File       : wr_node_core.vhd
+-- File       : mock_turtle_core.vhd
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
@@ -12,7 +12,7 @@
 -------------------------------------------------------------------------------
 -- Description: 
 --
--- White Rabbit Node Core - top level, interconnecting the CPU cores,
+-- Mock Turtle Core - top level, interconnecting the CPU cores,
 -- Message Queues, Host interface and the Shared Memory.
 -------------------------------------------------------------------------------
 --
@@ -40,18 +40,18 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-use work.wr_node_pkg.all;
+use work.mock_turtle_pkg.all;
 use work.wishbone_pkg.all;
-use work.wrn_cpu_csr_wbgen2_pkg.all;
-use work.wrn_mqueue_pkg.all;
+use work.mt_cpu_csr_wbgen2_pkg.all;
+use work.mt_mqueue_pkg.all;
 use work.gencores_pkg.all;
 use work.wr_fabric_pkg.all;
 
-entity wr_node_core is
+entity mock_turtle_core is
   
   generic (
 -- Message Queue and CPU configuration
-    g_config            : t_wr_node_config := c_default_node_config;
+    g_config            : t_mock_turtle_config := c_default_mock_turtle_config;
 -- When true, the CPUs can run with 2x the system clock. User design must
 --    supply the clk_cpu_i signal which is in phase with the clk_i signal.
     g_double_core_clock : boolean          := false;
@@ -90,7 +90,7 @@ entity wr_node_core is
     host_slave_o : out t_wishbone_slave_out;
 
     clk_ref_i : in std_logic := '0';
-    tm_i      : in t_wrn_timing_if;
+    tm_i      : in t_mt_timing_if;
 
     gpio_o : out std_logic_vector(31 downto 0);
     gpio_i : in  std_logic_vector(31 downto 0);
@@ -101,15 +101,15 @@ entity wr_node_core is
     debug_msg_irq_o : out std_logic
     );
 
-end wr_node_core;
+end mock_turtle_core;
 
-architecture rtl of wr_node_core is
+architecture rtl of mock_turtle_core is
 
   ------------------------------------------
   --        COMPONENTs DECLARATION  
   ------------------------------------------ 
   
-  component wrn_cpu_cb is
+  component mt_cpu_cb is
     generic (
       g_cpu_id            : integer;
       g_iram_size         : integer;
@@ -122,13 +122,13 @@ architecture rtl of wr_node_core is
       clk_ref_i   : in  std_logic;
       rst_n_ref_i : in  std_logic;
       clk_cpu_i   : in  std_logic;
-      tm_i        : in  t_wrn_timing_if;
+      tm_i        : in  t_mt_timing_if;
       sh_master_i : in  t_wishbone_master_in       := cc_dummy_master_in;
       sh_master_o : out t_wishbone_master_out;
       dp_master_i : in  t_wishbone_master_in       := cc_dummy_master_in;
       dp_master_o : out t_wishbone_master_out;
-      cpu_csr_i   : in  t_wrn_cpu_csr_out_registers;
-      cpu_csr_o   : out t_wrn_cpu_csr_in_registers := c_wrn_cpu_csr_in_registers_init_value;
+      cpu_csr_i   : in  t_mt_cpu_csr_out_registers;
+      cpu_csr_o   : out t_mt_cpu_csr_in_registers := c_mt_cpu_csr_in_registers_init_value;
       rmq_ready_i : in  std_logic_vector(15 downto 0);
       hmq_ready_i : in  std_logic_vector(15 downto 0);
       gpio_i      : in  std_logic_vector(31 downto 0);
@@ -136,9 +136,9 @@ architecture rtl of wr_node_core is
       dbg_drdy_o  : out std_logic;
       dbg_dack_i  : in  std_logic;
       dbg_data_o  : out std_logic_vector(7 downto 0));
-  end component wrn_cpu_cb;
+  end component mt_cpu_cb;
 
-  component wrn_cpu_csr_wb_slave is
+  component mt_cpu_csr_wb_slave is
     port (
       rst_n_i               : in  std_logic;
       clk_sys_i             : in  std_logic;
@@ -152,13 +152,13 @@ architecture rtl of wr_node_core is
       wb_ack_o              : out std_logic;
       wb_stall_o            : out std_logic;
       dbg_msg_data_rd_ack_o : out std_logic;
-      regs_i                : in  t_wrn_cpu_csr_in_registers;
-      regs_o                : out t_wrn_cpu_csr_out_registers);
-  end component wrn_cpu_csr_wb_slave;
+      regs_i                : in  t_mt_cpu_csr_in_registers;
+      regs_o                : out t_mt_cpu_csr_out_registers);
+  end component mt_cpu_csr_wb_slave;
 
-  component wrn_mqueue_host
+  component mt_mqueue_host
     generic (
-      g_config : t_wrn_mqueue_config);
+      g_config : t_mt_mqueue_config);
     port (
       clk_i        : in  std_logic;
       rst_n_i      : in  std_logic;
@@ -172,7 +172,7 @@ architecture rtl of wr_node_core is
 
   component mt_mqueue_remote is
     generic (
-      g_config        : t_wrn_mqueue_config;
+      g_config        : t_mt_mqueue_config;
       g_use_wr_fabric : boolean);
     port (
       clk_i        : in  std_logic;
@@ -192,7 +192,7 @@ architecture rtl of wr_node_core is
       debug_o      : out std_logic_vector(31 downto 0));
   end component mt_mqueue_remote;
 
-  component wrn_shared_mem is
+  component mt_shared_mem is
     generic (
       g_size : integer);
     port (
@@ -200,9 +200,9 @@ architecture rtl of wr_node_core is
       rst_n_i : in  std_logic;
       slave_i : in  t_wishbone_slave_in;
       slave_o : out t_wishbone_slave_out);
-  end component wrn_shared_mem;
+  end component mt_shared_mem;
 
-  component wb_remapper is
+  component mt_wb_remapper is
     generic (
       g_num_ranges : integer;
       g_base_in    : t_wishbone_address_array;
@@ -214,7 +214,7 @@ architecture rtl of wr_node_core is
       slave_o  : out t_wishbone_slave_out;
       master_i : in  t_wishbone_master_in;
       master_o : out t_wishbone_master_out);
-  end component wb_remapper;
+  end component mt_wb_remapper;
 
   component chipscope_ila
     port (
@@ -320,15 +320,15 @@ architecture rtl of wr_node_core is
   signal si_master_out : t_wishbone_master_out_array(c_si_wishbone_masters-1 downto 0);
 
 
-  signal cpu_csr_fromwb : t_wrn_cpu_csr_out_registers;
-  signal cpu_csr_towb   : t_wrn_cpu_csr_in_registers;
+  signal cpu_csr_fromwb : t_mt_cpu_csr_out_registers;
+  signal cpu_csr_towb   : t_mt_cpu_csr_in_registers;
 
   signal hmq_status, rmq_status : std_logic_vector(15 downto 0);
 
 
   signal cpu_index : integer := 0;
 
-  type t_wrn_cpu_csr_in_registers_array is array(integer range <>) of t_wrn_cpu_csr_in_registers;
+  type t_mt_cpu_csr_in_registers_array is array(integer range <>) of t_mt_cpu_csr_in_registers;
 
   type t_gpio_out_array is array(integer range <>) of std_logic_vector(31 downto 0);
   type t_dbg_msg_data_array is array(integer range <>) of std_logic_vector(7 downto 0);
@@ -338,7 +338,7 @@ architecture rtl of wr_node_core is
   signal dbg_msg_data_read_ack      : std_logic;
 
 
-  signal cpu_csr_towb_cb : t_wrn_cpu_csr_in_registers_array (g_config.cpu_count-1 downto 0);
+  signal cpu_csr_towb_cb : t_mt_cpu_csr_in_registers_array (g_config.cpu_count-1 downto 0);
   signal cpu_gpio_out    : t_gpio_out_array (g_config.cpu_count-1 downto 0);
 
   signal rst_n_ref : std_logic;
@@ -383,7 +383,7 @@ begin  -- rtl
       synced_o => rst_n_ref);
 
 
-  U_Remap_SMEM : wb_remapper
+  U_Remap_SMEM : mt_wb_remapper
     generic map (
       g_num_ranges => 5,
       g_base_in    => c_smem_remap_base_in,
@@ -452,7 +452,7 @@ begin  -- rtl
 --  ebs_slave_o                 <= si_slave_out(c_si_slave_ebs);
 
 
-  U_CPU_CSR : wrn_cpu_csr_wb_slave
+  U_CPU_CSR : mt_cpu_csr_wb_slave
     port map (
       rst_n_i               => rst_n_i,
       clk_sys_i             => clk_i,
@@ -480,7 +480,7 @@ begin  -- rtl
 
   gen_cpus : for i in 0 to g_config.cpu_count-1 generate
 
-    U_CPU_Block : wrn_cpu_cb
+    U_CPU_Block : mt_cpu_cb
       generic map (
         g_cpu_id            => i,
         g_iram_size         => g_config.cpu_memsizes(i),
@@ -512,7 +512,7 @@ begin  -- rtl
 
   cpu_csr_towb.udata_i <= cpu_csr_towb_cb(cpu_index).udata_i;
 
-  U_Host_MQ : wrn_mqueue_host
+  U_Host_MQ : mt_mqueue_host
     generic map (
       g_config => g_config.hmq_config)
     port map (
@@ -562,7 +562,7 @@ begin  -- rtl
 
 
 
-  U_Shared_Mem : wrn_shared_mem
+  U_Shared_Mem : mt_shared_mem
     generic map (
       g_size => g_config.shared_mem_size / 4)
     port map (

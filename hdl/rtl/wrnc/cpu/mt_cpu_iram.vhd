@@ -1,8 +1,8 @@
 -------------------------------------------------------------------------------
--- Title      : White Rabbit Node Core
--- Project    : White Rabbit
+-- Title      : Mock Turtle Core
+-- Project    : Mock Turtle
 -------------------------------------------------------------------------------
--- File       : wrn_cpu_iram.vhd
+-- File       : mt_cpu_iram.vhd
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
@@ -12,7 +12,7 @@
 -------------------------------------------------------------------------------
 -- Description: 
 -- 
--- WR Node CPU Internal RAM block. To be replaced with direct cache execution.
+-- MT CPU Internal RAM block. To be replaced with direct cache execution.
 -------------------------------------------------------------------------------
 --
 -- Copyright (c) 2014 CERN
@@ -41,7 +41,7 @@ use ieee.NUMERIC_STD.all;
 
 use work.genram_pkg.all;
 
-entity wrn_cpu_iram is
+entity mt_cpu_iram is
   
   generic (
     g_size : integer);
@@ -66,9 +66,9 @@ entity wrn_cpu_iram is
     web_i : in std_logic
     );
 
-end wrn_cpu_iram;
+end mt_cpu_iram;
 
-architecture rtl of wrn_cpu_iram is
+architecture rtl of mt_cpu_iram is
 
   type t_ram_type is array(0 to g_size - 1) of std_logic_vector(31 downto 0);
 

@@ -1,8 +1,8 @@
 -------------------------------------------------------------------------------
--- Title      : White Rabbit Node Core
--- Project    : White Rabbit
+-- Title      : Mock Turtle Node Core
+-- Project    : Mock Turtle
 -------------------------------------------------------------------------------
--- File       : wrn_mqueue_remote.vhd
+-- File       : mt_mqueue_remote.vhd
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
@@ -42,7 +42,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 
 use work.wishbone_pkg.all;
-use work.wrn_mqueue_pkg.all;
+use work.mt_mqueue_pkg.all;
 use work.wr_fabric_pkg.all;
 
 entity mt_ethernet_tx_framer is

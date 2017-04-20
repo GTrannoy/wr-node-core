@@ -1,8 +1,8 @@
 -------------------------------------------------------------------------------
--- Title      : White Rabbit Node Core
--- Project    : White Rabbit
+-- Title      : Mock Turtle Core
+-- Project    : Mock Turtle
 -------------------------------------------------------------------------------
--- File       : wrn_mqueue_pkg.vhd
+-- File       : mt_mqueue_pkg.vhd
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
@@ -12,7 +12,7 @@
 -------------------------------------------------------------------------------
 -- Description: 
 --
--- Global package for the MQs.
+-- Global package for the Message Queues
 -------------------------------------------------------------------------------
 --
 -- Copyright (c) 2014 CERN
@@ -38,10 +38,10 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
-use work.wrn_private_pkg.all;
+use work.mt_private_pkg.all;
 use work.wishbone_pkg.all;
 
-package wrn_mqueue_pkg is
+package mt_mqueue_pkg is
 
   constant c_MT_STREAM_TAG_HEADER  : std_logic_vector(1 downto 0) := "00";
   constant c_MT_STREAM_TAG_PAYLOAD : std_logic_vector(1 downto 0) := "01";
@@ -122,21 +122,21 @@ package wrn_mqueue_pkg is
   type t_mt_stream_sink_out_array is array(integer range<> ) of t_mt_stream_sink_out;
   type t_rmq_outgoing_slot_config_array is array(integer range<> ) of t_rmq_outgoing_slot_config;
 
-  type t_wrn_mqueue_slot_config is record
+  type t_mt_mqueue_slot_config is record
     width   : integer;
     entries : integer;
   end record;
 
-  type t_wrn_mqueue_slot_config_array is array(integer range<>) of t_wrn_mqueue_slot_config;
+  type t_mt_mqueue_slot_config_array is array(integer range<>) of t_mt_mqueue_slot_config;
 
-  type t_wrn_mqueue_config is record
+  type t_mt_mqueue_config is record
     in_slot_count   : integer;
     out_slot_count  : integer;
-    in_slot_config  : t_wrn_mqueue_slot_config_array(0 to 15);
-    out_slot_config : t_wrn_mqueue_slot_config_array(0 to 15);
+    in_slot_config  : t_mt_mqueue_slot_config_array(0 to 15);
+    out_slot_config : t_mt_mqueue_slot_config_array(0 to 15);
   end record;
 
-  constant c_wrn_default_mqueue_config : t_wrn_mqueue_config :=
+  constant c_mt_default_mqueue_config : t_mt_mqueue_config :=
     (2,
      2,
      ((64, 128), (64, 16),
@@ -183,7 +183,7 @@ package wrn_mqueue_pkg is
   type t_slot_status_out_array is array(integer range <>) of t_slot_status_out;
 
 
-  type t_wrn_irq_config is record
+  type t_mt_irq_config is record
     mask_in   : std_logic_vector(15 downto 0);
     mask_out  : std_logic_vector(15 downto 0);
     threshold : std_logic_vector(7 downto 0);
@@ -202,7 +202,7 @@ package wrn_mqueue_pkg is
   -- Components
   -----------------------------------------------------------------------------
 
-  component wrn_mqueue_slot
+  component mt_mqueue_slot
     generic (
       g_entries : integer;
       g_width   : integer);
@@ -218,10 +218,10 @@ package wrn_mqueue_pkg is
       rmq_swrst_o   : out std_logic);
   end component;
 
-  component wrn_mqueue_wishbone_slave
+  component mt_mqueue_wishbone_slave
     generic (
       g_with_gcr : boolean;
-      g_config   : t_wrn_mqueue_config);
+      g_config   : t_mt_mqueue_config);
     port (
       clk_i             : in  std_logic;
       rst_n_i           : in  std_logic;
@@ -233,12 +233,12 @@ package wrn_mqueue_pkg is
       outgoing_i        : in  t_slot_bus_out_array(0 to g_config.out_slot_count-1);
       slave_i           : in  t_wishbone_slave_in;
       slave_o           : out t_wishbone_slave_out;
-      irq_config_o      : out t_wrn_irq_config);
+      irq_config_o      : out t_mt_irq_config);
   end component;
 
-  component wrn_mqueue_irq_unit
+  component mt_mqueue_irq_unit
     generic (
-      g_config : t_wrn_mqueue_config);
+      g_config : t_mt_mqueue_config);
     port (
       clk_i             : in  std_logic;
       rst_n_i           : in  std_logic;
@@ -248,5 +248,5 @@ package wrn_mqueue_pkg is
   end component;
   
 
-end wrn_mqueue_pkg;
+end mt_mqueue_pkg;
 

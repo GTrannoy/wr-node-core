@@ -1,8 +1,8 @@
 -------------------------------------------------------------------------------
--- Title      : White Rabbit Node Core
--- Project    : White Rabbit
+-- Title      : Mock Turtle Node Core
+-- Project    : Mock Turtle
 -------------------------------------------------------------------------------
--- File       : wrn_shared_mem.vhd
+-- File       : mt_shared_mem.vhd
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
@@ -12,7 +12,7 @@
 -------------------------------------------------------------------------------
 -- Description: 
 --
--- WR Node CPU Shared Memory block.
+-- Mock Turtle CPU Shared Memory block.
 -------------------------------------------------------------------------------
 --
 -- Copyright (c) 2014 CERN
@@ -43,7 +43,7 @@ use ieee.numeric_std.all;
 use work.genram_pkg.all;
 use work.wishbone_pkg.all;
 
-entity wrn_shared_mem is
+entity mt_shared_mem is
   
   generic (
     g_size : integer := 16384);
@@ -55,9 +55,9 @@ entity wrn_shared_mem is
     slave_i : in  t_wishbone_slave_in;
     slave_o : out t_wishbone_slave_out);
 
-end wrn_shared_mem;
+end mt_shared_mem;
 
-architecture rtl of wrn_shared_mem is
+architecture rtl of mt_shared_mem is
 
   constant c_RANGE_DIRECT : std_logic_vector(2 downto 0) := "000";
   constant c_RANGE_ADD    : std_logic_vector(2 downto 0) := "001";

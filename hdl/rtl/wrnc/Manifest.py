@@ -1,10 +1,9 @@
-files = [	"wr_node_core.vhd", 
-		"wr_node_pkg.vhd",
-		"wr_node_core_with_etherbone.vhd",
-		"wb_remapper.vhd" ]
+files = [	"mock_turtle_core.vhd", 
+                "mock_turtle_pkg.vhd",
+                "mt_wb_remapper.vhd" ]
 modules = { 
-"local" : [ "cpu", "mqueue", "smem",
-        "../../ip_cores/general-cores",
-        "../../ip_cores/etherbone-core",
-        "../../ip_cores/wr-cores",
-        ] }
+    "local" : [ "cpu", "mqueue", "smem",
+                "../../ip_cores/general-cores",
+                "../../ip_cores/etherbone-core",
+                "../../ip_cores/wr-cores",
+            ] }

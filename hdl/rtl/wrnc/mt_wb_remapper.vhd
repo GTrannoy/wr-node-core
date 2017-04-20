@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
--- Title      : White Rabbit Node Core
--- Project    : White Rabbit
+-- Title      : Mock Turtle Node Core
+-- Project    : Mock Turtle
 -------------------------------------------------------------------------------
 -- File       : wb_remapper.vhd
 -- Author     : Tomasz Włostowski
@@ -42,7 +42,7 @@ use ieee.std_logic_1164.all;
 library work;
 use work.wishbone_pkg.all;
 
-entity wb_remapper is
+entity mt_wb_remapper is
   generic (
     g_num_ranges : integer := 1;
     g_base_in    : t_wishbone_address_array;
@@ -56,9 +56,9 @@ entity wb_remapper is
     master_i : in  t_wishbone_master_in;
     master_o : out t_wishbone_master_out
     );
-end wb_remapper;
+end mt_wb_remapper;
 
-architecture rtl of wb_remapper is
+architecture rtl of mt_wb_remapper is
 
 begin
 

@@ -1,8 +1,10 @@
-files = ["wrn_cpu_cb.vhd",
-"wrn_cpu_csr_wbgen2_pkg.vhd",
-"wrn_cpu_csr_wb.vhd",
-"wrn_cpu_iram.vhd",
-"wrn_cpu_lr_wbgen2_pkg.vhd",
-"wrn_cpu_lr_wb.vhd",
-"wrn_lm32_wrapper.vhd",
-"wrn_private_pkg.vhd"];
+files = [
+"mt_cpu_cb.vhd",
+"mt_cpu_csr_wbgen2_pkg.vhd",
+"mt_cpu_csr_wb.vhd",
+"mt_cpu_iram.vhd",
+"mt_cpu_lr_wbgen2_pkg.vhd",
+"mt_cpu_lr_wb.vhd",
+"mt_lm32_wrapper.vhd",
+"mt_private_pkg.vhd"
+];

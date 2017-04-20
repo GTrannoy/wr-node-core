@@ -1,1 +1,1 @@
-files = ["wrn_shared_mem.vhd"]
+files = ["mt_shared_mem.vhd"]
