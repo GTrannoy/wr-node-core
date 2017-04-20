@@ -16,4 +16,6 @@ files = [ "wrn_mqueue_host.vhd",
           "mt_rmq_tx_path.vhd",
           "mt_stream_register.vhd",
           "mt_udp_tx_framer.vhd",
-          "mt_rmq_packet_output.vhd"];
+          "mt_rmq_packet_output.vhd",
+          "mt_wr_sink.vhd",
+          "mt_wr_source.vhd"];

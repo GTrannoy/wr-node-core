@@ -3,31 +3,25 @@ use ieee.std_logic_1164.all;
 
 use work.genram_pkg.all;
 use work.wr_fabric_pkg.all;
+use work.wrn_mqueue_pkg.all;
 
-entity xwb_fabric_source is
+entity mt_wr_source is
   
   port (
     clk_i   : in std_logic;
     rst_n_i : in std_logic;
 
+    snk_i : in  t_mt_stream_sink_in;
+    snk_o : out t_mt_stream_sink_out;
+
     -- Wishbone Fabric Interface I/O
     src_i : in  t_wrf_source_in;
-    src_o : out t_wrf_source_out;
-
-    -- Decoded & buffered fabric
-    addr_i    : in  std_logic_vector(1 downto 0);
-    data_i    : in  std_logic_vector(15 downto 0);
-    dvalid_i  : in  std_logic;
-    sof_i     : in  std_logic;
-    eof_i     : in  std_logic;
-    error_i   : in  std_logic;
-    bytesel_i : in  std_logic;
-    dreq_o    : out std_logic
+    src_o : out t_wrf_source_out
     );
 
-end xwb_fabric_source;
+end mt_wr_source;
 
-architecture rtl of xwb_fabric_source is
+architecture rtl of mt_wr_source is
 
   constant c_fifo_width : integer := 16 + 2 + 4;
 
@@ -41,25 +35,29 @@ architecture rtl of xwb_fabric_source is
 
   signal post_dvalid, post_eof, post_bytesel, post_sof : std_logic;
 
-  signal err_status : t_wrf_status_reg;
-  signal cyc_int    : std_logic;
-  
+  signal err_status        : t_wrf_status_reg;
+  signal cyc_int, cyc_next : std_logic;
+
 begin  -- rtl
 
   err_status.error <= '1';
 
-  dreq_o <= not full;
+  snk_o.ready <= not full;
 
   rd <= not src_i.stall;
-  we <= sof_i or eof_i or error_i or dvalid_i;
+  we <= snk_i.valid or snk_i.error;
 
-  pre_dvalid <= dvalid_i or error_i;
-  pre_data   <= data_i when (error_i = '0') else f_marshall_wrf_status(err_status);
-  pre_addr   <= addr_i when (error_i = '0') else c_WRF_STATUS;
-  pre_eof    <= error_i or eof_i;
+  pre_dvalid <= snk_i.valid or snk_i.error;
+  pre_data   <= snk_i.data(15 downto 0) when (snk_i.error = '0') else f_marshall_wrf_status(err_status);
+  pre_addr   <= snk_i.tag  when (snk_i.error = '0') else c_WRF_STATUS;
+  pre_eof    <= snk_i.valid and snk_i.last;
 
-  fin <= sof_i & pre_eof & bytesel_i & pre_dvalid & pre_addr & pre_data;
 
+  fin(15 downto 0) <= pre_data;
+  fin(17 downto 16) <= "00";
+  fin(20) <= pre_eof;
+  
+  
   U_FIFO : generic_shiftreg_fifo
     generic map (
       g_data_width => c_fifo_width,
@@ -74,123 +72,32 @@ begin  -- rtl
       almost_full_o => full,
       q_valid_o     => q_valid);
 
-  post_sof    <= fout(21);
-  post_eof    <= fout(20);
-  post_dvalid <= fout(18);
+  post_eof <= fout(20);
 
   p_gen_cyc : process(clk_i)
   begin
     if rising_edge(clk_i) then
       if rst_n_i = '0' then
-        cyc_int <= '0';
+        cyc_int  <= '0';
+        cyc_next <= '0';
       else
-        if( q_valid = '1') then
-          if(post_sof = '1')then
-            cyc_int <= '1';
-          elsif(post_eof = '1') then
-            cyc_int <= '0';
-          end if;
+        if(q_valid = '1') then
+          cyc_next <= not post_eof;
+          cyc_int  <= '1';
+        else
+          cyc_next <= '0';
+          cyc_int  <= cyc_next;
         end if;
       end if;
     end if;
   end process;
 
-  src_o.cyc <= cyc_int;
+  src_o.cyc <= cyc_int or q_valid;
   src_o.we  <= '1';
-  src_o.stb <= post_dvalid and q_valid;
-  src_o.sel <= '1' & not fout(19);
+  src_o.stb <= q_valid;
+  src_o.sel <= "11";
   src_o.dat <= fout(15 downto 0);
   src_o.adr <= fout(17 downto 16);
-  
+
 end rtl;
 
-
-
-library ieee;
-use ieee.std_logic_1164.all;
-
-use work.wr_fabric_pkg.all;
-
-entity wb_fabric_source is
-  
-  port (
-    clk_i   : in std_logic;
-    rst_n_i : in std_logic;
-
-    -- Wishbone Fabric Interface I/O
-
-    src_dat_o   : out std_logic_vector(15 downto 0);
-    src_adr_o   : out std_logic_vector(1 downto 0);
-    src_sel_o   : out std_logic_vector(1 downto 0);
-    src_cyc_o   : out std_logic;
-    src_stb_o   : out std_logic;
-    src_we_o    : out std_logic;
-    src_stall_i : in  std_logic;
-    src_ack_i   : in  std_logic;
-    src_err_i   : in  std_logic;
-
-    -- Decoded & buffered fabric
-    addr_i    : in  std_logic_vector(1 downto 0);
-    data_i    : in  std_logic_vector(15 downto 0);
-    dvalid_i  : in  std_logic;
-    sof_i     : in  std_logic;
-    eof_i     : in  std_logic;
-    error_i   : in  std_logic;
-    bytesel_i : in  std_logic;
-    dreq_o    : out std_logic
-    );
-
-end wb_fabric_source;
-
-architecture wrapper of wb_fabric_source is
-  component xwb_fabric_source
-    port (
-      clk_i     : in  std_logic;
-      rst_n_i   : in  std_logic;
-      src_i     : in  t_wrf_source_in;
-      src_o     : out t_wrf_source_out;
-      addr_i    : in  std_logic_vector(1 downto 0);
-      data_i    : in  std_logic_vector(15 downto 0);
-      dvalid_i  : in  std_logic;
-      sof_i     : in  std_logic;
-      eof_i     : in  std_logic;
-      error_i   : in  std_logic;
-      bytesel_i : in  std_logic;
-      dreq_o    : out std_logic);
-  end component;
-
-  signal src_in  : t_wrf_source_in;
-  signal src_out : t_wrf_source_out;
-  
-begin  -- wrapper
-
-  
-  U_Wrapped_Source : xwb_fabric_source
-    port map (
-      clk_i     => clk_i,
-      rst_n_i   => rst_n_i,
-      src_i     => src_in,
-      src_o     => src_out,
-      addr_i    => addr_i,
-      data_i    => data_i,
-      dvalid_i  => dvalid_i,
-      sof_i     => sof_i,
-      eof_i     => eof_i,
-      error_i   => error_i,
-      bytesel_i => bytesel_i,
-      dreq_o    => dreq_o);
-
-  src_cyc_o <= src_out.cyc;
-  src_stb_o <= src_out.stb;
-  src_we_o  <= src_out.we;
-  src_sel_o <= src_out.sel;
-  src_adr_o <= src_out.adr;
-  src_dat_o <= src_out.dat;
-
-  src_in.rty   <= '0';
-  src_in.err   <= src_err_i;
-  src_in.ack   <= src_ack_i;
-  src_in.stall <= src_stall_i;
-
-  
-end wrapper;

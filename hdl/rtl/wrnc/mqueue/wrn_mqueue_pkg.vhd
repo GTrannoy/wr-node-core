@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2017-04-13
+-- Last update: 2017-04-20
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -108,9 +108,16 @@ package wrn_mqueue_pkg is
     ready : std_logic;
   end record;
 
+  
+  
   subtype t_mt_stream_source_in is t_mt_stream_sink_out;
   subtype t_mt_stream_source_out is t_mt_stream_sink_in;
 
+  constant c_mt_dummy_source_in : t_mt_stream_sink_out := ( ready => '0' );
+  constant c_mt_dummy_sink_in : t_mt_stream_sink_in :=
+    (x"00000000", "00", '0', '0', '0');
+
+  
   type t_mt_stream_sink_in_array is array(integer range<> ) of t_mt_stream_sink_in;
   type t_mt_stream_sink_out_array is array(integer range<> ) of t_mt_stream_sink_out;
   type t_rmq_outgoing_slot_config_array is array(integer range<> ) of t_rmq_outgoing_slot_config;

@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2017-03-30
+-- Last update: 2017-04-20
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -41,10 +41,12 @@ use ieee.std_logic_1164.all;
 
 use work.wishbone_pkg.all;
 use work.wrn_mqueue_pkg.all;
+use work.wr_fabric_pkg.all;
 
 entity mt_mqueue_remote is
   generic (
-    g_config : t_wrn_mqueue_config := c_wrn_default_mqueue_config
+    g_config : t_wrn_mqueue_config := c_wrn_default_mqueue_config;
+    g_use_wr_fabric : boolean := false
     );
 
   port (
@@ -60,6 +62,12 @@ entity mt_mqueue_remote is
     snk_o : out t_mt_stream_sink_out;
     snk_i : in  t_mt_stream_sink_in;
 
+    wr_snk_i : in t_wrf_sink_in := c_dummy_snk_in;
+    wr_snk_o : out t_wrf_sink_out;
+
+    wr_src_i : in t_wrf_source_in := c_dummy_src_in;
+    wr_src_o : out t_wrf_source_out;
+    
     -- software reset for etherbone
     rmq_swrst_o : out std_logic;
 
@@ -72,6 +80,26 @@ end mt_mqueue_remote;
 
 architecture rtl of mt_mqueue_remote is
 
+  component mt_wr_sink is
+    port (
+      clk_i   : in  std_logic;
+      rst_n_i : in  std_logic;
+      snk_i   : in  t_wrf_sink_in;
+      snk_o   : out t_wrf_sink_out;
+      src_o   : out t_mt_stream_source_out;
+      src_i   : in  t_mt_stream_source_in);
+  end component mt_wr_sink;
+
+  component mt_wr_source is
+    port (
+      clk_i   : in  std_logic;
+      rst_n_i : in  std_logic;
+      snk_i   : in  t_mt_stream_sink_in;
+      snk_o   : out t_mt_stream_sink_out;
+      src_i   : in  t_wrf_source_in;
+      src_o   : out t_wrf_source_out);
+  end component mt_wr_source;
+  
   component mt_rmq_packet_output is
     generic (
       g_config : t_wrn_mqueue_config);
@@ -170,6 +198,11 @@ architecture rtl of mt_mqueue_remote is
   signal snk_out : t_mt_stream_sink_out;
   signal p_header : t_rmq_rx_header;
   signal p_header_valid : std_logic;
+
+  signal mt_snk_in : t_mt_stream_sink_in;
+  signal mt_snk_out : t_mt_stream_sink_out;
+  signal mt_src_in : t_mt_stream_source_in;
+  signal mt_src_out : t_mt_stream_source_out;
   
 begin  -- rtl
 
@@ -239,12 +272,45 @@ begin  -- rtl
 
   end generate gen_incoming_slots;
 
+  gen_with_wr_fabric : if g_use_wr_fabric generate
+
+    U_WR_Sink: mt_wr_sink
+      port map (
+        clk_i   => clk_i,
+        rst_n_i => rst_n_i,
+        snk_i   => wr_snk_i,
+        snk_o   => wr_snk_o,
+        src_o   => mt_snk_in,
+        src_i   => mt_snk_out);
+
+    U_WR_Source: mt_wr_source
+      port map (
+        clk_i   => clk_i,
+        rst_n_i => rst_n_i,
+        snk_i   => mt_src_out,
+        snk_o   => mt_src_in,
+        src_i   => wr_src_i,
+        src_o   => wr_src_o);
+    
+  end generate gen_with_wr_fabric;
+
+
+
+  gen_without_wr_fabric : if not g_use_wr_fabric generate
+    snk_o <= mt_snk_out;
+    mt_snk_in <= snk_i;
+
+    src_o <= mt_src_out;
+    mt_src_in <= src_i;
+    
+  end generate gen_without_wr_fabric;
+  
   U_RX_Path : mt_rmq_rx_path
     port map (
       clk_i            => clk_i,
       rst_n_i          => rst_n_i,
-      snk_i            => snk_i,
-      snk_o            => snk_o,
+      snk_i            => mt_snk_in,
+      snk_o            => mt_snk_out,
       src_i            => snk_out,
       src_o            => snk_in,
       p_header_valid_o => p_header_valid,
@@ -264,8 +330,8 @@ begin  -- rtl
       cfgs_i      => out_cfgs,
       tx_req_i    => out_req,
       tx_grant_o  => out_grant,
-      src_o       => src_o,
-      src_i       => src_i,
+      src_o       => mt_src_out,
+      src_i       => mt_src_in,
       debug_o     => open);
 
 

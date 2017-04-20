@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2017-03-30
+-- Last update: 2017-04-20
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -45,6 +45,7 @@ use work.wishbone_pkg.all;
 use work.wrn_cpu_csr_wbgen2_pkg.all;
 use work.wrn_mqueue_pkg.all;
 use work.gencores_pkg.all;
+use work.wr_fabric_pkg.all;
 
 entity wr_node_core is
   
@@ -56,6 +57,7 @@ entity wr_node_core is
     g_double_core_clock : boolean          := false;
 -- When true, the Remote Message Queue is implemented.
     g_with_rmq          : boolean          := true;
+    g_use_wr_fabric     : boolean          := true;
 -- Frequency of clk_sys_i, in Hz
     g_system_clock_freq : integer          := 62500000;
 -- Enables/disables WR support
@@ -75,10 +77,14 @@ entity wr_node_core is
     dp_master_i : in  t_wishbone_master_in_array(0 to g_config.cpu_count-1) := f_dummy_master_in_array(g_config.cpu_count);
 
     rmq_src_o : out t_mt_stream_source_out;
-    rmq_src_i : in t_mt_stream_source_in;
+    rmq_src_i : in  t_mt_stream_source_in := c_mt_dummy_source_in;
     rmq_snk_o : out t_mt_stream_sink_out;
-    rmq_snk_i : in t_mt_stream_sink_in;
+    rmq_snk_i : in  t_mt_stream_sink_in   := c_mt_dummy_sink_in;
 
+    wr_src_o : out t_wrf_source_out;
+    wr_src_i : in  t_wrf_source_in := c_dummy_src_in;
+    wr_snk_o : out t_wrf_sink_out;
+    wr_snk_i : in  t_wrf_sink_in   := c_dummy_snk_in;
 
     host_slave_i : in  t_wishbone_slave_in;
     host_slave_o : out t_wishbone_slave_out;
@@ -166,7 +172,8 @@ architecture rtl of wr_node_core is
 
   component mt_mqueue_remote is
     generic (
-      g_config : t_wrn_mqueue_config);
+      g_config        : t_wrn_mqueue_config;
+      g_use_wr_fabric : boolean);
     port (
       clk_i        : in  std_logic;
       rst_n_i      : in  std_logic;
@@ -176,6 +183,10 @@ architecture rtl of wr_node_core is
       src_i        : in  t_mt_stream_source_in;
       snk_o        : out t_mt_stream_sink_out;
       snk_i        : in  t_mt_stream_sink_in;
+      wr_snk_i     : in  t_wrf_sink_in   := c_dummy_snk_in;
+      wr_snk_o     : out t_wrf_sink_out;
+      wr_src_i     : in  t_wrf_source_in := c_dummy_src_in;
+      wr_src_o     : out t_wrf_source_out;
       rmq_swrst_o  : out std_logic;
       rmq_status_o : out std_logic_vector(15 downto 0);
       debug_o      : out std_logic_vector(31 downto 0));
@@ -518,17 +529,23 @@ begin  -- rtl
     
     U_Remote_MQ : mt_mqueue_remote
       generic map (
-        g_config => g_config.rmq_config)
+        g_config        => g_config.rmq_config,
+        g_use_wr_fabric => g_use_wr_fabric
+        )
       port map (
-        clk_i       => clk_i,
-        rst_n_i     => rst_n_i,
-        rmq_swrst_o => rmq_swrst_o,
-        si_slave_i  => si_master_out(c_si_master_rmq),
-        si_slave_o  => si_master_in(c_si_master_rmq),
-        src_o       => rmq_src_o,
-        src_i       => rmq_src_i,
-        snk_i => rmq_snk_i,
-        snk_o => rmq_snk_o,
+        clk_i        => clk_i,
+        rst_n_i      => rst_n_i,
+        rmq_swrst_o  => rmq_swrst_o,
+        si_slave_i   => si_master_out(c_si_master_rmq),
+        si_slave_o   => si_master_in(c_si_master_rmq),
+        src_o        => rmq_src_o,
+        src_i        => rmq_src_i,
+        snk_i        => rmq_snk_i,
+        snk_o        => rmq_snk_o,
+        wr_src_o     => wr_src_o,
+        wr_src_i     => wr_src_i,
+        wr_snk_o     => wr_snk_o,
+        wr_snk_i     => wr_snk_i,
         rmq_status_o => rmq_status,
         debug_o      => trig2);
 

@@ -6,7 +6,7 @@
 -- Author     : Tomasz Wlostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2012-01-16
--- Last update: 2017-04-13
+-- Last update: 2017-04-18
 -- Platform   : 
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -57,21 +57,12 @@ entity mt_wr_sink is
 
     -- MT internal fabric source
     src_o : out t_mt_stream_source_out;
-    src_i : in t_mt_stream_source_in;
-    
-    --addr_o    : out std_logic_vector(1 downto 0);
-    --data_o    : out std_logic_vector(15 downto 0);
-    --dvalid_o  : out std_logic;
-    --sof_o     : out std_logic;
-    --eof_o     : out std_logic;
-    --error_o   : out std_logic;
-    --bytesel_o : out std_logic;
-    --dreq_i    : in  std_logic
+    src_i : in  t_mt_stream_source_in
     );
 
-end xwb_fabric_sink;
+end mt_wr_sink;
 
-architecture rtl of xwb_fabric_sink is
+architecture rtl of mt_wr_sink is
 
   constant c_fifo_width : integer := 16 + 2 + 4;
 
@@ -85,6 +76,7 @@ architecture rtl of xwb_fabric_sink is
   signal post_data                                 : std_logic_vector(15 downto 0);
 
   signal snk_out : t_wrf_sink_out;
+  signal data_present : std_logic;
   
 begin  -- rtl
 
@@ -106,15 +98,9 @@ begin  -- rtl
   end process;
 
 
-  pre_sof     <= snk_i.cyc and not cyc_d0;  -- sof
   pre_eof     <= not snk_i.cyc and cyc_d0;  -- eof
   pre_bytesel <= not snk_i.sel(0);      -- bytesel
   pre_dvalid  <= snk_i.stb and snk_i.we and snk_i.cyc and not snk_out.stall;  -- data valid
-
-  fin(15 downto 0)  <= snk_i.dat;
-  fin(17 downto 16) <= snk_i.adr;
-  fin(21 downto 18) <= pre_sof & pre_eof & pre_bytesel & pre_dvalid;
-
 
   snk_out.stall <= full or (snk_i.cyc and not cyc_d0);
   snk_out.err   <= '0';
@@ -131,11 +117,35 @@ begin  -- rtl
     end if;
   end process;
 
+fin(18) <= pre_eof;
+  
+  p_latch_data : process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      if rst_n_i = '0' or pre_sof = '1' then
+        data_present <= '0';
+--        we <= '0';
+      else
+        
+        if pre_dvalid = '1' then
+          fin(15 downto 0)  <= snk_i.dat;
+          fin(17 downto 16) <= snk_i.adr;
+          data_present      <= '1';
+        elsif pre_eof = '1' then
+          data_present <= '0';
+  --        we <= '0';
+        end if;
+      end if;
+    end if;
+  end process;
+
+  we <= data_present and (pre_dvalid or pre_eof);
+  
   snk_o <= snk_out;
 
-  we <= '1' when fin(21 downto 18) /= "0000" and full = '0' else '0';
-  rd <= q_valid and dreq_i and not post_sof;
+  rd <= q_valid and src_i.ready;
 
+  -- fixme: we assume this doesn't get full.
   U_FIFO : generic_shiftreg_fifo
     generic map (
       g_data_width => c_fifo_width,
@@ -150,36 +160,16 @@ begin  -- rtl
       almost_full_o => full,
       q_valid_o     => q_valid);
 
-  p_fout_reg : process(clk_i)
-  begin
-    if rising_edge(clk_i) then
-      if rst_n_i = '0' then
-        fout_reg <= (others => '0');
-      elsif(rd = '1') then
-        fout_reg <= fout;
-      end if;
-    end if;
-  end process;
-
- 
-
-  post_data <= fout_reg(15 downto 0);
-  src_o.dat(15 downto 0) <= post_data;
-  post_addr <= fout_reg(17 downto 16);
-  src_o.tag <= post_addr;
-  src_o.valid <= fout_reg(18);
-  src_o.error <= '1' when rd_d0 = '1' and (post_addr = c_WRF_STATUS) and (f_unmarshall_wrf_status(post_data).error = '1') else '0';
-  src_o.last <= fout_reg(20) and rd_d0;
-
-  post_dvalid <= fout_reg(18);
-
-  sof_o     <= post_sof and rd_d0;
-  dvalid_o  <= post_dvalid and rd_d0;
-  error_o   <= '1' when rd_d0 = '1' and (post_addr = c_WRF_STATUS) and (f_unmarshall_wrf_status(post_data).error = '1') else '0';
-  eof_o     <= fout_reg(20) and rd_d0;
-  bytesel_o <= fout_reg(19);
-  data_o    <= post_data;
-  addr_o    <= post_addr;
+  post_data              <= fout(15 downto 0);
+  src_o.data(15 downto 0) <= post_data;
+  post_addr              <= fout(17 downto 16);
+  src_o.tag              <= post_addr;
+  src_o.last             <= q_valid and fout(18);
+  src_o.error            <= '0';        -- fixme
+  src_o.valid <= q_valid;
+  
+  --
+  ----q_valid and (post_addr = c_WRF_STATUS) and (f_unmarshall_wrf_status(post_data).error = '1') else '0';
 
   
 end rtl;
