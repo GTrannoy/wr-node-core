@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2017-03-24
+-- Last update: 2017-04-21
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -71,7 +71,7 @@ architecture rtl of mt_udp_tx_framer is
   signal state    : t_state;
   signal checksum : unsigned(19 downto 0);
 
-  procedure f_send_hdr(data : std_logic_vector(15 downto 0); next_state : t_state; signal checksum : inout unsigned; signal src_o : inout t_mt_stream_source_out; signal state : inout t_state) is
+  procedure f_send_hdr(data : in std_logic_vector(15 downto 0); next_state : t_state; signal checksum : inout unsigned; signal src_o : out t_mt_stream_source_out; signal state : inout t_state) is
   begin
     src_o.valid <= '1';
     if src_i.ready = '1' then
@@ -124,7 +124,8 @@ begin
 
           when IP_TLEN =>
             f_send_hdr(
-              std_logic_vector((unsigned(p_payload_len_i) sll 1) + to_unsigned(20 + 8, 16)), IP_ID, checksum, src_o, state); 
+              std_logic_vector(
+              ( unsigned(p_payload_len_i) sll 1 ) + to_unsigned(20 + 8, 16)), IP_ID, checksum, src_o, state); 
 
           when IP_ID =>
             f_send_hdr(x"0000", IP_FLAGS, checksum, src_o, state);
@@ -157,7 +158,7 @@ begin
             f_send_hdr(p_dst_port_i, UDP_LEN, checksum, src_o, state);
 
           when UDP_LEN =>
-            f_send_hdr(std_logic_vector(unsigned(p_payload_len_i sll 1) + 8), UDP_CKSUM, checksum, src_o, state);
+            f_send_hdr(std_logic_vector((unsigned(p_payload_len_i) sll 1) + 8), UDP_CKSUM, checksum, src_o, state);
 
           when UDP_CKSUM =>
             f_send_hdr(x"0000", UDP_FIRST, checksum, src_o, state);

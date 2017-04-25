@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2017-03-24
+-- Last update: 2017-04-25
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -154,7 +154,9 @@ begin
       end if;
     end if;
   end process;
-  
+
+  src_o.tag <= "00";
+  src_o.error <= '0';
 end rtl;
 
 

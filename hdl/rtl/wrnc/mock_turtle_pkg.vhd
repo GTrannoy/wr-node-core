@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2016-11-28
+-- Last update: 2017-04-21
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -63,23 +63,23 @@ package mock_turtle_pkg is
   type t_int_array is array(integer range<>) of integer;
 
   type t_mock_turtle_config is record
-    app_id       : std_logic_vector(31 downto 0);
-    cpu_count    : integer;
+    app_id          : std_logic_vector(31 downto 0);
+    cpu_count       : integer;
     -- CPU memory sizes, in bytes
-    cpu_memsizes : t_int_array (0 to 7);
-    hmq_config   : t_mt_mqueue_config;
-    rmq_config   : t_mt_mqueue_config;
+    cpu_memsizes    : t_int_array (0 to 7);
+    hmq_config      : t_mt_mqueue_config;
+    rmq_config      : t_mt_mqueue_config;
     -- shared memory size, in bytes
     shared_mem_size : integer range 256 to 65536;
   end record;
 
   constant c_default_mock_turtle_config : t_mock_turtle_config :=
     (
-      app_id       => x"115790de",
-      cpu_count    => 2,
-      cpu_memsizes => (32768, 32768, 0, 0, 0, 0, 0, 0),
-      hmq_config   => c_mt_default_mqueue_config,
-      rmq_config   => c_mt_default_mqueue_config,
+      app_id          => x"115790de",
+      cpu_count       => 2,
+      cpu_memsizes    => (32768, 32768, 0, 0, 0, 0, 0, 0),
+      hmq_config      => c_mt_default_mqueue_config,
+      rmq_config      => c_mt_default_mqueue_config,
       shared_mem_size => 8192
       );
 
@@ -104,8 +104,65 @@ package mock_turtle_pkg is
         device_id => x"000090de",
         version   => x"00000001",
         date      => x"20141201",
-        name      => "WR-Node-Core       ")));
+        name      => "Mock-Turtle-Core   ")));
 
+
+  component mock_turtle_core is
+    
+    generic (
+-- Message Queue and CPU configuration
+      g_config            : t_mock_turtle_config := c_default_mock_turtle_config;
+-- When true, the CPUs can run with 2x the system clock. User design must
+--    supply the clk_cpu_i signal which is in phase with the clk_i signal.
+      g_double_core_clock : boolean              := false;
+-- When true, the Remote Message Queue is implemented.
+      g_with_rmq          : boolean              := true;
+      g_use_wr_fabric     : boolean              := true;
+-- Frequency of clk_sys_i, in Hz
+      g_system_clock_freq : integer              := 62500000;
+-- Enables/disables WR support
+      g_with_white_rabbit : boolean              := false
+      );
+
+    port (
+      clk_i     : in std_logic;
+      -- optional, 2x faster CPU core clock
+      clk_cpu_i : in std_logic := '0';
+      rst_n_i   : in std_logic;
+
+      sp_master_o : out t_wishbone_master_out;
+      sp_master_i : in  t_wishbone_master_in := cc_dummy_master_in;
+
+      dp_master_o : out t_wishbone_master_out_array(0 to g_config.cpu_count-1);
+      dp_master_i : in  t_wishbone_master_in_array(0 to g_config.cpu_count-1) := f_dummy_master_in_array(g_config.cpu_count);
+
+      rmq_src_o : out t_mt_stream_source_out;
+      rmq_src_i : in  t_mt_stream_source_in := c_mt_dummy_source_in;
+      rmq_snk_o : out t_mt_stream_sink_out;
+      rmq_snk_i : in  t_mt_stream_sink_in   := c_mt_dummy_sink_in;
+
+      wr_src_o : out t_wrf_source_out;
+      wr_src_i : in  t_wrf_source_in := c_dummy_src_in;
+      wr_snk_o : out t_wrf_sink_out;
+      wr_snk_i : in  t_wrf_sink_in   := c_dummy_snk_in;
+
+      host_slave_i : in  t_wishbone_slave_in;
+      host_slave_o : out t_wishbone_slave_out;
+
+      clk_ref_i : in std_logic := '0';
+      tm_i      : in t_mt_timing_if;
+
+      gpio_o : out std_logic_vector(31 downto 0);
+      gpio_i : in  std_logic_vector(31 downto 0) := x"00000000";
+
+      rmq_swrst_o : out std_logic;
+
+      host_irq_o      : out std_logic;
+      debug_msg_irq_o : out std_logic
+      );
+
+  end component;
+  
 end mock_turtle_pkg;
 
 package body mock_turtle_pkg is

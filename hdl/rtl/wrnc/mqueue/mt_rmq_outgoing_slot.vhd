@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2017-04-13
+-- Last update: 2017-04-25
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -441,4 +441,5 @@ begin  -- rtl
 
   config_o <= config;
 
+  src_o.tag <= (others => '0');
 end rtl;

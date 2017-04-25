@@ -67,6 +67,8 @@ package mt_mqueue_pkg is
     type2 : std_logic_vector(31 downto 0);
     type3 : std_logic_vector(31 downto 0);
 
+    store_header : std_logic;
+    
     is_tlv : std_logic;
     filter_dst_mac : std_logic;
     filter_dst_ip : std_logic;

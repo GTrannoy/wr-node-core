@@ -6,7 +6,7 @@
 -- Author     : Tomasz Wlostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2012-01-16
--- Last update: 2017-04-18
+-- Last update: 2017-04-25
 -- Platform   : 
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -76,6 +76,7 @@ architecture rtl of mt_wr_sink is
 
   signal snk_out : t_wrf_sink_out;
   signal data_present : std_logic;
+  signal is_data : std_logic;
   
 begin  -- rtl
 
@@ -97,9 +98,11 @@ begin  -- rtl
   end process;
 
 
+  is_data <= '1' when snk_i.adr = c_WRF_DATA else '0';
+                                                
   pre_eof     <= not snk_i.cyc and cyc_d0;  -- eof
   pre_bytesel <= not snk_i.sel(0);      -- bytesel
-  pre_dvalid  <= snk_i.stb and snk_i.we and snk_i.cyc and not snk_out.stall;  -- data valid
+  pre_dvalid  <= is_data and snk_i.stb and snk_i.we and snk_i.cyc and not snk_out.stall;  -- data valid
 
   snk_out.stall <= full or (snk_i.cyc and not cyc_d0);
   snk_out.err   <= '0';

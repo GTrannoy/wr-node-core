@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2017-04-17
+-- Last update: 2017-04-20
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -153,6 +153,7 @@ begin  -- rtl
               config.filter_type1     <= outb_i.dat(8);
               config.filter_type2     <= outb_i.dat(9);
               config.filter_type3     <= outb_i.dat(10);
+              config.store_header     <= outb_i.dat(11);
             when c_addr_dst_mac_hi =>
               config.dst_mac(47 downto 32) <= outb_i.dat(15 downto 0);
             when c_addr_dst_mac_lo =>
@@ -237,9 +238,9 @@ begin  -- rtl
   p_mem_out_addr : process(outb_i.adr, rd_state, rd_ptr)
   begin
     if(rd_state = IDLE) then
-      mem_raddr <= rd_ptr & to_unsigned(31, c_slot_offset_bits);
+      mem_raddr <= rd_ptr & to_unsigned(0, c_slot_offset_bits);
     else
-      mem_raddr <= rd_ptr & unsigned(outb_i.adr(c_slot_offset_bits+1 downto 2));
+      mem_raddr <= rd_ptr & ( unsigned(outb_i.adr(c_slot_offset_bits+1 downto 2)) - 1);
     end if;
   end process;
 
@@ -247,7 +248,7 @@ begin  -- rtl
   begin
 
     if (wr_state = READY_SEND) then
-      mem_waddr <= wr_ptr & to_unsigned(31 * 4, c_slot_offset_bits + 2);
+      mem_waddr <= wr_ptr & to_unsigned(0 * 4, c_slot_offset_bits + 2);
     else
       if (snk_i.tag = c_MT_STREAM_TAG_HEADER) then
         mem_waddr <= wr_ptr & mem_waddr_hdr(c_slot_offset_bits downto 0) & '0';
@@ -272,7 +273,12 @@ begin  -- rtl
     if(wr_state = READY_SEND) then
       mem_we <= '1';
     elsif (snk_i.valid = '1' and full = '0') then
-      mem_we <= '1';
+      if (snk_i.tag = c_MT_STREAM_TAG_HEADER and config.store_header = '1') or
+        snk_i.tag = c_MT_STREAM_TAG_PAYLOAD then
+        mem_we <= '1';
+      else
+        mem_we <= '0';
+      end if;
     else
       mem_we <= '0';
     end if;
@@ -395,8 +401,12 @@ begin  -- rtl
         case wr_state is
           when IDLE =>
             current_size      <= (others => '0');
-            mem_waddr_hdr     <= (others => '0');
-            mem_waddr_payload <= to_unsigned(64, mem_waddr_payload'length);
+            mem_waddr_hdr     <= to_unsigned(2, mem_waddr_hdr'length);
+            if (config.store_header = '1') then
+              mem_waddr_payload <= to_unsigned(64 + 2, mem_waddr_payload'length);
+            else
+              mem_waddr_payload <= to_unsigned(2, mem_waddr_payload'length);
+            end if;
 
             if snk_i.valid = '1' then
               if full = '1' or snk_i.error = '1' then

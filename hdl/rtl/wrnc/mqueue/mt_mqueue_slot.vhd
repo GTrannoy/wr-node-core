@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2016-11-28
+-- Last update: 2017-04-21
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -276,7 +276,7 @@ begin  -- rtl
 
           when READ_SIZE =>
             n_words_last        <= mem_rdata_out(7 downto 0);
-            stat_o.current_size <= mem_rdata_out(7 downto 0);
+            stat_o.current_size <= x"00" & mem_rdata_out(7 downto 0);
             stat_o.ready        <= '1';
             rd_state            <= WAIT_DISCARD;
 
