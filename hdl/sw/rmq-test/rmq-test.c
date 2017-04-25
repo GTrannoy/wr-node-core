@@ -42,12 +42,15 @@ main()
     0x0,
     0x0,
     0x0,
-    0xcafe
+    0xebd1
   };
 
     rmq_bind_out( 0, &bind_addr );
     rmq_bind_in(0, &bind_addr_in);
+
     send();
+
+    pp_printf("Sent!\n");
 
     for(;;)
     {
