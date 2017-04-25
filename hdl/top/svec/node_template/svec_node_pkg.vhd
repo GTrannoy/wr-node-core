@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2016-05-02
+-- Last update: 2017-04-24
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -41,8 +41,8 @@ use ieee.STD_LOGIC_1164.all;
 
 library work;
 use work.wishbone_pkg.all;
-use work.wr_node_pkg.all;
-use work.wrn_mqueue_pkg.all;
+use work.mock_turtle_pkg.all;
+use work.mt_mqueue_pkg.all;
 use work.xvme64x_core_pkg.all;
 
 package svec_node_pkg is
@@ -63,9 +63,11 @@ package svec_node_pkg is
       g_with_white_rabbit : boolean := true;
       g_simulation      : boolean := false;
       g_with_wr_phy     : boolean := true;
-      g_double_wrnode_core_clock : boolean := false;
-      g_wr_node_config  : t_wr_node_config;
-      g_use_external_fp_leds : boolean := false);
+      g_double_mt_core_clock : boolean := false;
+      g_mock_turtle_config  : t_mock_turtle_config;
+      g_use_external_fp_leds : boolean := false;
+      g_bypass_vme_core : boolean := false
+);
     port (
  -- power-up reset from the SVEC system FPGA
       rst_n_a_i            : in    std_logic;
@@ -169,6 +171,12 @@ package svec_node_pkg is
 
       pps_o                : out   std_logic;
       led_state_i : in std_logic_vector(15 downto 0) := x"0000"
+          -- synthesis translate_off
+    ;
+    sim_wb_i : in t_wishbone_slave_in := cc_dummy_slave_in;
+    sim_wb_o : out t_wishbone_slave_out
+    -- synthesis translate_on
+
       );
   end component svec_node_template;
 

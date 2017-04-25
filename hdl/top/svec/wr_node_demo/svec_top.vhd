@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2015-05-29
+-- Last update: 2017-04-25
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -50,15 +50,17 @@ use ieee.std_logic_1164.all;
 library work;
 use work.wishbone_pkg.all;
 use work.svec_node_pkg.all;
-use work.wrn_mqueue_pkg.all;
-use work.wr_node_pkg.all;
+use work.mt_mqueue_pkg.all;
+use work.mock_turtle_pkg.all;
 
 library unisim;
 use unisim.vcomponents.all;
 
 entity svec_top is
   generic (
-    g_simulation : boolean := false
+    g_simulation : boolean := false;
+    g_with_wr_phy : boolean := true;
+    g_bypass_vme_core : boolean := false
     );
 
   port (
@@ -153,6 +155,12 @@ entity svec_top is
     uart_txd_o : out std_logic
 
    -- put the FMC I/Os here
+    -- synthesis translate_off
+    ;
+    sim_wb_i : in t_wishbone_slave_in := cc_dummy_slave_in;
+    sim_wb_o : out t_wishbone_slave_out
+    -- synthesis translate_on
+    
     );
 end svec_top;
 
@@ -166,7 +174,7 @@ architecture rtl of svec_top is
   -- 3) a small outgoing queue (8 entries x 128 words) for receiving command replies
   --    (CPU to host)
   
-  constant c_hmq_config : t_wrn_mqueue_config :=
+  constant c_hmq_config : t_mt_mqueue_config :=
     (
       out_slot_count  => 4,
       out_slot_config => (
@@ -189,7 +197,7 @@ architecture rtl of svec_top is
   -- 2) incoming path (WR Network -> CPU): 16 entries x 128 words.
   -- Use at your convenience.
   
-  constant c_rmq_config : t_wrn_mqueue_config :=
+  constant c_rmq_config : t_mt_mqueue_config := 
     (
       out_slot_count  => 1,
       out_slot_config => (
@@ -204,13 +212,14 @@ architecture rtl of svec_top is
         )
       );
 
-  constant c_node_config : t_wr_node_config :=
+  constant c_node_config : t_mock_turtle_config :=
     (
       app_id       => x"d330d330",
       cpu_count    => 2,
       cpu_memsizes => (32768, 32768, 0, 0, 0, 0, 0, 0),
       hmq_config   => c_hmq_config,
-      rmq_config   => c_rmq_config
+      rmq_config   => c_rmq_config,
+      shared_mem_size => 8192
       );
 
   signal clk_sys : std_logic;
@@ -231,10 +240,11 @@ begin
   U_Node_Template : svec_node_template
     generic map (
       g_simulation           => g_simulation,
-      g_with_wr_phy          => true,
-      g_wr_node_config       => c_node_config,
+      g_mock_turtle_config       => c_node_config,
       -- we drive the FP leds from our demo CPUs instead of the WR core
-      g_use_external_fp_leds => true)
+      g_use_external_fp_leds => true,
+      g_with_wr_phy => g_with_wr_phy,
+      g_bypass_vme_core => g_bypass_vme_core)
     port map (
       rst_n_a_i           => rst_n_a_i,
       rst_n_sys_o         => rst_n_sys,
@@ -300,7 +310,11 @@ begin
       fmc1_dp_wb_i => fmc_dp_wb_in(1),
 
       led_state_i => cpu_gpio_out(23 downto 8)
-
+-- synthesis translate_off
+      ,
+      sim_wb_i => sim_wb_i,
+      sim_wb_o => sim_wb_o
+-- synthesis translate_on
       );
 
 
