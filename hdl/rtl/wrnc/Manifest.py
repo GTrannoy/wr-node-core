@@ -4,6 +4,5 @@ files = [	"mock_turtle_core.vhd",
 modules = { 
     "local" : [ "cpu", "mqueue", "smem",
                 "../../ip_cores/general-cores",
-                "../../ip_cores/etherbone-core",
                 "../../ip_cores/wr-cores",
             ] }

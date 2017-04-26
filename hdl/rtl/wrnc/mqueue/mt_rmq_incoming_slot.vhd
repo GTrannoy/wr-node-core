@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2017-04-20
+-- Last update: 2017-04-26
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -240,7 +240,7 @@ begin  -- rtl
     if(rd_state = IDLE) then
       mem_raddr <= rd_ptr & to_unsigned(0, c_slot_offset_bits);
     else
-      mem_raddr <= rd_ptr & ( unsigned(outb_i.adr(c_slot_offset_bits+1 downto 2)) - 1);
+      mem_raddr <= (rd_ptr & to_unsigned(0, c_slot_offset_bits)) + unsigned(outb_i.adr(c_slot_offset_bits+1 downto 2)) - c_rmq_data_start_offset + 1;
     end if;
   end process;
 

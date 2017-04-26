@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2017-04-25
+-- Last update: 2017-04-26
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -51,7 +51,6 @@ use work.wishbone_pkg.all;
 use work.wr_fabric_pkg.all;
 use work.xvme64x_core_pkg.all;
 use work.mock_turtle_pkg.all;
-use work.etherbone_pkg.all;
 use work.gencores_pkg.all;
 use work.wrcore_pkg.all;
 use work.wr_xilinx_pkg.all;

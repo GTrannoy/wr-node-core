@@ -4,9 +4,31 @@
 import wishbone_pkg::*;
 import etherbone_pkg::*;
 import wr_fabric_pkg::*;
-import wrn_mqueue_pkg::*;
+import mt_mqueue_pkg::*;
 
+typedef uint16_t vec16_t[$];
 typedef uint32_t vec32_t[$];
+typedef uint64_t vec64_t[$];
+
+function automatic vec64_t pack ( vec32_t in, int in_size, int out_size );
+   vec64_t out;
+   
+   if ( out_size < in_size )
+     begin
+	int i, j;
+
+	for(i = 0; i < in.size(); i++)
+	  for(j =0; j < in_size / out_size; j++)
+	    out.push_back( in[i] >> (((in_size/out_size-1) - j) * 8 * out_size) & ((1<<(8*out_size) )- 1));
+
+	return out;
+	
+     end
+   
+endfunction // pack
+
+
+
 
 module stream_sink
 (
@@ -64,19 +86,30 @@ module stream_sink
 	   if(snk_i.valid && snk_o.ready)
 	     begin
 		data.push_back(snk_i.data[15:0]);
-		$display("'h%x,", snk_i.data[15:0]);
+//		$display("'h%x,", snk_i.data[15:0]);
 		if(snk_i.last)
 		  begin
 		     dump( data );
 		     packets.push_back(data);
+//		     $display("got %d", data.size());
+		     
 		     data={};
 		  end
 	     end
 	end // else: !if(!rst_n_i)
      end // always@ (posedge clk_i)
    
-   
 
+   function bit poll();
+      return packets.size()>0;
+   endfunction // poll
+   
+   function vec32_t recv();
+      return packets.pop_front();
+      
+   endfunction // recv
+   
+      
    
    
 endmodule // stream_sink
@@ -103,7 +136,7 @@ module stream_mon
    
       for(i=0;i<d.size();i++)
 	begin
-	   $display("Mon %x: %x", i, d[i]);
+//	   $display("Mon %x: %x", i, d[i]);
 	 
 	end
       

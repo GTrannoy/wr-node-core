@@ -49,7 +49,8 @@
 #define RMQ_SLOT_OUT_SRC_IP 28
 #define RMQ_SLOT_OUT_DST_PORT 32
 #define RMQ_SLOT_OUT_SRC_PORT 36
-#define RMQ_SLOT_OUT_DATA_START 128
+
+#define RMQ_SLOT_DATA_START 128
 
 #define RMQ_FRAME_RAW 0
 #define RMQ_FRAME_UDP 1
@@ -141,7 +142,7 @@ static void *mq_map_out_buffer(int remote, int slot)
 {
   uint32_t base = remote ? RMQ_BASE : HMQ_BASE;
   if(remote)
-    return (void *) (base + MQ_OUT (slot) + RMQ_SLOT_OUT_DATA_START );
+    return (void *) (base + MQ_OUT (slot) + RMQ_SLOT_DATA_START );
   else
     return (void *) (base + MQ_OUT (slot) + MQ_SLOT_DATA_START );
 }
@@ -149,7 +150,13 @@ static void *mq_map_out_buffer(int remote, int slot)
 static void *mq_map_in_buffer(int remote, int slot)
 {
   uint32_t base = remote ? RMQ_BASE : HMQ_BASE;
-  return (void *) (base + MQ_IN (slot) + MQ_SLOT_DATA_START );
+
+  if(remote)
+    return (void *) (base + MQ_IN (slot) + RMQ_SLOT_DATA_START );
+  else
+    return (void *) (base + MQ_IN (slot) + MQ_SLOT_DATA_START );
+
+
 }
 
 static inline uint32_t mq_poll()

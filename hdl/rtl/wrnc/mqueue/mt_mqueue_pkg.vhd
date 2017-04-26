@@ -6,7 +6,7 @@
 -- Author     : Tomasz Włostowski
 -- Company    : CERN BE-CO-HT
 -- Created    : 2014-04-01
--- Last update: 2017-04-20
+-- Last update: 2017-04-26
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -42,6 +42,8 @@ use work.mt_private_pkg.all;
 use work.wishbone_pkg.all;
 
 package mt_mqueue_pkg is
+
+  constant c_rmq_data_start_offset : integer := 32;
 
   constant c_MT_STREAM_TAG_HEADER  : std_logic_vector(1 downto 0) := "00";
   constant c_MT_STREAM_TAG_PAYLOAD : std_logic_vector(1 downto 0) := "01";

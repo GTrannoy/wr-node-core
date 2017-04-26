@@ -5,5 +5,6 @@ set StdArithNoWarnings 1
 set NumericStdNoWarnings 1
 
 do wave.do
+run 700us
 radix -hexadecimal
-run 1350us
+
